@@ -1,0 +1,14 @@
+data_path = ../npz_e65_data/E65_data.npz
+trial_len_s = 12
+fps = 10
+drop_first_trials = 10
+latent_dim = 64
+batch_size = 8
+epochs = 100
+lr = 0.002
+weight_decay = 0.00001
+beta = 0.3
+kl_warmup_epochs = 10
+lambda_smooth = 0.01
+holdout_trials = 20
+out_dir = ../runs/ode_vae_E65

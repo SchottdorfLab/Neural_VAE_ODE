@@ -1,0 +1,18 @@
+=== Run at 2025-10-13 20:51:49 ===
+Data: ../npz_e65_data/E65_data.npz
+Latent dim: 64 | Epochs: 100 | LR: 0.002
+Final validation loss: 3.07825
+Saved model: ../runs/ode_vae_E65/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-13 20:41:47 ===
+Data: ../npz_e65_data/E65_data.npz
+Latent dim: 64 | Epochs: 50 | LR: 0.001
+Final validation loss: 3.07893
+Saved model: ../runs/ode_vae_E65/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-13 20:25:25 ===
+Data: ../npz_e65_data/E65_data.npz
+Latent dim: 32 | Epochs: 50 | LR: 0.001
+Final validation loss: 3.08175
+Saved model: ../runs/ode_vae_E65/ode_vae_best.pt
+---------------------------------------------

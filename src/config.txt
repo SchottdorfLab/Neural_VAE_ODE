@@ -9,6 +9,6 @@ lr = 0.002
 weight_decay = 0.00001
 beta = 0.1
 kl_warmup_epochs = 10
-lambda_smooth = 0.01
+lambda_smooth = 0.001
 holdout_trials = 20
 out_dir = ../runs/ode_vae_E65

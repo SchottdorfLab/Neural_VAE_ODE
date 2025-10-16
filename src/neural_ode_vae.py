@@ -15,13 +15,16 @@ from torchdiffeq import odeint
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SRC_DIR)
 
+# --- Root directory auto-detection --- #
+SRC_DIR  = os.path.dirname(os.path.abspath(__file__))
+
 PATHS = {
-    "data": os.path.join(ROOT_DIR, "npz_e65_data", "E65_data.npz"),
-    "out_dir": os.path.join(ROOT_DIR, "pt_files"),
-    "final_metrics": os.path.join(ROOT_DIR, "pt_files", "final_metrics.pt"),
-    "preview": os.path.join(ROOT_DIR, "preview.png"),
-    "training_log": os.path.join(ROOT_DIR, "training_results.txt"),
-    "config": os.path.join(ROOT_DIR, "config.txt")
+    "data":          os.path.join(SRC_DIR, "npz_e65_data", "E65_data.npz"),
+    "out_dir":       os.path.join(SRC_DIR, "pt_files"),
+    "final_metrics": os.path.join(SRC_DIR, "pt_files", "final_metrics.pt"),
+    "preview":       os.path.join(SRC_DIR, "preview.png"),
+    "training_log":  os.path.join(SRC_DIR, "training_results.txt"),
+    "config":        os.path.join(SRC_DIR, "config.txt"),
 }
 os.makedirs(PATHS["out_dir"], exist_ok=True)
 
@@ -343,7 +346,7 @@ def train(args):
 #__________________main_____________#
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default=PATHS["config"], help="Path to config file")
+    ap.add_argument("--config", default=os.path.join(SRC_DIR, "config.txt"), help="Path to config file")
     args_cli = ap.parse_args()
 
     # load defaults from file
@@ -374,12 +377,12 @@ if __name__ == "__main__":
 
     # add new entry at the top
     new_entry = (
-        f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
-        f"Data: {args.data_path}\n"
-        f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
-        f"Final validation loss: {best_val:.5f}\n"
-        f"Saved model: {os.path.join(args.out_dir, 'ode_vae_best.pt')}\n"
-        f"---------------------------------------------\n"
+    f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
+    f"Data: {PATHS['data']}\n"
+    f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
+    f"Final validation loss: {best_val:.5f}\n"
+    f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
+    f"---------------------------------------------\n"
     )
     result_lines.insert(0, new_entry)
 
@@ -388,6 +391,48 @@ if __name__ == "__main__":
         f.writelines(result_lines)
 
     print(f"Results logged to {log_file}")
+
+# --- Optional neuron-level reconstruction visualization --- #
+import matplotlib.pyplot as plt
+import torch
+import numpy as np
+from random import sample
+
+ckpt_path = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
+checkpoint = torch.load(ckpt_path, map_location=get_device(), weights_only=False)
+
+# Load model
+args_loaded = checkpoint["args"]
+meta = checkpoint["meta"]
+tvec_np = checkpoint["tvec"]
+model = ODEVAE(n_neurons=meta["N"], latent_dim=args_loaded["latent_dim"])
+model.load_state_dict(checkpoint["state_dict"])
+model.to(get_device())
+model.eval()
+
+# Load data again
+npz = np.load(PATHS["data"])
+X, tvec_np, _ = make_sequences(npz)
+xb = torch.from_numpy(X[0:1]).to(get_device())  # one validation trial
+
+# Run reconstruction
+with torch.no_grad():
+    xhat, mu, logvar, z_traj, zdiff = model(xb, torch.from_numpy(tvec_np).to(get_device()))
+xb_np = xb[0].cpu().numpy()
+xhat_np = xhat[0].cpu().numpy()
+
+# Plot a few random neurons
+neurons = sample(range(xb_np.shape[1]), 5)
+plt.figure(figsize=(10, 8))
+for i, n in enumerate(neurons):
+    plt.subplot(5, 1, i+1)
+    plt.plot(xb_np[:, n], label=f"GT neuron {n}", color='blue')
+    plt.plot(xhat_np[:, n], label=f"Recon neuron {n}", color='orange', alpha=0.7)
+    plt.legend()
+plt.tight_layout()
+plt.savefig(os.path.join(PATHS["out_dir"], "neuron_recon_examples.png"), dpi=160)
+plt.close()
+print("Saved neuron-level reconstructions to pt_files/neuron_recon_examples.png")
 
                 
 

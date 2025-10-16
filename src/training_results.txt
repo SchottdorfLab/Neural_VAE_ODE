@@ -1,3 +1,9 @@
+=== Run at 2025-10-16 15:23:45 ===
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 64 | Epochs: 100 | LR: 0.002
+Final validation loss: 3.07758
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-10-13 20:51:49 ===
 Data: ../npz_e65_data/E65_data.npz
 Latent dim: 64 | Epochs: 100 | LR: 0.002

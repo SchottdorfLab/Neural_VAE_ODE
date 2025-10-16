@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+# Current Challenges:
+Working to fix posterior collapse. 
+
 ## File Structure
 ```
 src/
@@ -30,5 +33,5 @@ Contains the best model and final metrics.
 
 ## How to Run:
 1. Configure the config.txt file. This file is used as the input configurations for the model.
-2. Run the model. Ensure you are in the src directory, then type python3 neural_ode_vae.py.
+2. Run the model. Ensure you are in the src directory, then type ```python3 neural_ode_vae.py```.
 3. Results, in addition to being output into the terminal, will also be saved to training_results.txt. Additionally, an image of the training process will be saved to preview.png. 

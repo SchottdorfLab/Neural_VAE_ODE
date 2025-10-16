@@ -4,12 +4,26 @@
 # Written by Kathleen Higgins
 # Worked as of 2025-09-10
 # src/train_neural_ode_vae.py
-import os, math, argparse
+import os, math, argparse, datetime
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as td
 from torchdiffeq import odeint
+
+# --- Root directory auto-detection --- #
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SRC_DIR)
+
+PATHS = {
+    "data": os.path.join(ROOT_DIR, "npz_e65_data", "E65_data.npz"),
+    "out_dir": os.path.join(ROOT_DIR, "pt_files"),
+    "final_metrics": os.path.join(ROOT_DIR, "pt_files", "final_metrics.pt"),
+    "preview": os.path.join(ROOT_DIR, "preview.png"),
+    "training_log": os.path.join(ROOT_DIR, "training_results.txt"),
+    "config": os.path.join(ROOT_DIR, "config.txt")
+}
+os.makedirs(PATHS["out_dir"], exist_ok=True)
 
 import datetime
 
@@ -229,7 +243,7 @@ def train(args):
     print("Device:", device)
 
     #load data 
-    npz = np.load(args.data_path)
+    npz = np.load(PATHS["data"])
     X, tvec_np, meta = make_sequences(
         npz, 
         trial_len_s=args.trial_len_s,
@@ -290,11 +304,14 @@ def train(args):
 
             if vl/nbv < best_val: 
                 best_val = vl/nbv
-                ckpt = os.path.join(args.out_dir, "ode_vae_best.pt")
-                torch.save({"state_dict": model.state_dict(),
-                        "tvec": tvec_np,
-                        "meta": meta,
-                        "args": vars(args)}, ckpt)
+                ckpt = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
+                torch.save({
+                    "state_dict": model.state_dict(),
+                    "tvec": tvec_np,
+                    "meta": meta,
+                    "args": vars(args)
+                }, ckpt)
+
                 print("  saved best model to", ckpt)
 
                 # quick preview image (first batch first trial)
@@ -309,7 +326,7 @@ def train(args):
                     plt.plot(xb_np.mean(axis=1), label="GT mean")
                     plt.plot(xhat_np.mean(axis=1), label="Recon mean", alpha=0.8)
                     plt.legend(); plt.title("Validation mean activity (GT vs Recon)")
-                    out_png = os.path.join(args.out_dir, "preview.png")
+                    out_png = PATHS["preview"]
                     plt.tight_layout(); plt.savefig(out_png, dpi=160); plt.close()
                     print(f"      wrote {out_png}")
                 except Exception as e:
@@ -320,13 +337,13 @@ def train(args):
     "kl": vk / nbv,
     "smooth": vs / nbv
 }
-    torch.save(final_metrics, os.path.join(args.out_dir, "final_metrics.pt"))
+    torch.save(final_metrics, PATHS["final_metrics"])
     return best_val
 
 #__________________main_____________#
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="config.txt", help="Path to config file")
+    ap.add_argument("--config", default=PATHS["config"], help="Path to config file")
     args_cli = ap.parse_args()
 
     # load defaults from file
@@ -347,7 +364,7 @@ if __name__ == "__main__":
     end_time = datetime.datetime.now()
 
     # ========== LOG RESULTS ========== #
-    log_file = "training_results.txt"
+    log_file = PATHS["training_log"]
     result_lines = []
 
     # read existing logs if any

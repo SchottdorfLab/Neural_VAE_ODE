@@ -1,3 +1,21 @@
+=== Run at 2025-10-16 16:02:09 ===
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 64 | Epochs: 100 | LR: 0.002
+Final validation loss: 3.07586
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-16 15:51:28 ===
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 64 | Epochs: 100 | LR: 0.002
+Final validation loss: 3.07732
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-16 15:33:33 ===
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 64 | Epochs: 100 | LR: 0.002
+Final validation loss: 3.07581
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-10-16 15:23:45 ===
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
 Latent dim: 64 | Epochs: 100 | LR: 0.002

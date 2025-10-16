@@ -392,47 +392,6 @@ if __name__ == "__main__":
 
     print(f"Results logged to {log_file}")
 
-# --- Optional neuron-level reconstruction visualization --- #
-import matplotlib.pyplot as plt
-import torch
-import numpy as np
-from random import sample
-
-ckpt_path = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
-checkpoint = torch.load(ckpt_path, map_location=get_device(), weights_only=False)
-
-# Load model
-args_loaded = checkpoint["args"]
-meta = checkpoint["meta"]
-tvec_np = checkpoint["tvec"]
-model = ODEVAE(n_neurons=meta["N"], latent_dim=args_loaded["latent_dim"])
-model.load_state_dict(checkpoint["state_dict"])
-model.to(get_device())
-model.eval()
-
-# Load data again
-npz = np.load(PATHS["data"])
-X, tvec_np, _ = make_sequences(npz)
-xb = torch.from_numpy(X[0:1]).to(get_device())  # one validation trial
-
-# Run reconstruction
-with torch.no_grad():
-    xhat, mu, logvar, z_traj, zdiff = model(xb, torch.from_numpy(tvec_np).to(get_device()))
-xb_np = xb[0].cpu().numpy()
-xhat_np = xhat[0].cpu().numpy()
-
-# Plot a few random neurons
-neurons = sample(range(xb_np.shape[1]), 5)
-plt.figure(figsize=(10, 8))
-for i, n in enumerate(neurons):
-    plt.subplot(5, 1, i+1)
-    plt.plot(xb_np[:, n], label=f"GT neuron {n}", color='blue')
-    plt.plot(xhat_np[:, n], label=f"Recon neuron {n}", color='orange', alpha=0.7)
-    plt.legend()
-plt.tight_layout()
-plt.savefig(os.path.join(PATHS["out_dir"], "neuron_recon_examples.png"), dpi=160)
-plt.close()
-print("Saved neuron-level reconstructions to pt_files/neuron_recon_examples.png")
 
                 
 

@@ -348,3 +348,29 @@ plt.savefig(os.path.join(PATHS["out_dir"], "mean_abs_error_over_time.png"), dpi=
 plt.close()
 
 print("Saved per-neuron MSE and error heatmaps to:", PATHS["out_dir"])
+
+# Raw versus Reconstruction Heatmap
+plt.figure(figsize=(12,6))
+plt.subplot(1,2,1)
+plt.imshow(xb_np.T, aspect='auto', cmap='viridis')
+plt.title("Ground Truth Activity")
+plt.xlabel("Time"); plt.ylabel("Neuron")
+
+plt.subplot(1,2,2)
+plt.imshow(xhat_np.T, aspect='auto', cmap='viridis')
+plt.title("Reconstructed Activity")
+plt.xlabel("Time"); plt.ylabel("Neuron")
+
+plt.tight_layout()
+plt.savefig(os.path.join(PATHS["out_dir"], "raw_vs_recon_heatmap.png"), dpi=160)
+plt.close()
+
+# Worst Neurons (Highlight Top Error Neurons):
+worst_neurons = np.argsort(mse_per_neuron)[-5:]  # top 5 worst
+for n in worst_neurons:
+    plt.figure()
+    plt.plot(xb_np[:, n], label=f"GT neuron {n}")
+    plt.plot(xhat_np[:, n], label=f"Recon neuron {n}")
+    plt.legend(); plt.title(f"High-Error Neuron {n}")
+    plt.savefig(os.path.join(PATHS["out_dir"], f"worst_neuron_{n}.png"), dpi=150)
+    plt.close()

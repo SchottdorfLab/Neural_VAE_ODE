@@ -18,6 +18,8 @@ src/
 ├── preview.png
 └── training_results.txt
 ```
+## Data_Visualization: 
+Holds ```analyze_model.py```, which runs on the data from the model to create visual analyses. Also contains .png images of the data visualizations. 
 
 ### Helper_Scripts:
 Code primarily used to covert Matlab files (e.g. the E65 data) from a .mat file to a .npz file.
@@ -35,3 +37,4 @@ Contains the best model and final metrics.
 1. Configure the config.txt file. This file is used as the input configurations for the model.
 2. Run the model. Ensure you are in the src directory, then type ```python3 neural_ode_vae.py```.
 3. Results, in addition to being output into the terminal, will also be saved to training_results.txt. Additionally, an image of the training process will be saved to preview.png. 
+

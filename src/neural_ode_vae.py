@@ -104,6 +104,7 @@ def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_fr
     """
 
     roi = npz["roi"] # [N, T] or [T, N] depending on the export 
+    roi = (roi - roi.mean(axis=0)) / (roi.std(axis=0) + 1e-8)
     # thr printout showed roi shape (375, 7434) => (N, %). Transpose to [T, N]. 
     if roi.shape[0] < roi.shape[1]:
         # assume (N, T) -> (T, N)
@@ -335,6 +336,11 @@ def train(args):
                 except Exception as e:
                     print("      (preview plot skipped:", e, ")")
     print("done.")
+    # Check out decoder bias terms
+    for name, param in model.decoder.named_parameters():
+        if 'bias' in name:
+            print(name, param.data.mean().item())
+    
     final_metrics = {
     "recon": vr / nbv,
     "kl": vk / nbv,

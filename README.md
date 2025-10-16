@@ -3,6 +3,7 @@
 * Built for: Schottdorf Lab
 
 ## File Structure
+```
 src/
 ├── helper_scripts/
 ├── mat_E65_data/
@@ -13,6 +14,7 @@ src/
 ├── config.txt
 ├── preview.png
 └── training_results.txt
+```
 
 ### Helper_Scripts:
 Code primarily used to covert Matlab files (e.g. the E65 data) from a .mat file to a .npz file.

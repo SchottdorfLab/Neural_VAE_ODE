@@ -1,5 +1,5 @@
 # note: using float32 inputs and added some code to get apple's MPS backend to work,
-# becuase torchdiffeq likes to create float64 tensirs fir uts tolerances (rtol, atol) which MPS doesn't support. 
+# becuase torchdiffeq likes to create float64 tensors for tolerances (rtol, atol) which MPS doesn't support. 
 
 # Written by Kathleen Higgins
 # Worked as of 2025-09-10

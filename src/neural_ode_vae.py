@@ -10,6 +10,24 @@ import torch
 import torch.nn as nn
 import torch.utils.data as td
 from torchdiffeq import odeint
+import datetime
+
+#____________________metrics__________________#
+def compute_r2(y_true, y_pred):
+    """
+    Compute coefficient of determination (R^2) between ground truth and prediction.
+    Works with torch tensors or numpy arrays.
+    """
+    if isinstance(y_true, torch.Tensor):
+        y_true = y_true.detach().cpu().numpy()
+    if isinstance(y_pred, torch.Tensor):
+        y_pred = y_pred.detach().cpu().numpy()
+
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    if ss_tot == 0:
+        return np.nan  # Avoid divide-by-zero for constant sequences
+    return 1 - (ss_res / ss_tot)
 
 # --- Root directory auto-detection --- #
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +37,7 @@ ROOT_DIR = os.path.dirname(SRC_DIR)
 SRC_DIR  = os.path.dirname(os.path.abspath(__file__))
 
 PATHS = {
-    "data":          os.path.join(SRC_DIR, "npz_e65_data", "E65_data.npz"),
+    "data":          os.path.join(SRC_DIR, "random_walk_data", "synthetic_rat_data.npz"),
     "out_dir":       os.path.join(SRC_DIR, "pt_files"),
     "final_metrics": os.path.join(SRC_DIR, "pt_files", "final_metrics.pt"),
     "preview":       os.path.join(SRC_DIR, "preview.png"),
@@ -28,7 +46,6 @@ PATHS = {
 }
 os.makedirs(PATHS["out_dir"], exist_ok=True)
 
-import datetime
 
 def load_config_from_txt(path):
     """Load key=value pairs from a text file into a dict."""
@@ -169,23 +186,28 @@ class Encoder(nn.Module):
 class LatentODEFunc(nn.Module):
     def __init__(self, latent_dim):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(latent_dim, 64), nn.Tanh(),
-            nn.Linear(64, 64), nn.Tanh(),
-            nn.Linear(64, latent_dim)
-        )
-    def forward(self, t, z): # z: [B, d]
-        return torch.tanh(self.net(z))
+        h = 128
+        self.f1 = nn.Sequential(nn.Linear(latent_dim, h), nn.SiLU(),
+                                nn.Linear(h, h), nn.SiLU())
+        self.f2 = nn.Linear(h, latent_dim)
+        self.ln = nn.LayerNorm(latent_dim)
+
+    def forward(self, t, z):
+        h = self.f1(z)
+        dz = self.f2(h)
+        # simple residual-normalized field for stability
+        return self.ln(dz)
         
 class Decoder(nn.Module):
     def __init__(self, latent_dim, n_out):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(latent_dim, 128), nn.ReLU(),
-            nn.Linear(128, 256), nn.ReLU(),
-            nn.Linear(256, 512), nn.ReLU(),
-            nn.Linear(512, n_out)
-        )
+        nn.Linear(latent_dim, 512),
+        nn.ReLU(),
+        nn.Linear(512, 512),      # ← extra hidden layer
+        nn.ReLU(),
+        nn.Linear(512, n_out)
+)
     def forward(self, z_traj): # [B, L, D]
         B, L, D = z_traj.shape
         x = self.net(z_traj.reshape(B*L, D)) # [B*L, N]
@@ -296,17 +318,26 @@ def train(args):
 
         # ______val
         model.eval()
-        with torch.no_grad(): 
-            vl, vr, vk, vs = 0.0, 0.0, 0.0, 0.0
-            for xb in val_loader:
-                xb = xb.to(device)
-                xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
-                loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth = args.lambda_smooth)
-                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item()
-            nbv = len(val_loader)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f}")
+    with torch.no_grad(): 
+        vl, vr, vk, vs, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0
+        n_batches = 0
+        for xb in val_loader:
+            xb = xb.to(device)
+            xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+            loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth=args.lambda_smooth)
+            vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item()
 
-            if vl/nbv < best_val: 
+            # --- NEW: R² computation per batch ---
+            r2_batch = compute_r2(xb.cpu(), xhat.cpu())
+            if not np.isnan(r2_batch):
+                r2_total += r2_batch
+            n_batches += 1
+
+        nbv = len(val_loader)
+        mean_r2 = r2_total / max(1, n_batches)
+        print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | R² {mean_r2:.4f}")
+
+        if vl/nbv < best_val: 
                 best_val = vl/nbv
                 ckpt = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
                 torch.save({
@@ -337,16 +368,18 @@ def train(args):
                     print("      (preview plot skipped:", e, ")")
     print("done.")
     # Check out decoder bias terms
-    for name, param in model.decoder.named_parameters():
+    for name, param in model.dec.named_parameters():
         if 'bias' in name:
             print(name, param.data.mean().item())
     
     final_metrics = {
     "recon": vr / nbv,
     "kl": vk / nbv,
-    "smooth": vs / nbv
+    "smooth": vs / nbv,
+    "r2": mean_r2
 }
     torch.save(final_metrics, PATHS["final_metrics"])
+    print(f"Final R²: {mean_r2:.4f}")
     return best_val
 
 #__________________main_____________#

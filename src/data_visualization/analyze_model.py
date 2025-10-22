@@ -32,7 +32,7 @@ from neural_ode_vae import get_device, ODEVAE, make_sequences, SeqDataset
 
 # ---------- Define path constants ----------
 PATHS = {
-    "data": os.path.join(SRC_DIR, "npz_e65_data", "E65_data.npz"),  # ✅ fix here
+    "data": os.path.join(SRC_DIR, "random_walk_data", "synthetic_rat_data.npz"),
     "checkpoint": os.path.join(SRC_DIR, "pt_files", "ode_vae_best.pt"),
     "out_dir": VIS_DIR,  # save all visualizations here
 }

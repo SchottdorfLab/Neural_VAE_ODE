@@ -223,36 +223,81 @@ class ODEVAE(nn.Module):
     def reparam(self, mu, logvar):
         eps = torch.randn_like(mu)
         return mu + torch.exp(0.5 * logvar) * eps
-    
+
+    def _integrate_latent(self, z0, tvec, method="rk4"):
+        """
+        Integrate latent dynamics with a backend that avoids dt-underflow on MPS.
+        method: "rk4" (fixed step, safest on MPS) or "dopri5" (adaptive).
+        """
+        if method == "rk4":
+            # Use your uniform t grid spacing as the fixed step size.
+            step = (tvec[1] - tvec[0]).abs().item()
+            # NOTE: step_size is required for fixed-step methods in torchdiffeq.
+            z_traj = odeint(
+                self.odefunc,
+                z0,
+                tvec,
+                method="rk4",
+                options={"step_size": step}
+            )
+            return z_traj
+
+        # ---- Adaptive fallback (CPU/double if on MPS) ----
+        use_cpu_double = (z0.device.type == "mps")
+        if use_cpu_double:
+            z0_cpu = z0.detach().to("cpu", dtype=torch.float64)
+            t_cpu  = tvec.detach().to("cpu", dtype=torch.float64)
+            odefunc_cpu = self.odefunc.to("cpu")
+            z_traj_cpu = odeint(
+                odefunc_cpu,
+                z0_cpu,
+                t_cpu,
+                method="dopri5",
+                rtol=1e-3,   # slightly looser than defaults
+                atol=1e-4
+            )
+            # move results back to original device/dtype
+            z_traj = z_traj_cpu.to(z0.device, dtype=z0.dtype)
+            # return odefunc to original device
+            self.odefunc.to(z0.device)
+            return z_traj
+        else:
+            # GPU/CPU non-MPS path: adaptive dopri5 with modest tolerances
+            z_traj = odeint(
+                self.odefunc,
+                z0,
+                tvec,
+                method="dopri5",
+                rtol=1e-3,
+                atol=1e-4
+            )
+            return z_traj
+
     def forward(self, x_seq, tvec):
         """
         x_seq: [B, L, N]
-        tvec: [L] (float tensor, monotoically increasing)
+        tvec:  [L] strictly increasing (float tensor)
         """
         B, L, N = x_seq.shape
-        x0 = x_seq[:, 0, :] # [B, N]
-        mu, logvar = self.enc(x0) # [B, D] x2 
-        z0 = self.reparam(mu, logvar) # [B, D]
-
-        z0 = z0.float()
+        x0 = x_seq[:, 0, :]                    # [B, N]
+        mu, logvar = self.enc(x0)              # [B, D], [B, D]
+        z0 = self.reparam(mu, logvar).float()
         tvec = tvec.float()
 
-        # integrate latent ODE (returns [L, B, D]; permute to [B, L, D])
-        z_traj = odeint(
-            self.odefunc,
-            z0,
-            tvec,
-            method="dopri5",
-            rtol=1e-3,
-            atol=1e-4,
-            options={"dtype": torch.float32, "device": z0.device}
-        )
-        z_traj = z_traj.permute(1,0, 2).contiguous()
+        # --- Use fixed-step RK4 by default on MPS to avoid dt underflow ---
+        prefer_fixed = (z0.device.type == "mps")
+        if prefer_fixed:
+            z_traj = self._integrate_latent(z0, tvec, method="rk4")   # [L, B, D]
+        else:
+            z_traj = self._integrate_latent(z0, tvec, method="dopri5")
 
-        #finite-diff for smoothness!
-        dt = (tvec[1:] - tvec[:-1]).view(1, -1, 1) # [1, L-1, 1]
-        zdiff = (z_traj[:, 1:, :] - z_traj[:, :-1, :]) /dt
-        xhat = self.dec(z_traj) # [B, L, N]
+        z_traj = z_traj.permute(1, 0, 2).contiguous()                 # [B, L, D]
+
+        # finite-difference for smoothness penalty
+        dt = (tvec[1:] - tvec[:-1]).view(1, -1, 1)                    # [1, L-1, 1]
+        zdiff = (z_traj[:, 1:, :] - z_traj[:, :-1, :]) / dt
+
+        xhat = self.dec(z_traj)                                       # [B, L, N]
         return xhat, mu, logvar, z_traj, zdiff
     
 #___________________loss_________________#

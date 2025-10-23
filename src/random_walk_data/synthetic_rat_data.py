@@ -3,8 +3,8 @@ import numpy as np, os
 np.random.seed(1)
 
 # Parameters
-N = 60   # number of neurons
-T = 2000 # Simulation time
+N = 300   # number of neurons
+T = 4000 # Simulation time
 dim = 2 # 2D arena -> 2D latents hidden among N time series.
 
 # Hyperparameters for the simulated foraging rat

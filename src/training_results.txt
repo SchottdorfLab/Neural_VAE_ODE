@@ -1,3 +1,9 @@
+=== Run at 2025-10-22 22:43:51 ===
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 6 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.78267
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-10-22 13:55:25 ===
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
 Latent dim: 6 | Epochs: 150 | LR: 0.002

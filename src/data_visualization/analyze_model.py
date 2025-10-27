@@ -79,12 +79,40 @@ X, tvec_np, _ = make_sequences(
 valX = X[-10:] if X.shape[0] > 10 else X
 
 # ---------- Helper for a single forward pass ----------
-def run_one_trial(x_seq_np):
-    xb = torch.from_numpy(x_seq_np[None, ...]).to(device)  # [1, L, N]
+def run_one_trial(xb_np_raw):
+    ckpt = torch.load(os.path.join(SRC_DIR, "pt_files", "ode_vae_best.pt"),
+                      map_location="cpu", weights_only=False)
+    meta = ckpt["meta"]
+    mu = meta["mu"]
+    sd = meta["sd"]
+
+    # --- Optional PCA stored in meta ---
+    pca_model = meta.get("pca_model", None)
+
+    # 1️ Z-score using stored training stats
+    # Handle shape mismatch automatically
+    if xb_np_raw.shape[1] != mu.shape[1]:
+        print(f"[info] Input shape {xb_np_raw.shape[1]} "
+              f"!= model normalization dim {mu.shape[1]}; "
+              f"attempting PCA preprocessing.")
+        # Apply PCA if stored, else truncate to match
+        if pca_model is not None:
+            xb_z = (xb_np_raw - meta.get("orig_mu", 0)) / (meta.get("orig_sd", 1) + 1e-8)
+            xb_proc = pca_model.transform(xb_z)
+        else:
+            xb_proc = xb_np_raw[:, :mu.shape[1]]  # fallback if PCA not saved
+    else:
+        xb_proc = (xb_np_raw - mu) / (sd + 1e-8)
+
+    # 2️ Convert to tensor
+    xb = torch.from_numpy(xb_proc.astype(np.float32)).unsqueeze(0).to(device)
+    tvec = torch.from_numpy(tvec_np.astype(np.float32)).to(device)
+
+    # 3️ Forward pass
     with torch.no_grad():
-        xhat, mu, logvar, z_traj, zdiff = model(xb, torch.from_numpy(tvec_np).to(device))
-    return (xb[0].cpu().numpy(), xhat[0].cpu().numpy(),
-            z_traj[0].cpu().numpy())  # [L, N], [L, N], [L, D]
+        xhat, mu_out, logvar, z_traj, zdiff = model(xb, tvec)
+
+    return xb_proc, xhat.detach().cpu().numpy()[0], z_traj.detach().cpu().numpy()[0]
 
 # ======================================================== #
 # ---------------- DATA VISUALIZATIONS ------------------- #
@@ -147,16 +175,22 @@ plt.savefig(os.path.join(PATHS["out_dir"], "latent_trajectories.png"), dpi=160)
 plt.close()
 
 # 4) 3D PCA of latent trajectory
-pca3 = PCA(n_components=3)
-z_pca3 = pca3.fit_transform(z_traj_np)  # [L, 3]
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(111, projection="3d")
-ax.plot(z_pca3[:, 0], z_pca3[:, 1], z_pca3[:, 2], color="tab:blue", lw=2)
-ax.set_title("3D Latent Trajectory (PCA projection)")
-ax.set_xlabel("PC1"); ax.set_ylabel("PC2"); ax.set_zlabel("PC3")
-plt.tight_layout()
-plt.savefig(os.path.join(PATHS["out_dir"], "latent_pca_3d.png"), dpi=160)
-plt.close()
+if z_traj_np.shape[1] >= 3:
+    # just pads with 0s if we still want a 3d plot wih 2 latent dimensions (this is just helpful for testing)
+    pca3 = PCA(n_components=min(3, z_traj_np.shape[1]))
+    z_pca3 = pca3.fit_transform(z_traj_np)
+    if z_pca3.shape[1] < 3:
+        z_pca3 = np.pad(z_pca3, ((0,0),(0,3 - z_pca3.shape[1])), mode='constant')
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot(z_pca3[:, 0], z_pca3[:, 1], z_pca3[:, 2], color="tab:blue", lw=2)
+    ax.set_title("3D Latent Trajectory (PCA projection)")
+    ax.set_xlabel("PC1"); ax.set_ylabel("PC2"); ax.set_zlabel("PC3")
+    plt.tight_layout()
+    plt.savefig(os.path.join(PATHS["out_dir"], "latent_pca_3d.png"), dpi=160)
+    plt.close()
+else:
+    print(f"Skipping 3D PCA: latent dimension is {z_traj_np.shape[1]}, need ≥3.")
 
 # 5) Latent trajectory animation (2D PCA)
 pca2 = PCA(n_components=2)

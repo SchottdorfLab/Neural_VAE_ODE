@@ -1,3 +1,34 @@
+=== Run at 2025-10-26 20:47:39 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.07797
+Final R^2 value: 0.9640
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-26 17:35:50 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.16839
+Final R^2 value: 0.8984
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-23 16:24:19 ===
+LATEST CHANGES: Going back to 3 dimensions in parameters file (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 1.31415
+Final R^2 value: -0.3858
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-23 10:52:02 ===
+LATEST CHANGES: Running on 2 dimensions in parameters file (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 2 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.93978
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-10-22 22:43:51 ===
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
 Latent dim: 6 | Epochs: 150 | LR: 0.002

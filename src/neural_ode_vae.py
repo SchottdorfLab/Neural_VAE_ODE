@@ -11,6 +11,12 @@ import torch.nn as nn
 import torch.utils.data as td
 from torchdiffeq import odeint
 import datetime
+from sklearn.decomposition import PCA
+from sklearn.metrics import pairwise_distances
+from sklearn.manifold import MDS
+import matplotlib.pyplot as plt
+
+
 
 #____________________metrics__________________#
 def compute_r2(y_true, y_pred):
@@ -157,6 +163,21 @@ def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_fr
         raise ValueError("No trials produced sequences (NOOOOO!!) Check trial/time vectors and args.")
     X = np.stack(X, axis=0).astype(np.float32) # [B, L, N]
     return X, t_rs.astype(np.float32), {"trials_used": np.array(good_trial_ids), "mu": mu, "sd": sd, "N": N}
+
+def greedy_landmarks(X, k=200):
+    """
+    Greedy selection of k landmarks from X to maximize coverage.
+    Equivalent to MIND's greedyvq.m
+    """
+    X = np.asarray(X)
+    n = len(X)
+    if n <= k:
+        return np.arange(n)
+    landmarks = [np.random.randint(n)]
+    for _ in range(k - 1):
+        d = pairwise_distances(X, X[landmarks]).min(axis=1)
+        landmarks.append(np.argmax(d))
+    return np.array(landmarks)
 
 class SeqDataset(td.Dataset):
     def __init__(self, X):
@@ -315,6 +336,20 @@ def train(args):
 
     #load data 
     npz = np.load(PATHS["data"])
+    # --- Step 1: PCA Preprocessing (MIND-style) ---
+    roi = npz["roi"]
+    if roi.shape[0] < roi.shape[1]:
+        roi = roi.T  # [T, N]
+
+    #   Keep 95% variance
+    pca = PCA(n_components=0.95, svd_solver="full")
+    roi_pca = pca.fit_transform(roi)
+    print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
+
+    # Replace ROI in npz-like structure
+    npz_mod = dict(npz)
+    npz_mod["roi"] = roi_pca
+    npz = npz_mod
     X, tvec_np, meta = make_sequences(
         npz, 
         trial_len_s=args.trial_len_s,
@@ -322,6 +357,16 @@ def train(args):
         drop_first_trials=args.drop_first_trials,
         min_frames=10
     ) # X: [B, L, N]
+
+    # --- Step 2: Landmark Subsampling (optional) ---
+    if getattr(args, "landmark_count", 0) > 0:
+        print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
+        # Flatten trials along time for selection
+        X_flat = X.reshape(-1, X.shape[-1])
+        lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+        X = X[lm_idx % X.shape[0]]  # map back to batch level
+        print(f"Subsampled to {X.shape[0]} sequences.")
+
     B, L, N = X.shape
     print(f"Built sequences: B={B}, :={L}, N={N}")
 
@@ -372,7 +417,7 @@ def train(args):
             loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth=args.lambda_smooth)
             vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item()
 
-            # --- NEW: R² computation per batch ---
+            # --- R² computation per batch ---
             r2_batch = compute_r2(xb.cpu(), xhat.cpu())
             if not np.isnan(r2_batch):
                 r2_total += r2_batch
@@ -396,7 +441,6 @@ def train(args):
 
                 # quick preview image (first batch first trial)
                 try:
-                    import matplotlib.pyplot as plt
                     xb = next(iter(val_loader)).to(device)
                     xhat, *_ = model(xb, tvec)
                     xb_np   = xb[0].detach().cpu().numpy()      # [L, N]
@@ -411,6 +455,83 @@ def train(args):
                     print(f"      wrote {out_png}")
                 except Exception as e:
                     print("      (preview plot skipped:", e, ")")
+
+                    # --- Reconstruction accuracy over time (R² and MSE per timestep) ---
+                '''
+                try:
+                    xb = next(iter(val_loader)).to(device)
+                    xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+                    xb_np = xb[0].detach().cpu().numpy()      # [L, N]
+                    xhat_np = xhat[0].detach().cpu().numpy()  # [L, N]
+
+                    # Compute R² and MSE per time step
+                    r2_t = []
+                    mse_t = []
+                    for t in range(xb_np.shape[0]):
+                        r2_t.append(r2_score(xb_np[t], xhat_np[t]))
+                        mse_t.append(np.mean((xb_np[t] - xhat_np[t])**2))
+
+                    r2_t = np.array(r2_t)
+                    mse_t = np.array(mse_t)
+
+                    time_axis = np.arange(len(r2_t)) / args.fps  # convert frames → seconds
+
+                    fig, ax1 = plt.subplots(figsize=(8, 4))
+                    color_r2 = 'tab:blue'
+                    color_mse = 'tab:red'
+
+                    ax1.set_xlabel('Time (s)')
+                    ax1.set_ylabel('R²', color=color_r2)
+                    ax1.plot(time_axis, r2_t, color=color_r2, label='R²(t)')
+                    ax1.tick_params(axis='y', labelcolor=color_r2)
+                    ax1.set_ylim(-1, 1.1)
+
+                    ax2 = ax1.twinx()
+                    ax2.set_ylabel('MSE', color=color_mse)
+                    ax2.plot(time_axis, mse_t, color=color_mse, linestyle='--', label='MSE(t)')
+                    ax2.tick_params(axis='y', labelcolor=color_mse)
+
+                    plt.title('Reconstruction Accuracy Over Time')
+                    fig.tight_layout()
+                    plt.legend(loc='upper right')
+                    plt.savefig(os.path.join(PATHS["out_dir"], "recon_accuracy_over_time.png"), dpi=160)
+                    plt.close()
+                    print("      wrote reconstruction accuracy plot → recon_accuracy_over_time.png")
+
+                except Exception as e:
+                    print("      (reconstruction accuracy plot skipped:", e, ")")
+                '''
+
+    # --- Step 3: Latent manifold embedding (MIND-style) ---
+    try:
+        xb = next(iter(val_loader)).to(device)
+        xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+        z_flat = z_traj[0].detach().cpu().numpy()  # [L, D]
+
+        # Compute pairwise distance matrix and apply MDS
+        from sklearn.manifold import MDS
+        from sklearn.metrics import pairwise_distances
+
+        D = pairwise_distances(z_flat)
+        mds = MDS(n_components=3, dissimilarity='precomputed', random_state=0, n_init = 1)
+        embed = mds.fit_transform(D)
+
+        # Plot MDS embedding (color by time)
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(6,5))
+        ax = fig.add_subplot(111, projection="3d")
+        t = np.arange(len(embed))
+        p = ax.scatter(embed[:,0], embed[:,1], embed[:,2], c=t, cmap="viridis", s=8)
+        fig.colorbar(p, ax=ax, label="Time")
+        ax.set_title("Latent Manifold Embedding (MIND-style)")
+        plt.tight_layout()
+        out_path = os.path.join(PATHS["out_dir"], "latent_manifold_mds.png")
+        plt.savefig(out_path, dpi=160)
+        plt.close()
+        print(f"      wrote {out_path}")
+    except Exception as e:
+        print("      (MIND manifold plot skipped:", e, ")")
+
     print("done.")
     # Check out decoder bias terms
     for name, param in model.dec.named_parameters():
@@ -425,7 +546,7 @@ def train(args):
 }
     torch.save(final_metrics, PATHS["final_metrics"])
     print(f"Final R²: {mean_r2:.4f}")
-    return best_val
+    return best_val, mean_r2
 
 #__________________main_____________#
 if __name__ == "__main__":
@@ -447,7 +568,7 @@ if __name__ == "__main__":
 
     # train model!!!
     start_time = datetime.datetime.now()
-    best_val = train(args)
+    best_val, mean_r2 = train(args)
     end_time = datetime.datetime.now()
 
     # ========== LOG RESULTS ========== #
@@ -462,9 +583,11 @@ if __name__ == "__main__":
     # add new entry at the top
     new_entry = (
     f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
+    f"LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).\n"
     f"Data: {PATHS['data']}\n"
     f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
     f"Final validation loss: {best_val:.5f}\n"
+    f"Final R^2 value: {mean_r2:.4f}\n"
     f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
     f"---------------------------------------------\n"
     )

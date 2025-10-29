@@ -3,7 +3,7 @@
 * Built for: Schottdorf Lab
 
 # Current Challenges:
-Working to fix posterior collapse. 
+Running 97% on synthetic data. 
 
 ## File Structure
 ```

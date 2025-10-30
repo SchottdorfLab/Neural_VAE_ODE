@@ -2,9 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
-# Current Challenges:
+## Current Challenges:
 Moving the data from the simulated data and scaling, also re-running data visualizations on the new model output. 
-# Most Recent Updates:
+## Most Recent Updates:
 
 October 30th, 4:41pm:
 - Added logvar clamping to prevent extreme variance from inflating the reconstruction term.
@@ -27,7 +27,7 @@ src/
 ├── preview.png
 └── training_results.txt
 ```
-## Data_Visualization: 
+### Data_Visualization: 
 Holds ```analyze_model.py```, which runs on the data from the model to create visual analyses. Also contains .png images of the data visualizations. 
 
 ### Helper_Scripts:

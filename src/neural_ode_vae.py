@@ -19,6 +19,18 @@ import matplotlib.pyplot as plt
 import json
 import hashlib
 
+# Utility: convert NumPy/tensor types into JSON-friendly Python types
+def to_jsonable(obj):
+    if isinstance(obj, (np.floating, np.float32, np.float64)):
+        return float(obj)
+    if isinstance(obj, (np.integer, np.int32, np.int64)):
+        return int(obj)
+    if isinstance(obj, (np.ndarray, list, tuple)):
+        return [to_jsonable(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: to_jsonable(v) for k, v in obj.items()}
+    return obj
+
 # used to compute file sha256 checksum, used to log the hash of the input file (for reproducibility)
 def compute_file_sha(path):
     with open(path, "rb") as f:
@@ -272,14 +284,16 @@ class ODEVAE(nn.Module):
         """
         if method == "rk4":
             # Use your uniform t grid spacing as the fixed step size.
+            # Slightly smaller fixed-step for MPS to reduce stiffness-related NaNs
             step = (tvec[1] - tvec[0]).abs().item()
-            # NOTE: step_size is required for fixed-step methods in torchdiffeq.
+            safe_step = step / 2.0  # you can try /4 if a seed still blows up
+
             z_traj = odeint(
                 self.odefunc,
                 z0,
                 tvec,
                 method="rk4",
-                options={"step_size": step}
+                options={"step_size": safe_step}
             )
             return z_traj
 
@@ -343,6 +357,9 @@ class ODEVAE(nn.Module):
     
 #___________________loss_________________#
 def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0):
+    # --- Safety clamp to prevent numerical overflow ---
+    logvar = torch.clamp(logvar, min=-10.0, max=10.0)
+
     recon = torch.mean((xhat - x) ** 2)
     kl = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     smooth = torch.mean(zdiff**2) if lambda_smooth > 0 else x.new_tensor(0.0)
@@ -380,6 +397,9 @@ def train(args):
         drop_first_trials=args.drop_first_trials,
         min_frames=10
     ) # X: [B, L, N]
+
+    # --- Normalize time vector to [0,1] for numerical stability ---
+    tvec_np = tvec_np / tvec_np[-1]
 
     
 
@@ -564,7 +584,6 @@ def train(args):
         embed = mds.fit_transform(D)
 
         # Plot MDS embedding (color by time)
-        import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(6,5))
         ax = fig.add_subplot(111, projection="3d")
         t = np.arange(len(embed))
@@ -608,7 +627,7 @@ def train(args):
 
     json_path = os.path.join(args.out_dir, "run_metadata.json")
     with open(json_path, "w") as f:
-        json.dump(run_metadata, f, indent=2)
+        json.dump(to_jsonable(final_metrics), f, indent=2)
     print(f"Saved run metadata → {json_path}")
 
     torch.save(final_metrics, PATHS["final_metrics"])

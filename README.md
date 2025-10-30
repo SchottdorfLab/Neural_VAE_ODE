@@ -3,7 +3,16 @@
 * Built for: Schottdorf Lab
 
 # Current Challenges:
-Working to fix posterior collapse. 
+Moving the data from the simulated data and scaling, also re-running data visualizations on the new model output. 
+# Most Recent Updates:
+
+October 30th, 4:41pm:
+- Added logvar clamping to prevent extreme variance from inflating the reconstruction term.
+- Added time normalization (tvec / tvec[-1]) to help the model behavor consistently across datasets. 
+- Smaller step size for RK4 (slightly less aggressive trajectory fitting)
+- Seed scan:
+    - Ran the model on simulated data using 5 different seeds, saved the result dump to ```seed_sweep_results.txt```. 
+    - Seed 1 is currently getting the best results with the simulated data (R^2 of 0.9789)
 
 ## File Structure
 ```

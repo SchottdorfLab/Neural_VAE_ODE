@@ -863,4 +863,4 @@ Seed 1337 → R²=0.9116 | best val loss=0.16298
 Seed 2025 → R²=0.7467 | best val loss=0.31145
 Seed  777 → R²=0.0000 | best val loss=inf
 
-🎯 Best seed: 1 → R²=0.9789
+Best seed: 1 → R²=0.9789

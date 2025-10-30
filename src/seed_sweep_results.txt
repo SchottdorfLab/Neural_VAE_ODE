@@ -1,0 +1,866 @@
+SEED SWEEP RESULTS
+Running on: Simulated neuron data (syntetic_rat_data.py)
+
+Code Used: 
+    #----------------OPTIONAL: Seed Sweep ----------------#
+    # What this does: sweeps across multiple random seeds to find the best performing model.
+
+    seed_list = [1, 42, 1337, 2025, 777]
+    results = []
+
+    for seed in seed_list:
+        print(f"\n===== Running seed {seed} =====")
+        set_seed(seed)
+        start_time = datetime.datetime.now()
+        best_val, mean_r2 = train(args)
+        end_time = datetime.datetime.now()
+        results.append((seed, best_val, mean_r2))
+
+    # ========== SUMMARY ==========
+    print("\n===== Seed Sweep Summary =====")
+    for seed, val, r2 in results:
+        print(f"Seed {seed:4d} → R²={r2:.4f} | best val loss={val:.5f}")
+
+    best_run = max(results, key=lambda x: x[2])
+    print(f"\nBest seed: {best_run[0]} → R²={best_run[2]:.4f}")
+
+Goal: To check which seed returned the best results on the simulated neuron data. 
+This is a dump of the output returned from running the sweep on seeds 1, 42, 1337, 2025, and 777.
+
+
+===== Running seed 1 =====
+Device: mps
+PCA reduced 60 → 12 dims (95.98% variance)
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=12
+[001] train loss 2.16177 | recon 2.16120 | kl 0.12684 | smooth 0.97707 | beta 0.001
+[002] train loss 0.97817 | recon 0.97386 | kl 2.89562 | smooth 0.89312 | beta 0.001
+[003] train loss 0.74398 | recon 0.73044 | kl 6.54213 | smooth 0.89248 | beta 0.002
+[004] train loss 0.71071 | recon 0.69444 | kl 5.93565 | smooth 0.86932 | beta 0.003
+[005] train loss 0.62747 | recon 0.60529 | kl 6.52572 | smooth 0.85106 | beta 0.003
+[006] train loss 0.56525 | recon 0.54216 | kl 5.66741 | smooth 0.83666 | beta 0.004
+[007] train loss 0.50504 | recon 0.47676 | kl 5.97182 | smooth 0.82658 | beta 0.005
+[008] train loss 0.39976 | recon 0.36323 | kl 6.77288 | smooth 0.81660 | beta 0.005
+[009] train loss 0.34259 | recon 0.29766 | kl 7.42022 | smooth 0.80792 | beta 0.006
+[010] train loss 0.33792 | recon 0.29676 | kl 6.11507 | smooth 0.79718 | beta 0.007
+[011] train loss 0.27200 | recon 0.22736 | kl 6.03348 | smooth 0.79231 | beta 0.007
+[012] train loss 0.24226 | recon 0.19961 | kl 5.28215 | smooth 0.78158 | beta 0.008
+[013] train loss 0.24344 | recon 0.20338 | kl 4.57699 | smooth 0.77099 | beta 0.009
+[014] train loss 0.23329 | recon 0.18624 | kl 5.00013 | smooth 0.76563 | beta 0.009
+[015] train loss 0.20838 | recon 0.16175 | kl 4.62540 | smooth 0.75843 | beta 0.010
+[016] train loss 0.24298 | recon 0.19817 | kl 4.16570 | smooth 0.75173 | beta 0.011
+[017] train loss 0.19970 | recon 0.15394 | kl 4.00453 | smooth 0.74258 | beta 0.011
+[018] train loss 0.17829 | recon 0.13022 | kl 3.97483 | smooth 0.73565 | beta 0.012
+[019] train loss 0.16178 | recon 0.11937 | kl 3.31996 | smooth 0.72847 | beta 0.013
+[020] train loss 0.19133 | recon 0.14924 | kl 3.12945 | smooth 0.72014 | beta 0.013
+[021] train loss 0.17668 | recon 0.12660 | kl 3.55162 | smooth 0.71725 | beta 0.014
+[022] train loss 0.16159 | recon 0.10995 | kl 3.49701 | smooth 0.71137 | beta 0.015
+[023] train loss 0.14892 | recon 0.09940 | kl 3.20615 | smooth 0.70453 | beta 0.015
+[024] train loss 0.16850 | recon 0.12022 | kl 2.99612 | smooth 0.69832 | beta 0.016
+[025] train loss 0.13543 | recon 0.08572 | kl 2.96145 | smooth 0.69430 | beta 0.017
+[026] train loss 0.16972 | recon 0.11824 | kl 2.95063 | smooth 0.68924 | beta 0.017
+[027] train loss 0.15573 | recon 0.10718 | kl 2.67792 | smooth 0.68361 | beta 0.018
+[028] train loss 0.13885 | recon 0.08758 | kl 2.72808 | smooth 0.68119 | beta 0.019
+[029] train loss 0.13844 | recon 0.08578 | kl 2.70607 | smooth 0.67475 | beta 0.019
+[030] train loss 0.14403 | recon 0.09133 | kl 2.61823 | smooth 0.66968 | beta 0.020
+[031] train loss 0.11461 | recon 0.06158 | kl 2.63488 | smooth 0.66426 | beta 0.020
+[032] train loss 0.12542 | recon 0.07730 | kl 2.38918 | smooth 0.65975 | beta 0.020
+[033] train loss 0.12427 | recon 0.07314 | kl 2.54011 | smooth 0.65751 | beta 0.020
+[034] train loss 0.13617 | recon 0.08436 | kl 2.57422 | smooth 0.65195 | beta 0.020
+[035] train loss 0.25456 | recon 0.20288 | kl 2.56753 | smooth 0.65294 | beta 0.020
+[036] train loss 0.25715 | recon 0.20661 | kl 2.51085 | smooth 0.64816 | beta 0.020
+[037] train loss 0.26878 | recon 0.21466 | kl 2.68996 | smooth 0.64470 | beta 0.020
+[038] train loss 0.21389 | recon 0.16547 | kl 2.40522 | smooth 0.64040 | beta 0.020
+[039] train loss 0.20324 | recon 0.15896 | kl 2.19837 | smooth 0.63583 | beta 0.020
+[040] train loss 0.17727 | recon 0.12674 | kl 2.51074 | smooth 0.63310 | beta 0.020
+[041] train loss 0.15013 | recon 0.09833 | kl 2.57429 | smooth 0.63034 | beta 0.020
+[042] train loss 0.13897 | recon 0.08808 | kl 2.52857 | smooth 0.62853 | beta 0.020
+[043] train loss 0.15483 | recon 0.10291 | kl 2.58041 | smooth 0.62468 | beta 0.020
+[044] train loss 0.14054 | recon 0.08166 | kl 2.92826 | smooth 0.62426 | beta 0.020
+[045] train loss 0.11867 | recon 0.06701 | kl 2.56755 | smooth 0.62037 | beta 0.020
+[046] train loss 0.13525 | recon 0.08295 | kl 2.59962 | smooth 0.61502 | beta 0.020
+[047] train loss 0.11889 | recon 0.07227 | kl 2.31547 | smooth 0.60965 | beta 0.020
+[048] train loss 0.11978 | recon 0.07541 | kl 2.20332 | smooth 0.60788 | beta 0.020
+[049] train loss 0.18866 | recon 0.13829 | kl 2.50328 | smooth 0.60715 | beta 0.020
+[050] train loss 0.16677 | recon 0.11431 | kl 2.60783 | smooth 0.59896 | beta 0.020
+[051] train loss 0.11762 | recon 0.06530 | kl 2.60106 | smooth 0.59724 | beta 0.020
+[052] train loss 0.11317 | recon 0.06555 | kl 2.36564 | smooth 0.59764 | beta 0.020
+[053] train loss 0.10133 | recon 0.05326 | kl 2.38842 | smooth 0.59374 | beta 0.020
+[054] train loss 0.09997 | recon 0.05550 | kl 2.20850 | smooth 0.58912 | beta 0.020
+[055] train loss 0.15508 | recon 0.11262 | kl 2.10835 | smooth 0.58755 | beta 0.020
+[056] train loss 0.14404 | recon 0.10249 | kl 2.06321 | smooth 0.58500 | beta 0.020
+[057] train loss 0.11788 | recon 0.07509 | kl 2.12501 | smooth 0.58003 | beta 0.020
+[058] train loss 0.10463 | recon 0.05757 | kl 2.33847 | smooth 0.57827 | beta 0.020
+[059] train loss 0.08875 | recon 0.04308 | kl 2.26879 | smooth 0.57394 | beta 0.020
+[060] train loss 0.10026 | recon 0.06071 | kl 1.96354 | smooth 0.57208 | beta 0.020
+[061] train loss 0.10065 | recon 0.06072 | kl 1.98214 | smooth 0.56863 | beta 0.020
+[062] train loss 0.09934 | recon 0.06065 | kl 1.92040 | smooth 0.56756 | beta 0.020
+[063] train loss 0.11478 | recon 0.07326 | kl 2.06177 | smooth 0.56763 | beta 0.020
+[064] train loss 0.10797 | recon 0.05913 | kl 2.42805 | smooth 0.56533 | beta 0.020
+[065] train loss 0.09913 | recon 0.05448 | kl 2.21820 | smooth 0.56420 | beta 0.020
+[066] train loss 0.10353 | recon 0.06146 | kl 2.08935 | smooth 0.55926 | beta 0.020
+[067] train loss 0.08524 | recon 0.04267 | kl 2.11489 | smooth 0.55976 | beta 0.020
+[068] train loss 0.08947 | recon 0.04817 | kl 2.05104 | smooth 0.55682 | beta 0.020
+[069] train loss 0.09408 | recon 0.05297 | kl 2.04204 | smooth 0.55228 | beta 0.020
+[070] train loss 0.08514 | recon 0.04744 | kl 1.87110 | smooth 0.55189 | beta 0.020
+[071] train loss 0.09791 | recon 0.05683 | kl 2.04023 | smooth 0.55151 | beta 0.020
+[072] train loss 0.13269 | recon 0.09322 | kl 1.95994 | smooth 0.55033 | beta 0.020
+[073] train loss 0.11940 | recon 0.07796 | kl 2.05874 | smooth 0.54589 | beta 0.020
+[074] train loss 0.09102 | recon 0.05374 | kl 1.85024 | smooth 0.54169 | beta 0.020
+[075] train loss 0.08907 | recon 0.04715 | kl 2.08235 | smooth 0.54145 | beta 0.020
+[076] train loss 0.09104 | recon 0.04776 | kl 2.15058 | smooth 0.54123 | beta 0.020
+[077] train loss 0.07846 | recon 0.03842 | kl 1.98878 | smooth 0.53673 | beta 0.020
+[078] train loss 0.09546 | recon 0.05557 | kl 1.98146 | smooth 0.53432 | beta 0.020
+[079] train loss 0.08074 | recon 0.04024 | kl 2.01170 | smooth 0.53491 | beta 0.020
+[080] train loss 0.07711 | recon 0.03494 | kl 2.09503 | smooth 0.53303 | beta 0.020
+[081] train loss 0.08194 | recon 0.04603 | kl 1.78230 | smooth 0.53087 | beta 0.020
+[082] train loss 0.08175 | recon 0.04373 | kl 1.88799 | smooth 0.53147 | beta 0.020
+[083] train loss 0.07684 | recon 0.03602 | kl 2.02805 | smooth 0.53190 | beta 0.020
+[084] train loss 0.07890 | recon 0.04380 | kl 1.74150 | smooth 0.53018 | beta 0.020
+[085] train loss 0.09741 | recon 0.06038 | kl 1.83793 | smooth 0.53053 | beta 0.020
+[086] train loss 0.08191 | recon 0.03887 | kl 2.13929 | smooth 0.52642 | beta 0.020
+[087] train loss 0.08367 | recon 0.04408 | kl 1.96615 | smooth 0.52636 | beta 0.020
+[088] train loss 0.10106 | recon 0.05902 | kl 2.08905 | smooth 0.52179 | beta 0.020
+[089] train loss 0.07165 | recon 0.03043 | kl 2.04781 | smooth 0.52254 | beta 0.020
+[090] train loss 0.07143 | recon 0.03267 | kl 1.92528 | smooth 0.52119 | beta 0.020
+[091] train loss 0.10835 | recon 0.07226 | kl 1.79152 | smooth 0.52144 | beta 0.020
+[092] train loss 0.09281 | recon 0.04385 | kl 2.43499 | smooth 0.52065 | beta 0.020
+[093] train loss 0.08340 | recon 0.03988 | kl 2.16291 | smooth 0.51851 | beta 0.020
+[094] train loss 0.08720 | recon 0.05032 | kl 1.83148 | smooth 0.51490 | beta 0.020
+[095] train loss 0.08593 | recon 0.04678 | kl 1.94462 | smooth 0.51439 | beta 0.020
+[096] train loss 0.07879 | recon 0.04533 | kl 1.66009 | smooth 0.51293 | beta 0.020
+[097] train loss 0.07366 | recon 0.03618 | kl 1.86078 | smooth 0.51240 | beta 0.020
+[098] train loss 0.07376 | recon 0.03534 | kl 1.90802 | smooth 0.51019 | beta 0.020
+[099] train loss 0.07336 | recon 0.03534 | kl 1.88833 | smooth 0.51030 | beta 0.020
+[100] train loss 0.06918 | recon 0.03207 | kl 1.84289 | smooth 0.50861 | beta 0.020
+[101] train loss 0.07077 | recon 0.03509 | kl 1.77120 | smooth 0.50882 | beta 0.020
+[102] train loss 0.10371 | recon 0.06618 | kl 1.86368 | smooth 0.51048 | beta 0.020
+[103] train loss 0.06957 | recon 0.03314 | kl 1.80919 | smooth 0.50502 | beta 0.020
+[104] train loss 0.07266 | recon 0.03373 | kl 1.93403 | smooth 0.50377 | beta 0.020
+[105] train loss 0.08140 | recon 0.04537 | kl 1.78893 | smooth 0.50604 | beta 0.020
+[106] train loss 0.07912 | recon 0.04222 | kl 1.83217 | smooth 0.50420 | beta 0.020
+[107] train loss 0.06341 | recon 0.02753 | kl 1.78129 | smooth 0.50388 | beta 0.020
+[108] train loss 0.06302 | recon 0.02878 | kl 1.69904 | smooth 0.50236 | beta 0.020
+[109] train loss 0.08014 | recon 0.04332 | kl 1.82843 | smooth 0.50354 | beta 0.020
+[110] train loss 0.07145 | recon 0.03091 | kl 2.01487 | smooth 0.50068 | beta 0.020
+[111] train loss 0.08266 | recon 0.04752 | kl 1.74455 | smooth 0.50144 | beta 0.020
+[112] train loss 0.07243 | recon 0.03839 | kl 1.68942 | smooth 0.49653 | beta 0.020
+[113] train loss 0.06495 | recon 0.03133 | kl 1.66867 | smooth 0.49695 | beta 0.020
+[114] train loss 0.07521 | recon 0.04166 | kl 1.66522 | smooth 0.49559 | beta 0.020
+[115] train loss 0.06320 | recon 0.02569 | kl 1.86318 | smooth 0.49680 | beta 0.020
+[116] train loss 0.06925 | recon 0.03646 | kl 1.62692 | smooth 0.49715 | beta 0.020
+[117] train loss 0.06710 | recon 0.02899 | kl 1.89300 | smooth 0.49287 | beta 0.020
+[118] train loss 0.06508 | recon 0.02619 | kl 1.93207 | smooth 0.49361 | beta 0.020
+[119] train loss 0.07293 | recon 0.03684 | kl 1.79208 | smooth 0.49397 | beta 0.020
+[120] train loss 0.06795 | recon 0.03273 | kl 1.74867 | smooth 0.49133 | beta 0.020
+[121] train loss 0.07246 | recon 0.03871 | kl 1.67534 | smooth 0.49116 | beta 0.020
+[122] train loss 0.09357 | recon 0.05767 | kl 1.78244 | smooth 0.48729 | beta 0.020
+[123] train loss 0.08757 | recon 0.04801 | kl 1.96586 | smooth 0.48904 | beta 0.020
+[124] train loss 0.09372 | recon 0.05412 | kl 1.96792 | smooth 0.48687 | beta 0.020
+[125] train loss 0.08282 | recon 0.05005 | kl 1.62603 | smooth 0.48724 | beta 0.020
+[126] train loss 0.07002 | recon 0.03377 | kl 1.80060 | smooth 0.48434 | beta 0.020
+[127] train loss 0.06969 | recon 0.03575 | kl 1.68486 | smooth 0.48429 | beta 0.020
+[128] train loss 0.06804 | recon 0.02596 | kl 2.09211 | smooth 0.48167 | beta 0.020
+[129] train loss 0.07685 | recon 0.04093 | kl 1.78377 | smooth 0.48251 | beta 0.020
+[130] train loss 0.06487 | recon 0.03011 | kl 1.72593 | smooth 0.48175 | beta 0.020
+[131] train loss 0.07166 | recon 0.02695 | kl 2.22312 | smooth 0.48265 | beta 0.020
+[132] train loss 0.06711 | recon 0.03054 | kl 1.81646 | smooth 0.48173 | beta 0.020
+[133] train loss 0.07595 | recon 0.04245 | kl 1.66301 | smooth 0.48021 | beta 0.020
+[134] train loss 0.06331 | recon 0.02694 | kl 1.80642 | smooth 0.48085 | beta 0.020
+[135] train loss 0.14916 | recon 0.11764 | kl 1.56386 | smooth 0.48169 | beta 0.020
+[136] train loss 0.10688 | recon 0.07424 | kl 1.61987 | smooth 0.47820 | beta 0.020
+[137] train loss 0.10357 | recon 0.06832 | kl 1.75049 | smooth 0.47581 | beta 0.020
+[138] train loss 0.07974 | recon 0.04488 | kl 1.73133 | smooth 0.47319 | beta 0.020
+[139] train loss 0.07755 | recon 0.03576 | kl 2.07780 | smooth 0.47312 | beta 0.020
+[140] train loss 0.11820 | recon 0.08342 | kl 1.72739 | smooth 0.46809 | beta 0.020
+[141] train loss 0.07085 | recon 0.03526 | kl 1.76791 | smooth 0.47148 | beta 0.020
+[142] train loss 0.07403 | recon 0.03540 | kl 1.91985 | smooth 0.47346 | beta 0.020
+[143] train loss 0.06036 | recon 0.02008 | kl 2.00220 | smooth 0.47299 | beta 0.020
+[144] train loss 0.05932 | recon 0.02547 | kl 1.68060 | smooth 0.47401 | beta 0.020
+[145] train loss 0.06644 | recon 0.03427 | kl 1.59640 | smooth 0.47443 | beta 0.020
+[146] train loss 0.07286 | recon 0.03704 | kl 1.77900 | smooth 0.47102 | beta 0.020
+[147] train loss 0.05714 | recon 0.02136 | kl 1.77706 | smooth 0.47146 | beta 0.020
+[148] train loss 0.06480 | recon 0.02805 | kl 1.82584 | smooth 0.47139 | beta 0.020
+[149] train loss 0.05712 | recon 0.02283 | kl 1.70249 | smooth 0.47028 | beta 0.020
+[150] train loss 0.07043 | recon 0.03368 | kl 1.82586 | smooth 0.47006 | beta 0.020
+      valid loss 0.06642 | recon 0.02558 | kl 2.03041 | smooth 0.47437 | R² 0.9789
+  saved best model to /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+      (preview plot skipped: local variable 'plt' referenced before assignment )
+      wrote /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/latent_manifold_mds.png
+done.
+net.0.bias -0.0656474381685257
+net.2.bias 0.0013712875079363585
+net.4.bias 0.0021294814068824053
+Final R²: 0.9789
+
+===== Running seed 42 =====
+Device: mps
+PCA reduced 60 → 12 dims (95.98% variance)
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=12
+[001] train loss 1.28123 | recon 1.28101 | kl 0.07602 | smooth 0.32789 | beta 0.001
+[002] train loss 0.89190 | recon 0.89101 | kl 0.63508 | smooth 0.09579 | beta 0.001
+[003] train loss 0.69513 | recon 0.69156 | kl 1.76514 | smooth 0.08020 | beta 0.002
+[004] train loss 0.61712 | recon 0.61001 | kl 2.64846 | smooth 0.08605 | beta 0.003
+[005] train loss 0.59246 | recon 0.58211 | kl 3.08976 | smooth 0.10417 | beta 0.003
+[006] train loss 0.57467 | recon 0.56225 | kl 3.08849 | smooth 0.12397 | beta 0.004
+[007] train loss 0.53297 | recon 0.51667 | kl 3.47496 | smooth 0.16511 | beta 0.005
+[008] train loss 0.47786 | recon 0.45861 | kl 3.59167 | smooth 0.18744 | beta 0.005
+[009] train loss 0.43218 | recon 0.40839 | kl 3.94047 | smooth 0.27992 | beta 0.006
+[010] train loss 0.43190 | recon 0.40740 | kl 3.66351 | smooth 0.16124 | beta 0.007
+[011] train loss 0.55177 | recon 0.52412 | kl 3.76043 | smooth 0.15158 | beta 0.007
+[012] train loss 0.50976 | recon 0.47967 | kl 3.75001 | smooth 0.17835 | beta 0.008
+[013] train loss 0.45329 | recon 0.42032 | kl 3.78961 | smooth 0.24524 | beta 0.009
+[014] train loss 0.38540 | recon 0.35069 | kl 3.70478 | smooth 0.25326 | beta 0.009
+[015] train loss 0.36798 | recon 0.33414 | kl 3.37328 | smooth 0.21484 | beta 0.010
+[016] train loss 0.39342 | recon 0.35678 | kl 3.42424 | smooth 0.23618 | beta 0.011
+[017] train loss 0.34761 | recon 0.31008 | kl 3.30192 | smooth 0.21196 | beta 0.011
+[018] train loss 0.37995 | recon 0.33692 | kl 3.57302 | smooth 0.30590 | beta 0.012
+[019] train loss 0.33365 | recon 0.28847 | kl 3.55413 | smooth 0.31565 | beta 0.013
+[020] train loss 0.30914 | recon 0.26273 | kl 3.47120 | smooth 0.25823 | beta 0.013
+[021] train loss 0.30492 | recon 0.25351 | kl 3.66350 | smooth 0.24857 | beta 0.014
+[022] train loss 0.30394 | recon 0.25255 | kl 3.49394 | smooth 0.29321 | beta 0.015
+[023] train loss 0.35679 | recon 0.30630 | kl 3.28336 | smooth 0.28780 | beta 0.015
+[024] train loss 0.40992 | recon 0.35919 | kl 3.16281 | smooth 0.24784 | beta 0.016
+[025] train loss 0.35440 | recon 0.28897 | kl 3.91660 | smooth 0.29598 | beta 0.017
+[026] train loss 0.33343 | recon 0.26733 | kl 3.80299 | smooth 0.37322 | beta 0.017
+[027] train loss 0.36196 | recon 0.30055 | kl 3.40440 | smooth 0.25129 | beta 0.018
+[028] train loss 0.32477 | recon 0.26617 | kl 3.13556 | smooth 0.14456 | beta 0.019
+[029] train loss 0.31269 | recon 0.24107 | kl 3.69929 | smooth 0.20276 | beta 0.019
+[030] train loss 0.38375 | recon 0.30979 | kl 3.69231 | smooth 0.23710 | beta 0.020
+[031] train loss 0.32726 | recon 0.26051 | kl 3.33039 | smooth 0.27746 | beta 0.020
+[032] train loss 0.38959 | recon 0.32639 | kl 3.15288 | smooth 0.27364 | beta 0.020
+[033] train loss 0.30096 | recon 0.24012 | kl 3.03474 | smooth 0.28352 | beta 0.020
+[034] train loss 0.26037 | recon 0.19889 | kl 3.06692 | smooth 0.29681 | beta 0.020
+[035] train loss 0.28855 | recon 0.22321 | kl 3.25787 | smooth 0.37009 | beta 0.020
+[036] train loss 0.28947 | recon 0.23206 | kl 2.86325 | smooth 0.29748 | beta 0.020
+[037] train loss 0.38427 | recon 0.32695 | kl 2.85955 | smooth 0.25380 | beta 0.020
+[038] train loss 0.34444 | recon 0.28818 | kl 2.80594 | smooth 0.27678 | beta 0.020
+[039] train loss 0.33413 | recon 0.28180 | kl 2.60944 | smooth 0.28457 | beta 0.020
+[040] train loss 0.32528 | recon 0.26905 | kl 2.80361 | smooth 0.32103 | beta 0.020
+[041] train loss 0.35039 | recon 0.28876 | kl 3.07353 | smooth 0.32128 | beta 0.020
+[042] train loss 0.35545 | recon 0.30283 | kl 2.62512 | smooth 0.24070 | beta 0.020
+[043] train loss 0.39055 | recon 0.33114 | kl 2.96602 | smooth 0.17054 | beta 0.020
+[044] train loss 0.43410 | recon 0.37631 | kl 2.88757 | smooth 0.07371 | beta 0.020
+[045] train loss 0.32471 | recon 0.26816 | kl 2.82599 | smooth 0.04741 | beta 0.020
+[046] train loss 0.30486 | recon 0.24966 | kl 2.75865 | smooth 0.05721 | beta 0.020
+[047] train loss 0.31026 | recon 0.24693 | kl 3.16511 | smooth 0.06172 | beta 0.020
+[048] train loss 0.29810 | recon 0.23720 | kl 3.04369 | smooth 0.06185 | beta 0.020
+[049] train loss 0.29550 | recon 0.24100 | kl 2.72376 | smooth 0.04612 | beta 0.020
+[050] train loss 0.27742 | recon 0.21348 | kl 3.19543 | smooth 0.06081 | beta 0.020
+[051] train loss 0.25856 | recon 0.20057 | kl 2.89811 | smooth 0.05004 | beta 0.020
+[052] train loss 0.25371 | recon 0.20395 | kl 2.48688 | smooth 0.05236 | beta 0.020
+[053] train loss 0.27950 | recon 0.22306 | kl 2.82101 | smooth 0.04129 | beta 0.020
+[054] train loss 0.23423 | recon 0.16879 | kl 3.27077 | smooth 0.05409 | beta 0.020
+[055] train loss 0.25894 | recon 0.20865 | kl 2.51325 | smooth 0.05239 | beta 0.020
+[056] train loss 0.26421 | recon 0.20641 | kl 2.88853 | smooth 0.05675 | beta 0.020
+[057] train loss 0.24680 | recon 0.18452 | kl 3.11273 | smooth 0.04700 | beta 0.020
+[058] train loss 0.24332 | recon 0.18362 | kl 2.98391 | smooth 0.05237 | beta 0.020
+[059] train loss 0.27387 | recon 0.21327 | kl 3.02852 | smooth 0.05605 | beta 0.020
+[060] train loss 0.24439 | recon 0.18655 | kl 2.89041 | smooth 0.05538 | beta 0.020
+[061] train loss 0.24355 | recon 0.19115 | kl 2.61894 | smooth 0.04654 | beta 0.020
+[062] train loss 0.29967 | recon 0.25088 | kl 2.43794 | smooth 0.05212 | beta 0.020
+[063] train loss 0.26793 | recon 0.21407 | kl 2.69175 | smooth 0.05192 | beta 0.020
+[064] train loss 0.25669 | recon 0.20343 | kl 2.66179 | smooth 0.04552 | beta 0.020
+[065] train loss 0.26720 | recon 0.21011 | kl 2.85334 | smooth 0.05178 | beta 0.020
+[066] train loss 0.22478 | recon 0.16319 | kl 3.07782 | smooth 0.05805 | beta 0.020
+[067] train loss 0.26674 | recon 0.20819 | kl 2.92607 | smooth 0.06077 | beta 0.020
+[068] train loss 0.26282 | recon 0.20699 | kl 2.78967 | smooth 0.06818 | beta 0.020
+[069] train loss 0.22478 | recon 0.16087 | kl 3.19357 | smooth 0.06612 | beta 0.020
+[070] train loss 0.24035 | recon 0.18314 | kl 2.85859 | smooth 0.07709 | beta 0.020
+[071] train loss 0.21376 | recon 0.15619 | kl 2.87681 | smooth 0.07761 | beta 0.020
+[072] train loss 0.21739 | recon 0.16352 | kl 2.69182 | smooth 0.07320 | beta 0.020
+[073] train loss 0.25781 | recon 0.20206 | kl 2.78544 | smooth 0.08031 | beta 0.020
+[074] train loss 0.21582 | recon 0.16025 | kl 2.77655 | smooth 0.08210 | beta 0.020
+[075] train loss 0.22077 | recon 0.17254 | kl 2.40916 | smooth 0.08630 | beta 0.020
+[076] train loss 0.33313 | recon 0.28593 | kl 2.35753 | smooth 0.09403 | beta 0.020
+[077] train loss 0.26418 | recon 0.21259 | kl 2.57693 | smooth 0.09786 | beta 0.020
+[078] train loss 0.22225 | recon 0.16721 | kl 2.74939 | smooth 0.10978 | beta 0.020
+[079] train loss 0.70674 | recon 0.61627 | kl 4.51619 | smooth 0.30079 | beta 0.020
+[080] train loss 0.55041 | recon 0.46369 | kl 4.32781 | smooth 0.32584 | beta 0.020
+[081] train loss 0.50703 | recon 0.44531 | kl 3.07793 | smooth 0.31583 | beta 0.020
+[082] train loss 0.49079 | recon 0.42862 | kl 3.10024 | smooth 0.32025 | beta 0.020
+[083] train loss 0.50469 | recon 0.43758 | kl 3.34783 | smooth 0.32119 | beta 0.020
+[084] train loss 0.45395 | recon 0.38868 | kl 3.25569 | smooth 0.31271 | beta 0.020
+[085] train loss 0.47603 | recon 0.41118 | kl 3.23641 | smooth 0.23830 | beta 0.020
+[086] train loss 0.50322 | recon 0.44137 | kl 3.08779 | smooth 0.18700 | beta 0.020
+[087] train loss 0.41703 | recon 0.35147 | kl 3.27277 | smooth 0.20652 | beta 0.020
+[088] train loss 0.56170 | recon 0.49373 | kl 3.39225 | smooth 0.24921 | beta 0.020
+[089] train loss 0.53887 | recon 0.46799 | kl 3.53716 | smooth 0.28385 | beta 0.020
+[090] train loss 0.45626 | recon 0.38844 | kl 3.38357 | smooth 0.29292 | beta 0.020
+[091] train loss 0.43360 | recon 0.37158 | kl 3.09392 | smooth 0.27973 | beta 0.020
+[092] train loss 0.55404 | recon 0.48532 | kl 3.42919 | smooth 0.27288 | beta 0.020
+[093] train loss 0.38960 | recon 0.32330 | kl 3.30851 | smooth 0.26514 | beta 0.020
+[094] train loss 0.36733 | recon 0.30844 | kl 2.93790 | smooth 0.26398 | beta 0.020
+[095] train loss 0.35732 | recon 0.29673 | kl 3.02350 | smooth 0.25528 | beta 0.020
+[096] train loss 0.37477 | recon 0.31008 | kl 3.22812 | smooth 0.24870 | beta 0.020
+[097] train loss 0.39632 | recon 0.34119 | kl 2.75145 | smooth 0.19886 | beta 0.020
+[098] train loss 0.33128 | recon 0.27802 | kl 2.65769 | smooth 0.20690 | beta 0.020
+[099] train loss 0.31008 | recon 0.25617 | kl 2.68979 | smooth 0.21944 | beta 0.020
+[100] train loss 0.27143 | recon 0.21322 | kl 2.90521 | smooth 0.21643 | beta 0.020
+[101] train loss 0.37956 | recon 0.31954 | kl 2.99424 | smooth 0.26989 | beta 0.020
+[102] train loss 0.36447 | recon 0.29920 | kl 3.25626 | smooth 0.28790 | beta 0.020
+[103] train loss 0.38444 | recon 0.31496 | kl 3.46631 | smooth 0.30923 | beta 0.020
+[104] train loss 0.28409 | recon 0.22454 | kl 2.97027 | smooth 0.27842 | beta 0.020
+[105] train loss 0.25776 | recon 0.19958 | kl 2.90205 | smooth 0.27463 | beta 0.020
+[106] train loss 0.23316 | recon 0.17617 | kl 2.84246 | smooth 0.27761 | beta 0.020
+[107] train loss 0.21814 | recon 0.15631 | kl 3.08443 | smooth 0.28190 | beta 0.020
+[108] train loss 0.24620 | recon 0.18607 | kl 2.99962 | smooth 0.27221 | beta 0.020
+[109] train loss 0.23123 | recon 0.16372 | kl 3.36867 | smooth 0.26942 | beta 0.020
+[110] train loss 0.18671 | recon 0.12459 | kl 3.09938 | smooth 0.26978 | beta 0.020
+[111] train loss 0.22579 | recon 0.16309 | kl 3.12796 | smooth 0.27906 | beta 0.020
+[112] train loss 0.23934 | recon 0.18007 | kl 2.95704 | smooth 0.27361 | beta 0.020
+[113] train loss 0.21429 | recon 0.15292 | kl 3.06180 | smooth 0.27405 | beta 0.020
+[114] train loss 0.22355 | recon 0.16430 | kl 2.95598 | smooth 0.26631 | beta 0.020
+[115] train loss 0.22516 | recon 0.16045 | kl 3.22968 | smooth 0.24969 | beta 0.020
+[116] train loss 0.19791 | recon 0.13174 | kl 3.30234 | smooth 0.24953 | beta 0.020
+[117] train loss 0.32486 | recon 0.27022 | kl 2.72560 | smooth 0.25581 | beta 0.020
+[118] train loss 0.26651 | recon 0.20227 | kl 3.20484 | smooth 0.28909 | beta 0.020
+[119] train loss 0.22409 | recon 0.16489 | kl 2.95281 | smooth 0.27346 | beta 0.020
+[120] train loss 0.23669 | recon 0.18597 | kl 2.52997 | smooth 0.25110 | beta 0.020
+[121] train loss 0.26876 | recon 0.20349 | kl 3.25755 | smooth 0.24529 | beta 0.020
+[122] train loss 0.22616 | recon 0.14928 | kl 3.83838 | smooth 0.23057 | beta 0.020
+[123] train loss 0.25648 | recon 0.18029 | kl 3.80343 | smooth 0.24123 | beta 0.020
+[124] train loss 0.46827 | recon 0.40955 | kl 2.92989 | smooth 0.24200 | beta 0.020
+[125] train loss 0.29249 | recon 0.23147 | kl 3.04446 | smooth 0.25243 | beta 0.020
+[126] train loss 0.20085 | recon 0.13851 | kl 3.11035 | smooth 0.26003 | beta 0.020
+[127] train loss 0.23037 | recon 0.17268 | kl 2.87774 | smooth 0.26992 | beta 0.020
+[128] train loss 0.24146 | recon 0.18495 | kl 2.81802 | smooth 0.29569 | beta 0.020
+[129] train loss 0.20222 | recon 0.13750 | kl 3.22866 | smooth 0.29830 | beta 0.020
+[130] train loss 0.21374 | recon 0.15694 | kl 2.83318 | smooth 0.29039 | beta 0.020
+[131] train loss 0.25342 | recon 0.19549 | kl 2.88896 | smooth 0.30045 | beta 0.020
+[132] train loss 0.23838 | recon 0.17860 | kl 2.98160 | smooth 0.28638 | beta 0.020
+[133] train loss 0.19233 | recon 0.12829 | kl 3.19524 | smooth 0.28458 | beta 0.020
+[134] train loss 0.18932 | recon 0.12551 | kl 3.18280 | smooth 0.29688 | beta 0.020
+[135] train loss 0.18132 | recon 0.11718 | kl 3.19930 | smooth 0.31273 | beta 0.020
+[136] train loss 0.16334 | recon 0.10253 | kl 3.03247 | smooth 0.32449 | beta 0.020
+[137] train loss 0.21223 | recon 0.16102 | kl 2.55222 | smooth 0.31616 | beta 0.020
+[138] train loss 0.16538 | recon 0.10925 | kl 2.79870 | smooth 0.31712 | beta 0.020
+[139] train loss 0.19429 | recon 0.13715 | kl 2.84908 | smooth 0.31473 | beta 0.020
+[140] train loss 0.18651 | recon 0.12657 | kl 2.98918 | smooth 0.31661 | beta 0.020
+[141] train loss 0.15602 | recon 0.09574 | kl 3.00579 | smooth 0.32214 | beta 0.020
+[142] train loss 0.15935 | recon 0.10474 | kl 2.72215 | smooth 0.33397 | beta 0.020
+[143] train loss 0.15553 | recon 0.09914 | kl 2.81161 | smooth 0.31377 | beta 0.020
+[144] train loss 0.16536 | recon 0.11223 | kl 2.64892 | smooth 0.29419 | beta 0.020
+[145] train loss 0.14558 | recon 0.09214 | kl 2.66464 | smooth 0.29290 | beta 0.020
+[146] train loss 0.21159 | recon 0.15853 | kl 2.64601 | smooth 0.28756 | beta 0.020
+[147] train loss 0.16967 | recon 0.11118 | kl 2.91708 | smooth 0.29268 | beta 0.020
+[148] train loss 0.16054 | recon 0.10575 | kl 2.73222 | smooth 0.29264 | beta 0.020
+[149] train loss 0.15807 | recon 0.10049 | kl 2.87129 | smooth 0.30064 | beta 0.020
+[150] train loss 0.19728 | recon 0.13141 | kl 3.28521 | smooth 0.32571 | beta 0.020
+      valid loss 0.40521 | recon 0.34495 | kl 3.00213 | smooth 0.44258 | R² 0.6757
+  saved best model to /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+      (preview plot skipped: local variable 'plt' referenced before assignment )
+      wrote /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/latent_manifold_mds.png
+done.
+net.0.bias -0.04174991324543953
+net.2.bias -0.007860038429498672
+net.4.bias -0.002968214452266693
+Final R²: 0.6757
+
+===== Running seed 1337 =====
+Device: mps
+PCA reduced 60 → 12 dims (95.98% variance)
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=12
+[001] train loss 1.69790 | recon 1.69746 | kl 0.42064 | smooth 0.32226 | beta 0.001
+[002] train loss 0.94975 | recon 0.94634 | kl 2.47581 | smooth 0.21011 | beta 0.001
+[003] train loss 0.83488 | recon 0.82701 | kl 3.87484 | smooth 0.24297 | beta 0.002
+[004] train loss 0.77686 | recon 0.76557 | kl 4.16181 | smooth 0.36634 | beta 0.003
+[005] train loss 0.70797 | recon 0.69027 | kl 5.22668 | smooth 0.56035 | beta 0.003
+[006] train loss 0.64046 | recon 0.61964 | kl 5.15147 | smooth 0.43300 | beta 0.004
+[007] train loss 0.58382 | recon 0.56139 | kl 4.77508 | smooth 0.28828 | beta 0.005
+[008] train loss 0.54844 | recon 0.51436 | kl 6.35617 | smooth 0.36212 | beta 0.005
+[009] train loss 0.61254 | recon 0.58856 | kl 3.96497 | smooth 0.37095 | beta 0.006
+[010] train loss 0.66053 | recon 0.63654 | kl 3.57332 | smooth 0.32234 | beta 0.007
+[011] train loss 0.58801 | recon 0.54407 | kl 5.96801 | smooth 0.36181 | beta 0.007
+[012] train loss 0.54765 | recon 0.49657 | kl 6.35906 | smooth 0.42066 | beta 0.008
+[013] train loss 0.48696 | recon 0.44100 | kl 5.27612 | smooth 0.46765 | beta 0.009
+[014] train loss 0.51189 | recon 0.45671 | kl 5.87128 | smooth 0.74907 | beta 0.009
+[015] train loss 0.45420 | recon 0.39368 | kl 6.01547 | smooth 0.73508 | beta 0.010
+[016] train loss 0.50233 | recon 0.44020 | kl 5.79407 | smooth 0.64539 | beta 0.011
+[017] train loss 0.45436 | recon 0.41222 | kl 3.70233 | smooth 0.36326 | beta 0.011
+[018] train loss 0.42455 | recon 0.38191 | kl 3.53982 | smooth 0.32303 | beta 0.012
+[019] train loss 0.39927 | recon 0.35082 | kl 3.81226 | smooth 0.33370 | beta 0.013
+[020] train loss 0.41603 | recon 0.36822 | kl 3.57484 | smooth 0.30473 | beta 0.013
+[021] train loss 0.38963 | recon 0.34339 | kl 3.29106 | smooth 0.33231 | beta 0.014
+[022] train loss 0.38058 | recon 0.33402 | kl 3.16371 | smooth 0.30961 | beta 0.015
+[023] train loss 0.37093 | recon 0.32207 | kl 3.17810 | smooth 0.25009 | beta 0.015
+[024] train loss 0.41015 | recon 0.35441 | kl 3.47579 | smooth 0.24764 | beta 0.016
+[025] train loss 0.47759 | recon 0.42779 | kl 2.98178 | smooth 0.20826 | beta 0.017
+[026] train loss 0.47518 | recon 0.43062 | kl 2.56593 | smooth 0.17230 | beta 0.017
+[027] train loss 0.47623 | recon 0.40765 | kl 3.80478 | smooth 0.19391 | beta 0.018
+[028] train loss 0.70761 | recon 0.63424 | kl 3.92592 | smooth 0.17560 | beta 0.019
+[029] train loss 0.79167 | recon 0.69176 | kl 5.16075 | smooth 0.26109 | beta 0.019
+[030] train loss 0.76129 | recon 0.65404 | kl 5.35560 | smooth 0.27923 | beta 0.020
+[031] train loss 0.74155 | recon 0.61968 | kl 6.08374 | smooth 0.38981 | beta 0.020
+[032] train loss 0.77978 | recon 0.66433 | kl 5.76304 | smooth 0.37999 | beta 0.020
+[033] train loss 0.77108 | recon 0.68116 | kl 4.48901 | smooth 0.27900 | beta 0.020
+[034] train loss 0.70355 | recon 0.62110 | kl 4.11637 | smooth 0.23554 | beta 0.020
+[035] train loss 0.71309 | recon 0.64993 | kl 3.15315 | smooth 0.18734 | beta 0.020
+[036] train loss 0.54495 | recon 0.50057 | kl 2.21530 | smooth 0.14623 | beta 0.020
+[037] train loss 0.46297 | recon 0.40403 | kl 2.94306 | smooth 0.15442 | beta 0.020
+[038] train loss 0.44450 | recon 0.38151 | kl 3.14565 | smooth 0.15798 | beta 0.020
+[039] train loss 0.42293 | recon 0.36423 | kl 2.93086 | smooth 0.16435 | beta 0.020
+[040] train loss 0.35524 | recon 0.28808 | kl 3.35377 | smooth 0.17015 | beta 0.020
+[041] train loss 0.35263 | recon 0.28218 | kl 3.51814 | smooth 0.16980 | beta 0.020
+[042] train loss 0.39227 | recon 0.32558 | kl 3.33035 | smooth 0.18368 | beta 0.020
+[043] train loss 0.38731 | recon 0.32690 | kl 3.01614 | smooth 0.18300 | beta 0.020
+[044] train loss 0.54826 | recon 0.49120 | kl 2.84846 | smooth 0.18645 | beta 0.020
+[045] train loss 0.58382 | recon 0.51612 | kl 3.37974 | smooth 0.21085 | beta 0.020
+[046] train loss 0.49769 | recon 0.43355 | kl 3.20226 | smooth 0.20365 | beta 0.020
+[047] train loss 0.58073 | recon 0.52501 | kl 2.78312 | smooth 0.13117 | beta 0.020
+[048] train loss 0.45234 | recon 0.39790 | kl 2.71925 | smooth 0.11344 | beta 0.020
+[049] train loss 0.45522 | recon 0.40268 | kl 2.62486 | smooth 0.09346 | beta 0.020
+[050] train loss 0.38260 | recon 0.33068 | kl 2.59423 | smooth 0.08360 | beta 0.020
+[051] train loss 0.38014 | recon 0.32340 | kl 2.83474 | smooth 0.08785 | beta 0.020
+[052] train loss 0.34344 | recon 0.29090 | kl 2.62455 | smooth 0.08717 | beta 0.020
+[053] train loss 0.34979 | recon 0.29859 | kl 2.55782 | smooth 0.08844 | beta 0.020
+[054] train loss 0.32115 | recon 0.26635 | kl 2.73720 | smooth 0.09669 | beta 0.020
+[055] train loss 0.30897 | recon 0.25269 | kl 2.81157 | smooth 0.09712 | beta 0.020
+[056] train loss 0.31718 | recon 0.26059 | kl 2.82690 | smooth 0.09443 | beta 0.020
+[057] train loss 0.33594 | recon 0.27567 | kl 3.01118 | smooth 0.09333 | beta 0.020
+[058] train loss 0.32744 | recon 0.27161 | kl 2.78901 | smooth 0.09542 | beta 0.020
+[059] train loss 0.34607 | recon 0.29019 | kl 2.79149 | smooth 0.10105 | beta 0.020
+[060] train loss 0.31355 | recon 0.26113 | kl 2.61833 | smooth 0.09724 | beta 0.020
+[061] train loss 0.27883 | recon 0.22142 | kl 2.86824 | smooth 0.10631 | beta 0.020
+[062] train loss 0.28410 | recon 0.22385 | kl 3.00957 | smooth 0.11226 | beta 0.020
+[063] train loss 0.27296 | recon 0.21551 | kl 2.86952 | smooth 0.10254 | beta 0.020
+[064] train loss 0.27720 | recon 0.22337 | kl 2.68934 | smooth 0.09442 | beta 0.020
+[065] train loss 0.29158 | recon 0.23418 | kl 2.86712 | smooth 0.10317 | beta 0.020
+[066] train loss 0.27248 | recon 0.21823 | kl 2.71019 | smooth 0.09954 | beta 0.020
+[067] train loss 0.27271 | recon 0.21961 | kl 2.65251 | smooth 0.09978 | beta 0.020
+[068] train loss 0.29769 | recon 0.24371 | kl 2.69676 | smooth 0.09796 | beta 0.020
+[069] train loss 0.31854 | recon 0.26306 | kl 2.77170 | smooth 0.09289 | beta 0.020
+[070] train loss 0.33707 | recon 0.28339 | kl 2.68161 | smooth 0.10780 | beta 0.020
+[071] train loss 0.33959 | recon 0.28513 | kl 2.72007 | smooth 0.10432 | beta 0.020
+[072] train loss 0.31474 | recon 0.26240 | kl 2.61509 | smooth 0.08001 | beta 0.020
+[073] train loss 0.28949 | recon 0.23447 | kl 2.74920 | smooth 0.06940 | beta 0.020
+[074] train loss 0.27972 | recon 0.22262 | kl 2.85282 | smooth 0.07379 | beta 0.020
+[075] train loss 0.25589 | recon 0.19907 | kl 2.83897 | smooth 0.08535 | beta 0.020
+[076] train loss 0.26278 | recon 0.21302 | kl 2.48608 | smooth 0.08337 | beta 0.020
+[077] train loss 0.26012 | recon 0.20743 | kl 2.63222 | smooth 0.08815 | beta 0.020
+[078] train loss 0.27568 | recon 0.21589 | kl 2.98708 | smooth 0.09029 | beta 0.020
+[079] train loss 0.27616 | recon 0.21424 | kl 3.09386 | smooth 0.09637 | beta 0.020
+[080] train loss 0.27333 | recon 0.21699 | kl 2.81471 | smooth 0.08989 | beta 0.020
+[081] train loss 0.27080 | recon 0.21560 | kl 2.75797 | smooth 0.08728 | beta 0.020
+[082] train loss 0.26233 | recon 0.21101 | kl 2.56385 | smooth 0.09137 | beta 0.020
+[083] train loss 0.25536 | recon 0.20188 | kl 2.67139 | smooth 0.09918 | beta 0.020
+[084] train loss 0.23774 | recon 0.18457 | kl 2.65591 | smooth 0.10634 | beta 0.020
+[085] train loss 0.24197 | recon 0.18908 | kl 2.64127 | smooth 0.11686 | beta 0.020
+[086] train loss 0.24201 | recon 0.18473 | kl 2.86136 | smooth 0.11072 | beta 0.020
+[087] train loss 0.24339 | recon 0.18521 | kl 2.90612 | smooth 0.10782 | beta 0.020
+[088] train loss 0.26787 | recon 0.21066 | kl 2.85814 | smooth 0.10056 | beta 0.020
+[089] train loss 0.22972 | recon 0.16932 | kl 3.01727 | smooth 0.10483 | beta 0.020
+[090] train loss 0.21514 | recon 0.15886 | kl 2.81165 | smooth 0.10438 | beta 0.020
+[091] train loss 0.24173 | recon 0.18977 | kl 2.59547 | smooth 0.09991 | beta 0.020
+[092] train loss 0.22628 | recon 0.17183 | kl 2.71953 | smooth 0.09893 | beta 0.020
+[093] train loss 0.22348 | recon 0.16584 | kl 2.87897 | smooth 0.10387 | beta 0.020
+[094] train loss 0.24175 | recon 0.18235 | kl 2.96751 | smooth 0.09795 | beta 0.020
+[095] train loss 0.21538 | recon 0.15426 | kl 3.05353 | smooth 0.09329 | beta 0.020
+[096] train loss 0.24997 | recon 0.19442 | kl 2.77490 | smooth 0.08949 | beta 0.020
+[097] train loss 0.21860 | recon 0.16400 | kl 2.72739 | smooth 0.08823 | beta 0.020
+[098] train loss 0.21471 | recon 0.16059 | kl 2.70413 | smooth 0.09165 | beta 0.020
+[099] train loss 0.20565 | recon 0.14915 | kl 2.82254 | smooth 0.10054 | beta 0.020
+[100] train loss 0.20651 | recon 0.15049 | kl 2.79814 | smooth 0.11075 | beta 0.020
+[101] train loss 0.21541 | recon 0.16228 | kl 2.65384 | smooth 0.10838 | beta 0.020
+[102] train loss 0.21135 | recon 0.15648 | kl 2.74130 | smooth 0.10442 | beta 0.020
+[103] train loss 0.20135 | recon 0.14130 | kl 3.00009 | smooth 0.10561 | beta 0.020
+[104] train loss 0.20757 | recon 0.14640 | kl 3.05542 | smooth 0.10555 | beta 0.020
+[105] train loss 0.20750 | recon 0.15211 | kl 2.76722 | smooth 0.09988 | beta 0.020
+[106] train loss 0.21705 | recon 0.15810 | kl 2.94482 | smooth 0.09864 | beta 0.020
+[107] train loss 0.18359 | recon 0.12182 | kl 3.08611 | smooth 0.10005 | beta 0.020
+[108] train loss 0.19205 | recon 0.13561 | kl 2.82020 | smooth 0.08996 | beta 0.020
+[109] train loss 0.18466 | recon 0.13159 | kl 2.65146 | smooth 0.08950 | beta 0.020
+[110] train loss 0.20812 | recon 0.15051 | kl 2.87826 | smooth 0.10032 | beta 0.020
+[111] train loss 0.17381 | recon 0.11816 | kl 2.77939 | smooth 0.11040 | beta 0.020
+[112] train loss 0.17304 | recon 0.12198 | kl 2.55032 | smooth 0.11252 | beta 0.020
+[113] train loss 0.19967 | recon 0.14375 | kl 2.79288 | smooth 0.10680 | beta 0.020
+[114] train loss 0.17957 | recon 0.12222 | kl 2.86528 | smooth 0.09317 | beta 0.020
+[115] train loss 0.18267 | recon 0.12499 | kl 2.88186 | smooth 0.07846 | beta 0.020
+[116] train loss 0.20095 | recon 0.14711 | kl 2.69021 | smooth 0.07374 | beta 0.020
+[117] train loss 0.22124 | recon 0.16586 | kl 2.76757 | smooth 0.07290 | beta 0.020
+[118] train loss 0.16314 | recon 0.10210 | kl 3.05000 | smooth 0.07766 | beta 0.020
+[119] train loss 0.16577 | recon 0.10985 | kl 2.79466 | smooth 0.06888 | beta 0.020
+[120] train loss 0.20214 | recon 0.14230 | kl 2.99004 | smooth 0.07594 | beta 0.020
+[121] train loss 0.18998 | recon 0.12601 | kl 3.19525 | smooth 0.12131 | beta 0.020
+[122] train loss 0.17879 | recon 0.11741 | kl 3.06592 | smooth 0.12569 | beta 0.020
+[123] train loss 0.17157 | recon 0.11574 | kl 2.78854 | smooth 0.11949 | beta 0.020
+[124] train loss 0.18900 | recon 0.12801 | kl 3.04656 | smooth 0.12222 | beta 0.020
+[125] train loss 0.20289 | recon 0.14075 | kl 3.10362 | smooth 0.12939 | beta 0.020
+[126] train loss 0.21021 | recon 0.14914 | kl 3.05038 | smooth 0.13007 | beta 0.020
+[127] train loss 0.73844 | recon 0.67411 | kl 3.21325 | smooth 0.13553 | beta 0.020
+[128] train loss 0.52820 | recon 0.47026 | kl 2.89396 | smooth 0.11749 | beta 0.020
+[129] train loss 0.42276 | recon 0.36640 | kl 2.81560 | smooth 0.08543 | beta 0.020
+[130] train loss 0.79092 | recon 0.74313 | kl 2.38793 | smooth 0.07482 | beta 0.020
+[131] train loss 0.50841 | recon 0.45188 | kl 2.82464 | smooth 0.07141 | beta 0.020
+[132] train loss 0.33450 | recon 0.27764 | kl 2.84172 | smooth 0.06447 | beta 0.020
+[133] train loss 0.26577 | recon 0.19973 | kl 3.30045 | smooth 0.06632 | beta 0.020
+[134] train loss 0.24954 | recon 0.18433 | kl 3.25887 | smooth 0.06263 | beta 0.020
+[135] train loss 0.24067 | recon 0.17550 | kl 3.25675 | smooth 0.06936 | beta 0.020
+[136] train loss 0.22802 | recon 0.16650 | kl 3.07424 | smooth 0.06852 | beta 0.020
+[137] train loss 0.20954 | recon 0.14982 | kl 2.98441 | smooth 0.06953 | beta 0.020
+[138] train loss 0.23163 | recon 0.17262 | kl 2.94884 | smooth 0.06872 | beta 0.020
+[139] train loss 0.21717 | recon 0.15624 | kl 3.04439 | smooth 0.07096 | beta 0.020
+[140] train loss 0.18324 | recon 0.12035 | kl 3.14276 | smooth 0.07584 | beta 0.020
+[141] train loss 0.20279 | recon 0.14688 | kl 2.79341 | smooth 0.07448 | beta 0.020
+[142] train loss 0.19847 | recon 0.13854 | kl 2.99432 | smooth 0.07920 | beta 0.020
+[143] train loss 0.18611 | recon 0.12455 | kl 3.07563 | smooth 0.08439 | beta 0.020
+[144] train loss 0.16536 | recon 0.10604 | kl 2.96422 | smooth 0.08429 | beta 0.020
+[145] train loss 0.21430 | recon 0.15176 | kl 3.12462 | smooth 0.08358 | beta 0.020
+[146] train loss 0.18518 | recon 0.12078 | kl 3.21794 | smooth 0.08698 | beta 0.020
+[147] train loss 0.17709 | recon 0.11566 | kl 3.06971 | smooth 0.08349 | beta 0.020
+[148] train loss 0.18253 | recon 0.12570 | kl 2.83936 | smooth 0.07861 | beta 0.020
+[149] train loss 0.15900 | recon 0.10196 | kl 2.84976 | smooth 0.07577 | beta 0.020
+[150] train loss 0.17548 | recon 0.11878 | kl 2.83323 | smooth 0.08524 | beta 0.020
+      valid loss 0.16298 | recon 0.10416 | kl 2.93937 | smooth 0.07130 | R² 0.9116
+  saved best model to /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+      (preview plot skipped: local variable 'plt' referenced before assignment )
+      wrote /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/latent_manifold_mds.png
+done.
+net.0.bias -0.041974857449531555
+net.2.bias -0.00645246310159564
+net.4.bias -0.023534437641501427
+Final R²: 0.9116
+
+===== Running seed 2025 =====
+Device: mps
+PCA reduced 60 → 12 dims (95.98% variance)
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=12
+[001] train loss 1.44758 | recon 1.44707 | kl 0.20925 | smooth 0.74523 | beta 0.001
+[002] train loss 1.02124 | recon 1.01857 | kl 1.84490 | smooth 0.41411 | beta 0.001
+[003] train loss 0.90543 | recon 0.90375 | kl 0.77522 | smooth 0.25218 | beta 0.002
+[004] train loss 0.82836 | recon 0.82672 | kl 0.59477 | smooth 0.11738 | beta 0.003
+[005] train loss 0.79171 | recon 0.78571 | kl 1.77632 | smooth 0.17456 | beta 0.003
+[006] train loss 0.73843 | recon 0.73199 | kl 1.60137 | smooth 0.07640 | beta 0.004
+[007] train loss 0.68968 | recon 0.68055 | kl 1.94994 | smooth 0.05924 | beta 0.005
+[008] train loss 0.66324 | recon 0.65039 | kl 2.40226 | smooth 0.07475 | beta 0.005
+[009] train loss 0.65058 | recon 0.63444 | kl 2.68279 | smooth 0.08484 | beta 0.006
+[010] train loss 0.65126 | recon 0.63682 | kl 2.15946 | smooth 0.08978 | beta 0.007
+[011] train loss 0.65085 | recon 0.63562 | kl 2.06907 | smooth 0.10430 | beta 0.007
+[012] train loss 0.63672 | recon 0.61801 | kl 2.33156 | smooth 0.11509 | beta 0.008
+[013] train loss 0.61504 | recon 0.59321 | kl 2.51198 | smooth 0.12102 | beta 0.009
+[014] train loss 0.58169 | recon 0.55814 | kl 2.51662 | smooth 0.12511 | beta 0.009
+[015] train loss 0.52518 | recon 0.50084 | kl 2.42743 | smooth 0.12164 | beta 0.010
+[016] train loss 0.50579 | recon 0.47599 | kl 2.78773 | smooth 0.12316 | beta 0.011
+[017] train loss 0.52296 | recon 0.48932 | kl 2.96268 | smooth 0.12458 | beta 0.011
+[018] train loss 0.49037 | recon 0.45813 | kl 2.68221 | smooth 0.11632 | beta 0.012
+[019] train loss 0.46004 | recon 0.42250 | kl 2.95869 | smooth 0.13105 | beta 0.013
+[020] train loss 0.43788 | recon 0.39886 | kl 2.92159 | smooth 0.13987 | beta 0.013
+[021] train loss 0.44166 | recon 0.39825 | kl 3.09630 | smooth 0.12878 | beta 0.014
+[022] train loss 0.48239 | recon 0.43989 | kl 2.89446 | smooth 0.10321 | beta 0.015
+[023] train loss 0.48898 | recon 0.44671 | kl 2.75388 | smooth 0.06946 | beta 0.015
+[024] train loss 0.48814 | recon 0.44758 | kl 2.53320 | smooth 0.05480 | beta 0.016
+[025] train loss 0.45424 | recon 0.41088 | kl 2.60009 | smooth 0.05426 | beta 0.017
+[026] train loss 0.54762 | recon 0.50439 | kl 2.49168 | smooth 0.08079 | beta 0.017
+[027] train loss 0.51238 | recon 0.46151 | kl 2.82406 | smooth 0.07425 | beta 0.018
+[028] train loss 0.47879 | recon 0.42496 | kl 2.88143 | smooth 0.07478 | beta 0.019
+[029] train loss 0.44975 | recon 0.39763 | kl 2.69351 | smooth 0.07651 | beta 0.019
+[030] train loss 0.41328 | recon 0.35915 | kl 2.70494 | smooth 0.07382 | beta 0.020
+[031] train loss 0.42035 | recon 0.36027 | kl 3.00176 | smooth 0.08793 | beta 0.020
+[032] train loss 0.40745 | recon 0.34937 | kl 2.90182 | smooth 0.08785 | beta 0.020
+[033] train loss 0.38760 | recon 0.33445 | kl 2.65551 | smooth 0.07897 | beta 0.020
+[034] train loss 0.37426 | recon 0.32425 | kl 2.49809 | smooth 0.09607 | beta 0.020
+[035] train loss 0.34845 | recon 0.28553 | kl 3.14312 | smooth 0.10430 | beta 0.020
+[036] train loss 0.38031 | recon 0.32072 | kl 2.97709 | smooth 0.08597 | beta 0.020
+[037] train loss 0.40306 | recon 0.35212 | kl 2.54468 | smooth 0.08353 | beta 0.020
+[038] train loss 0.39648 | recon 0.34131 | kl 2.75612 | smooth 0.09499 | beta 0.020
+[039] train loss 0.49949 | recon 0.43193 | kl 3.37468 | smooth 0.12944 | beta 0.020
+[040] train loss 1.08755 | recon 0.99739 | kl 4.50497 | smooth 0.13377 | beta 0.020
+[041] train loss 0.75142 | recon 0.67635 | kl 3.75000 | smooth 0.13773 | beta 0.020
+[042] train loss 0.54131 | recon 0.48638 | kl 2.74396 | smooth 0.10005 | beta 0.020
+[043] train loss 0.40454 | recon 0.35792 | kl 2.32903 | smooth 0.07558 | beta 0.020
+[044] train loss 0.35684 | recon 0.29937 | kl 2.87201 | smooth 0.06156 | beta 0.020
+[045] train loss 0.35358 | recon 0.30105 | kl 2.62519 | smooth 0.05843 | beta 0.020
+[046] train loss 0.46399 | recon 0.41666 | kl 2.36495 | smooth 0.07291 | beta 0.020
+[047] train loss 0.45901 | recon 0.39444 | kl 3.22611 | smooth 0.09753 | beta 0.020
+[048] train loss 0.34913 | recon 0.28751 | kl 3.07909 | smooth 0.08479 | beta 0.020
+[049] train loss 0.30895 | recon 0.24865 | kl 3.01322 | smooth 0.07100 | beta 0.020
+[050] train loss 0.34890 | recon 0.29235 | kl 2.82593 | smooth 0.06544 | beta 0.020
+[051] train loss 0.33852 | recon 0.27917 | kl 2.96531 | smooth 0.09052 | beta 0.020
+[052] train loss 0.34256 | recon 0.27172 | kl 3.53847 | smooth 0.12597 | beta 0.020
+[053] train loss 0.37173 | recon 0.31073 | kl 3.04662 | smooth 0.13931 | beta 0.020
+[054] train loss 0.32034 | recon 0.26022 | kl 3.00225 | smooth 0.14346 | beta 0.020
+[055] train loss 0.33967 | recon 0.27644 | kl 3.15836 | smooth 0.11907 | beta 0.020
+[056] train loss 0.28389 | recon 0.22097 | kl 3.14363 | smooth 0.09853 | beta 0.020
+[057] train loss 0.27701 | recon 0.21681 | kl 3.00795 | smooth 0.07532 | beta 0.020
+[058] train loss 0.27527 | recon 0.21844 | kl 2.83918 | smooth 0.09006 | beta 0.020
+[059] train loss 0.25793 | recon 0.19630 | kl 3.07894 | smooth 0.11786 | beta 0.020
+[060] train loss 0.25455 | recon 0.18501 | kl 3.47285 | smooth 0.16813 | beta 0.020
+[061] train loss 0.28665 | recon 0.22469 | kl 3.09399 | smooth 0.15335 | beta 0.020
+[062] train loss 0.28934 | recon 0.22920 | kl 3.00381 | smooth 0.12607 | beta 0.020
+[063] train loss 0.29586 | recon 0.23754 | kl 2.91291 | smooth 0.11230 | beta 0.020
+[064] train loss 0.25106 | recon 0.19422 | kl 2.83962 | smooth 0.09873 | beta 0.020
+[065] train loss 0.25912 | recon 0.19682 | kl 3.11275 | smooth 0.10080 | beta 0.020
+[066] train loss 0.24795 | recon 0.18425 | kl 3.18272 | smooth 0.09787 | beta 0.020
+[067] train loss 0.23625 | recon 0.17335 | kl 3.14299 | smooth 0.08987 | beta 0.020
+[068] train loss 0.21754 | recon 0.15867 | kl 2.94128 | smooth 0.09966 | beta 0.020
+[069] train loss 0.23690 | recon 0.17982 | kl 2.85086 | smooth 0.11780 | beta 0.020
+[070] train loss 0.22364 | recon 0.16472 | kl 2.94291 | smooth 0.12682 | beta 0.020
+[071] train loss 0.23676 | recon 0.17675 | kl 2.99768 | smooth 0.11900 | beta 0.020
+[072] train loss 0.27551 | recon 0.22592 | kl 2.47651 | smooth 0.10798 | beta 0.020
+[073] train loss 0.25528 | recon 0.20519 | kl 2.50275 | smooth 0.08650 | beta 0.020
+[074] train loss 0.25260 | recon 0.19635 | kl 2.81018 | smooth 0.09280 | beta 0.020
+[075] train loss 0.25019 | recon 0.18760 | kl 3.12651 | smooth 0.10915 | beta 0.020
+[076] train loss 0.23115 | recon 0.17169 | kl 2.97077 | smooth 0.10118 | beta 0.020
+[077] train loss 0.24257 | recon 0.18538 | kl 2.85703 | smooth 0.10378 | beta 0.020
+[078] train loss 0.24976 | recon 0.18783 | kl 3.09353 | smooth 0.11822 | beta 0.020
+[079] train loss 0.24042 | recon 0.17840 | kl 3.09801 | smooth 0.13413 | beta 0.020
+[080] train loss 0.22778 | recon 0.17383 | kl 2.69391 | smooth 0.14093 | beta 0.020
+[081] train loss 0.25952 | recon 0.20013 | kl 2.96597 | smooth 0.15357 | beta 0.020
+[082] train loss 0.28090 | recon 0.21617 | kl 3.23159 | smooth 0.19310 | beta 0.020
+[083] train loss 0.24524 | recon 0.16969 | kl 3.77090 | smooth 0.24903 | beta 0.020
+[084] train loss 0.22308 | recon 0.15661 | kl 3.31841 | smooth 0.20513 | beta 0.020
+[085] train loss 0.22315 | recon 0.16423 | kl 2.94173 | smooth 0.17029 | beta 0.020
+[086] train loss 0.28571 | recon 0.22903 | kl 2.83058 | smooth 0.15002 | beta 0.020
+[087] train loss 0.30647 | recon 0.25506 | kl 2.56782 | smooth 0.11014 | beta 0.020
+[088] train loss 0.24637 | recon 0.19100 | kl 2.76623 | smooth 0.09442 | beta 0.020
+[089] train loss 0.24425 | recon 0.18612 | kl 2.90496 | smooth 0.06924 | beta 0.020
+[090] train loss 0.23886 | recon 0.18004 | kl 2.93917 | smooth 0.06160 | beta 0.020
+[091] train loss 0.22439 | recon 0.17036 | kl 2.70027 | smooth 0.04967 | beta 0.020
+[092] train loss 0.26280 | recon 0.20596 | kl 2.83964 | smooth 0.09877 | beta 0.020
+[093] train loss 0.23338 | recon 0.18346 | kl 2.49346 | smooth 0.10601 | beta 0.020
+[094] train loss 0.20366 | recon 0.14716 | kl 2.82249 | smooth 0.09963 | beta 0.020
+[095] train loss 0.21028 | recon 0.15727 | kl 2.64782 | smooth 0.09529 | beta 0.020
+[096] train loss 0.22360 | recon 0.16969 | kl 2.69376 | smooth 0.08237 | beta 0.020
+[097] train loss 0.21857 | recon 0.15983 | kl 2.93502 | smooth 0.08837 | beta 0.020
+[098] train loss 0.20314 | recon 0.14275 | kl 3.01713 | smooth 0.10232 | beta 0.020
+[099] train loss 0.21938 | recon 0.16364 | kl 2.78476 | smooth 0.09718 | beta 0.020
+[100] train loss 0.24846 | recon 0.19456 | kl 2.69333 | smooth 0.08217 | beta 0.020
+[101] train loss 0.20615 | recon 0.14940 | kl 2.83613 | smooth 0.06826 | beta 0.020
+[102] train loss 0.20790 | recon 0.14350 | kl 3.21843 | smooth 0.06716 | beta 0.020
+[103] train loss 0.22798 | recon 0.16561 | kl 3.11673 | smooth 0.05905 | beta 0.020
+[104] train loss 0.24375 | recon 0.18029 | kl 3.17097 | smooth 0.06686 | beta 0.020
+[105] train loss 0.23201 | recon 0.16702 | kl 3.24802 | smooth 0.06802 | beta 0.020
+[106] train loss 0.22833 | recon 0.16057 | kl 3.38614 | smooth 0.07168 | beta 0.020
+[107] train loss 0.19893 | recon 0.13431 | kl 3.22934 | smooth 0.06861 | beta 0.020
+[108] train loss 0.20045 | recon 0.13886 | kl 3.07765 | smooth 0.06987 | beta 0.020
+[109] train loss 0.18648 | recon 0.12896 | kl 2.87450 | smooth 0.06454 | beta 0.020
+[110] train loss 0.24658 | recon 0.19147 | kl 2.75370 | smooth 0.06235 | beta 0.020
+[111] train loss 0.24260 | recon 0.18382 | kl 2.93712 | smooth 0.06155 | beta 0.020
+[112] train loss 0.20570 | recon 0.14481 | kl 3.04263 | smooth 0.06624 | beta 0.020
+[113] train loss 0.19031 | recon 0.12975 | kl 3.02621 | smooth 0.07686 | beta 0.020
+[114] train loss 0.24621 | recon 0.18607 | kl 3.00466 | smooth 0.10585 | beta 0.020
+[115] train loss 0.21031 | recon 0.15162 | kl 2.93185 | smooth 0.10888 | beta 0.020
+[116] train loss 0.20364 | recon 0.13923 | kl 3.21762 | smooth 0.12258 | beta 0.020
+[117] train loss 0.23447 | recon 0.17442 | kl 3.00033 | smooth 0.09990 | beta 0.020
+[118] train loss 0.21020 | recon 0.15510 | kl 2.75270 | smooth 0.08604 | beta 0.020
+[119] train loss 0.23344 | recon 0.17386 | kl 2.97682 | smooth 0.07935 | beta 0.020
+[120] train loss 0.20345 | recon 0.14209 | kl 3.06619 | smooth 0.07084 | beta 0.020
+[121] train loss 0.18493 | recon 0.12484 | kl 3.00272 | smooth 0.07756 | beta 0.020
+[122] train loss 0.24929 | recon 0.19593 | kl 2.66616 | smooth 0.07926 | beta 0.020
+[123] train loss 0.21921 | recon 0.16418 | kl 2.74945 | smooth 0.07916 | beta 0.020
+[124] train loss 0.21638 | recon 0.15806 | kl 2.91434 | smooth 0.07640 | beta 0.020
+[125] train loss 0.22067 | recon 0.16697 | kl 2.68334 | smooth 0.06691 | beta 0.020
+[126] train loss 0.25608 | recon 0.20005 | kl 2.80016 | smooth 0.06866 | beta 0.020
+[127] train loss 0.20160 | recon 0.14321 | kl 2.91784 | smooth 0.06881 | beta 0.020
+[128] train loss 0.22796 | recon 0.17002 | kl 2.89528 | smooth 0.07634 | beta 0.020
+[129] train loss 0.22328 | recon 0.16097 | kl 3.11364 | smooth 0.08247 | beta 0.020
+[130] train loss 0.21317 | recon 0.15266 | kl 3.02396 | smooth 0.07545 | beta 0.020
+[131] train loss 0.21694 | recon 0.16061 | kl 2.81480 | smooth 0.06653 | beta 0.020
+[132] train loss 0.19406 | recon 0.13638 | kl 2.88243 | smooth 0.05953 | beta 0.020
+[133] train loss 0.23724 | recon 0.18484 | kl 2.61858 | smooth 0.05879 | beta 0.020
+[134] train loss 0.21817 | recon 0.16295 | kl 2.75913 | smooth 0.06756 | beta 0.020
+[135] train loss 0.21626 | recon 0.15885 | kl 2.86863 | smooth 0.07101 | beta 0.020
+[136] train loss 0.16787 | recon 0.10614 | kl 3.08483 | smooth 0.07080 | beta 0.020
+[137] train loss 0.16743 | recon 0.10854 | kl 2.94309 | smooth 0.06667 | beta 0.020
+[138] train loss 0.20483 | recon 0.14144 | kl 3.16767 | smooth 0.07479 | beta 0.020
+[139] train loss 0.18353 | recon 0.11637 | kl 3.35649 | smooth 0.06787 | beta 0.020
+[140] train loss 0.22315 | recon 0.15886 | kl 3.21298 | smooth 0.06408 | beta 0.020
+[141] train loss 0.19227 | recon 0.13180 | kl 3.02178 | smooth 0.05351 | beta 0.020
+[142] train loss 0.25393 | recon 0.20110 | kl 2.64029 | smooth 0.04956 | beta 0.020
+[143] train loss 0.20191 | recon 0.14787 | kl 2.70094 | smooth 0.05017 | beta 0.020
+[144] train loss 0.18795 | recon 0.13152 | kl 2.82033 | smooth 0.05268 | beta 0.020
+[145] train loss 0.20696 | recon 0.14743 | kl 2.97554 | smooth 0.05294 | beta 0.020
+[146] train loss 0.25886 | recon 0.20572 | kl 2.65550 | smooth 0.05672 | beta 0.020
+[147] train loss 0.20483 | recon 0.14759 | kl 2.86060 | smooth 0.06159 | beta 0.020
+[148] train loss 0.15870 | recon 0.09980 | kl 2.94369 | smooth 0.05670 | beta 0.020
+[149] train loss 0.20792 | recon 0.15194 | kl 2.79809 | smooth 0.04024 | beta 0.020
+[150] train loss 0.20289 | recon 0.14315 | kl 2.98599 | smooth 0.03368 | beta 0.020
+      valid loss 0.31145 | recon 0.24597 | kl 3.27281 | smooth 0.03300 | R² 0.7467
+  saved best model to /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+      (preview plot skipped: local variable 'plt' referenced before assignment )
+      wrote /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/latent_manifold_mds.png
+done.
+net.0.bias -0.059145696461200714
+net.2.bias -0.0028486319351941347
+net.4.bias -0.018402863293886185
+Final R²: 0.7467
+
+===== Running seed 777 =====
+Device: mps
+PCA reduced 60 → 12 dims (95.98% variance)
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=12
+[001] train loss 1.98168 | recon 1.98102 | kl 0.24825 | smooth 0.98427 | beta 0.001
+[002] train loss 0.85609 | recon 0.85079 | kl 3.61997 | smooth 0.94278 | beta 0.001
+[003] train loss 0.57410 | recon 0.56126 | kl 6.19953 | smooth 0.87303 | beta 0.002
+[004] train loss 0.49717 | recon 0.47953 | kl 6.48304 | smooth 0.71810 | beta 0.003
+[005] train loss 0.59556 | recon 0.57445 | kl 6.26236 | smooth 0.47333 | beta 0.003
+[006] train loss 0.45779 | recon 0.43651 | kl 5.28775 | smooth 0.24452 | beta 0.004
+[007] train loss 0.51225 | recon 0.48674 | kl 5.43265 | smooth 0.32390 | beta 0.005
+[008] train loss 0.38523 | recon 0.34848 | kl 6.84804 | smooth 0.46030 | beta 0.005
+[009] train loss 0.48206 | recon 0.44152 | kl 6.71169 | smooth 0.53587 | beta 0.006
+[010] train loss 0.40193 | recon 0.36110 | kl 6.08994 | smooth 0.45356 | beta 0.007
+[011] train loss 0.64389 | recon 0.59592 | kl 6.51495 | smooth 0.39248 | beta 0.007
+[012] train loss 0.62233 | recon 0.55332 | kl 8.58489 | smooth 0.65482 | beta 0.008
+[013] train loss 0.48408 | recon 0.42963 | kl 6.24570 | smooth 0.63414 | beta 0.009
+[014] train loss 0.51505 | recon 0.47010 | kl 4.78421 | smooth 0.59811 | beta 0.009
+[015] train loss 0.52598 | recon 0.47114 | kl 5.45276 | smooth 0.63130 | beta 0.010
+[016] train loss 0.44591 | recon 0.38897 | kl 5.30688 | smooth 0.66127 | beta 0.011
+[017] train loss 0.46444 | recon 0.41485 | kl 4.34877 | smooth 0.62370 | beta 0.011
+[018] train loss 0.40363 | recon 0.35351 | kl 4.14832 | smooth 0.69207 | beta 0.012
+[019] train loss 0.34918 | recon 0.29625 | kl 4.15229 | smooth 0.65399 | beta 0.013
+[020] train loss 0.33707 | recon 0.27568 | kl 4.57837 | smooth 0.68879 | beta 0.013
+[021] train loss 0.34558 | recon 0.28762 | kl 4.11629 | smooth 0.67794 | beta 0.014
+[022] train loss 0.30093 | recon 0.23974 | kl 4.14977 | smooth 0.65464 | beta 0.015
+[023] train loss 0.35177 | recon 0.28968 | kl 4.02631 | smooth 0.69989 | beta 0.015
+[024] train loss 0.27501 | recon 0.21302 | kl 3.85252 | smooth 0.69396 | beta 0.016
+[025] train loss 0.30660 | recon 0.25483 | kl 3.08551 | smooth 0.68086 | beta 0.017
+[026] train loss 0.35587 | recon 0.29896 | kl 3.26366 | smooth 0.67884 | beta 0.017
+[027] train loss 0.36887 | recon 0.30547 | kl 3.50313 | smooth 0.69177 | beta 0.018
+[028] train loss 0.30625 | recon 0.23783 | kl 3.64676 | smooth 0.68871 | beta 0.019
+[029] train loss 0.36655 | recon 0.30020 | kl 3.41460 | smooth 0.67756 | beta 0.019
+[030] train loss 0.26837 | recon 0.19023 | kl 3.89042 | smooth 0.66866 | beta 0.020
+[031] train loss 0.22286 | recon 0.15872 | kl 3.19058 | smooth 0.66007 | beta 0.020
+[032] train loss 0.23580 | recon 0.18230 | kl 2.65836 | smooth 0.66225 | beta 0.020
+[033] train loss 0.26184 | recon 0.20901 | kl 2.62505 | smooth 0.65368 | beta 0.020
+[034] train loss 0.23264 | recon 0.17521 | kl 2.85516 | smooth 0.65984 | beta 0.020
+[035] train loss 0.24773 | recon 0.19110 | kl 2.81534 | smooth 0.64839 | beta 0.020
+[036] train loss 0.20921 | recon 0.15169 | kl 2.86024 | smooth 0.64240 | beta 0.020
+[037] train loss 0.19848 | recon 0.14659 | kl 2.57842 | smooth 0.64688 | beta 0.020
+[038] train loss 0.21723 | recon 0.16860 | kl 2.41543 | smooth 0.64362 | beta 0.020
+[039] train loss 0.20564 | recon 0.14869 | kl 2.83117 | smooth 0.64225 | beta 0.020
+[040] train loss 0.22776 | recon 0.16937 | kl 2.90374 | smooth 0.62270 | beta 0.020
+[041] train loss 0.17602 | recon 0.12321 | kl 2.62490 | smooth 0.63553 | beta 0.020
+[042] train loss 0.19772 | recon 0.14882 | kl 2.42929 | smooth 0.63415 | beta 0.020
+[043] train loss 0.18374 | recon 0.13258 | kl 2.54193 | smooth 0.63053 | beta 0.020
+[044] train loss 0.22542 | recon 0.17413 | kl 2.54841 | smooth 0.62899 | beta 0.020
+[045] train loss 0.19154 | recon 0.13749 | kl 2.68678 | smooth 0.62537 | beta 0.020
+[046] train loss 0.19885 | recon 0.14357 | kl 2.74876 | smooth 0.60909 | beta 0.020
+[047] train loss 0.20484 | recon 0.15099 | kl 2.67653 | smooth 0.63856 | beta 0.020
+[048] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[049] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[050] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[051] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[052] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[053] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[054] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[055] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[056] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[057] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[058] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[059] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[060] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[061] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[062] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[063] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[064] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[065] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[066] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[067] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[068] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[069] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[070] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[071] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[072] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[073] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[074] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[075] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[076] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[077] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[078] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[079] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[080] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[081] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[082] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[083] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[084] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[085] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[086] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[087] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[088] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[089] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[090] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[091] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[092] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[093] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[094] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[095] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[096] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[097] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[098] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[099] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[100] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[101] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[102] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[103] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[104] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[105] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[106] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[107] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[108] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[109] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[110] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[111] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[112] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[113] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[114] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[115] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[116] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[117] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[118] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[119] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[120] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[121] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[122] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[123] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[124] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[125] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[126] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[127] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[128] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[129] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[130] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[131] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[132] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[133] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[134] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[135] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[136] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[137] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[138] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[139] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[140] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[141] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[142] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[143] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[144] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[145] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[146] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[147] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[148] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[149] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+[150] train loss nan | recon nan | kl nan | smooth nan | beta 0.020
+      valid loss nan | recon nan | kl nan | smooth nan | R² 0.0000
+      (MIND manifold plot skipped: Input contains NaN. )
+done.
+net.0.bias nan
+net.2.bias nan
+net.4.bias nan
+Final R²: 0.0000
+
+===== Seed Sweep Summary =====
+Seed    1 → R²=0.9789 | best val loss=0.06642
+Seed   42 → R²=0.6757 | best val loss=0.40521
+Seed 1337 → R²=0.9116 | best val loss=0.16298
+Seed 2025 → R²=0.7467 | best val loss=0.31145
+Seed  777 → R²=0.0000 | best val loss=inf
+
+🎯 Best seed: 1 → R²=0.9789

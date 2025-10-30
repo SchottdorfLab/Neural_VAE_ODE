@@ -1,3 +1,51 @@
+=== Run at 2025-10-30 15:09:23 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: inf
+Final R^2 value: 0.0000
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-30 10:57:17 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.40521
+Final R^2 value: 0.6757
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-27 12:53:06 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.28719
+Final R^2 value: 0.7951
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-27 12:28:52 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.42361
+Final R^2 value: 0.6753
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-27 12:01:28 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 1.06075
+Final R^2 value: -0.0846
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-10-27 10:07:37 ===
+LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Final validation loss: 0.20389
+Final R^2 value: 0.8788
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-10-27 08:40:47 ===
 LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz

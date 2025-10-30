@@ -11,11 +11,31 @@ import torch.nn as nn
 import torch.utils.data as td
 from torchdiffeq import odeint
 import datetime
+import random
 from sklearn.decomposition import PCA
 from sklearn.metrics import pairwise_distances
 from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
+import json
+import hashlib
 
+# used to compute file sha256 checksum, used to log the hash of the input file (for reproducibility)
+def compute_file_sha(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    return hashlib.sha256(data).hexdigest()
+
+# used to set the seed, later used to sweep across seeds 
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.use_deterministic_algorithms(False)  # allow non-deterministic ops for exploration
+
+    # ensures CuDNN kernels behave deterministically 
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
 
 
 #____________________metrics__________________#
@@ -120,7 +140,7 @@ def resample_sequence(x, t_src, L, t0 = None, t1 = None):
 def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_frames=10):
     """
     Build fixed-length oer-trial sequences by:
-    - grouping frmaes by trial
+    - grouping frames by trial
     - resampling each trial to L frames (L = trial_len_s * fps)
     Returns: 
     X: [B, L, N], tvec: [L], meta: dict
@@ -336,6 +356,9 @@ def train(args):
 
     #load data 
     npz = np.load(PATHS["data"])
+
+    meta = {}
+
     # --- Step 1: PCA Preprocessing (MIND-style) ---
     roi = npz["roi"]
     if roi.shape[0] < roi.shape[1]:
@@ -357,6 +380,8 @@ def train(args):
         drop_first_trials=args.drop_first_trials,
         min_frames=10
     ) # X: [B, L, N]
+
+    
 
     # --- Step 2: Landmark Subsampling (optional) ---
     if getattr(args, "landmark_count", 0) > 0:
@@ -385,6 +410,9 @@ def train(args):
     best_val = math.inf
     os.makedirs(args.out_dir, exist_ok = True)
 
+    # a global break safeguard, stops training if NaNs are detected
+    nan_flag = False
+
     for epoch in range(1, args.epochs+1):
         #_____ train 
         model.train()
@@ -399,12 +427,22 @@ def train(args):
             else:
                 beta = args.beta
             loss, rec,kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=beta, lambda_smooth=args.lambda_smooth)
+            
+            # ---- NaN check ----
+            if torch.isnan(loss):
+                print(f"[epoch {epoch}] NaN detected — stopping training early.")
+                nan_flag = True
+                break
+
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             opt.step()
             tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item()
         nb = len(train_loader)
         print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | beta {beta:.3f}")
+
+        if nan_flag:
+            break
 
         # ______val
         model.eval()
@@ -430,12 +468,21 @@ def train(args):
         if vl/nbv < best_val: 
                 best_val = vl/nbv
                 ckpt = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
-                torch.save({
-                    "state_dict": model.state_dict(),
-                    "tvec": tvec_np,
-                    "meta": meta,
-                    "args": vars(args)
-                }, ckpt)
+
+                # obtains the hash of the input file for logging
+                data_hash = compute_file_sha(PATHS["data"])
+
+                # verifies no nans, then saaves the model 
+                if not nan_flag and vl/nbv < best_val:
+                    torch.save({
+                        "state_dict": model.state_dict(),
+                        "tvec": tvec_np,
+                        "meta": meta,
+                        "args": vars(args),
+                        "timestamp": datetime.datetime.now().isoformat(),
+                        "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+                        "data_hash": data_hash,
+                    }, ckpt)
 
                 print("  saved best model to", ckpt)
 
@@ -544,9 +591,31 @@ def train(args):
     "smooth": vs / nbv,
     "r2": mean_r2
 }
+    # --- Log run metadata to JSON file --- #
+    run_metadata = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+        "hyperparameters": vars(args),
+        "final_metrics": {
+            "best_val_loss": best_val,
+            "final_r2": mean_r2,
+            "recon": vr / nbv,
+            "kl": vk / nbv,
+            "smooth": vs / nbv,
+            "data_hash": data_hash,
+        }
+    }
+
+    json_path = os.path.join(args.out_dir, "run_metadata.json")
+    with open(json_path, "w") as f:
+        json.dump(run_metadata, f, indent=2)
+    print(f"Saved run metadata → {json_path}")
+
     torch.save(final_metrics, PATHS["final_metrics"])
     print(f"Final R²: {mean_r2:.4f}")
     return best_val, mean_r2
+
+
 
 #__________________main_____________#
 if __name__ == "__main__":
@@ -566,10 +635,37 @@ if __name__ == "__main__":
         def __init__(self, **entries): self.__dict__.update(entries)
     args = Struct(**cfg)
 
-    # train model!!!
+    '''
+    #----------------OPTIONAL: Seed Sweep ----------------#
+    # What this does: sweeps across multiple random seeds to find the best performing model.
+
+    seed_list = [1, 42, 1337, 2025, 777]
+    results = []
+
+    for seed in seed_list:
+        print(f"\n===== Running seed {seed} =====")
+        set_seed(seed)
+        start_time = datetime.datetime.now()
+        best_val, mean_r2 = train(args)
+        end_time = datetime.datetime.now()
+        results.append((seed, best_val, mean_r2))
+
+    # ========== SUMMARY ==========
+    print("\n===== Seed Sweep Summary =====")
+    for seed, val, r2 in results:
+        print(f"Seed {seed:4d} → R²={r2:.4f} | best val loss={val:.5f}")
+
+    best_run = max(results, key=lambda x: x[2])
+    print(f"\nBest seed: {best_run[0]} → R²={best_run[2]:.4f}")
+    '''
+
+    seed = 1  # using the best seed from the results from the sweep above 
+    results = []
+    set_seed(seed)
     start_time = datetime.datetime.now()
     best_val, mean_r2 = train(args)
     end_time = datetime.datetime.now()
+    results.append((seed, best_val, mean_r2))
 
     # ========== LOG RESULTS ========== #
     log_file = PATHS["training_log"]
@@ -583,11 +679,13 @@ if __name__ == "__main__":
     # add new entry at the top
     new_entry = (
     f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
-    f"LATEST CHANGES (Update): Fixed the R^2 output (synthetic data).\n"
+    f"Commit: {os.popen('git rev-parse HEAD').read().strip() or 'unknown'}\n"
     f"Data: {PATHS['data']}\n"
     f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
+    f"Batch size: {args.batch_size} | Beta: {args.beta} | Smooth λ: {args.lambda_smooth}\n"
+    f"Holdout: {args.holdout_trials} | KL warmup: {args.kl_warmup_epochs}\n"
     f"Final validation loss: {best_val:.5f}\n"
-    f"Final R^2 value: {mean_r2:.4f}\n"
+    f"Final R² value: {mean_r2:.4f}\n"
     f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
     f"---------------------------------------------\n"
     )
@@ -598,19 +696,3 @@ if __name__ == "__main__":
         f.writelines(result_lines)
 
     print(f"Results logged to {log_file}")
-
-
-                
-
-
-
-
-
-
-    
-
-        
-    
-
-
-

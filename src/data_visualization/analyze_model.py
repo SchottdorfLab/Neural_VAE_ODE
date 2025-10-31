@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import joblib
 
 # 3D + animation + sklearn
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (needed for 3D)
@@ -16,7 +17,6 @@ from random import sample
 
 
 # ---------- Path setup ----------
-import os, sys
 
 # This file now lives in: Neural_VAE_ODE/src/data_visualization/
 VIS_DIR = os.path.dirname(os.path.abspath(__file__))      # .../src/data_visualization
@@ -66,8 +66,30 @@ model = ODEVAE(n_neurons=meta["N"], latent_dim=latent_dim).to(device)
 model.load_state_dict(checkpoint["state_dict"])
 model.eval()
 
-# Load data & build trial sequences consistent with training
+# --------- Load data & apply the same PCA as training ---------
 npz = np.load(PATHS["data"])
+
+roi_full = npz["roi"]
+if roi_full.shape[0] < roi_full.shape[1]:
+    roi_full = roi_full.T  # [T, N]
+
+# Try to load the PCA used during training
+pca_path = os.path.join(SRC_DIR, "pt_files", "trained_pca.pkl")
+if os.path.exists(pca_path):
+    print(f"[info] Loading trained PCA from {pca_path}")
+    pca = joblib.load(pca_path)
+    roi_full = pca.transform(roi_full)
+else:
+    print("[warn] No trained PCA found; fitting a new one.")
+    pca = PCA(n_components=model.enc.net[0].in_features, svd_solver="full")
+    roi_full = pca.fit_transform(roi_full)
+
+# Replace ROI in npz-like structure
+npz_mod = dict(npz)
+npz_mod["roi"] = roi_full
+npz = npz_mod
+
+# Build sequences consistent with training
 X, tvec_np, _ = make_sequences(
     npz,
     trial_len_s=args_loaded["trial_len_s"],
@@ -75,6 +97,7 @@ X, tvec_np, _ = make_sequences(
     drop_first_trials=args_loaded["drop_first_trials"],
     min_frames=10
 )
+
 # Use last 10 sequences as a quick "validation-like" slice
 valX = X[-10:] if X.shape[0] > 10 else X
 
@@ -88,6 +111,9 @@ def run_one_trial(xb_np_raw):
 
     # --- Optional PCA stored in meta ---
     pca_model = meta.get("pca_model", None)
+
+    assert roi_full.shape[1] == model.enc.net[0].in_features, \
+    f"Feature mismatch: data has {roi_full.shape[1]}, model expects {model.enc.net[0].in_features}"
 
     # 1️ Z-score using stored training stats
     # Handle shape mismatch automatically
@@ -120,7 +146,7 @@ def run_one_trial(xb_np_raw):
 
 # 1) Raw neural activity across session (random 5 neurons)
 # --- Improved raw neural data visualization ---
-roi_full = npz["roi"].T  # [T, N]
+roi_full = npz["roi"]  # already [T, N] after PCA transform
 time_full = npz["Time"]
 neurons = np.random.choice(roi_full.shape[1], size=min(5, roi_full.shape[1]), replace=False)
 

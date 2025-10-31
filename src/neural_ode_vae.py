@@ -18,6 +18,7 @@ from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
 import json
 import hashlib
+import joblib
 
 # Utility: convert NumPy/tensor types into JSON-friendly Python types
 def to_jsonable(obj):
@@ -385,7 +386,7 @@ def train(args):
     pca = PCA(n_components=0.95, svd_solver="full")
     roi_pca = pca.fit_transform(roi)
     print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
-
+    joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
     # Replace ROI in npz-like structure
     npz_mod = dict(npz)
     npz_mod["roi"] = roi_pca

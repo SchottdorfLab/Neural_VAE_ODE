@@ -1,3 +1,13 @@
+=== Run at 2025-10-30 16:55:10 ===
+Commit: 311244fe8188c0fc9b472ae516c7868b108e7532
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz
+Latent dim: 3 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 20 | KL warmup: 30
+Final validation loss: 0.08369
+Final R² value: 0.9666
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-10-30 15:48:35 ===
 Commit: fcd167d5a10543bc2dc33254c1ce2b5e2feec0c3
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/random_walk_data/synthetic_rat_data.npz

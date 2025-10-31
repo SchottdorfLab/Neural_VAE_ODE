@@ -5,6 +5,9 @@
 ## Current Challenges:
 Moving the data from the simulated data and scaling, also re-running data visualizations on the new model output. 
 ## Most Recent Updates:
+October 31st, 1:01pm:
+- Updated storing of meta to get the correct data for the data visualization script. 
+- Completed run of ```analyze_model.py``` with the 2D simulated data. 
 
 October 30th, 4:41pm:
 - Added logvar clamping to prevent extreme variance from inflating the reconstruction term.

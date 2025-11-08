@@ -138,6 +138,7 @@ def run_one_trial(xb_np_raw):
     with torch.no_grad():
         xhat, mu_out, logvar, z_traj, zdiff = model(xb, tvec)
 
+    
     return xb_proc, xhat.detach().cpu().numpy()[0], z_traj.detach().cpu().numpy()[0]
 
 # ======================================================== #

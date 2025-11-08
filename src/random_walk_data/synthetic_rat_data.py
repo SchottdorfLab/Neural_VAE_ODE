@@ -9,7 +9,11 @@ dim = 5 # 2D arena -> 2D latents hidden among N time series.
 
 # Hyperparameters for the simulated foraging rat
 s = 0.1 # Define geometric properties of the path. s is stepsize
-noise = 0  # 0 = no noise
+
+# The noise variable represents the standard deviation (amplitude) of the noise distribution applied to each data point
+# Setting noise = 1.0 results in 20% noise 
+noise = 2.0  # 0 = no noise
+
 
 # -------------------------------------------------------
 # Generate random walk trajectory inside unit circle

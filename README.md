@@ -5,6 +5,10 @@
 ## Current Challenges:
 Moving the data from the simulated data and scaling, also re-running data visualizations on the new model output. 
 ## Most Recent Updates:
+November 10th, 9:15am:
+- Added sandbox and experiment 1 (Dr. Schottdorf) from the matlab code on E65. 
+November 8th, 2:12pm: 
+- Scaled dimensions (to 5 dimensions) and increased noise to 2.0. Achieved a final R^2 of 0.9133, number of holdout trials is 3, final validation loss of 0.10623. Commit key is `0806572e9b8995251162795e461def6ad15fd882`. 
 October 31st, 1:01pm:
 - Updated storing of meta to get the correct data for the data visualization script. 
 - Completed run of ```analyze_model.py``` with the 2D simulated data. 

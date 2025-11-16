@@ -8,6 +8,7 @@ Moving the data from the simulated data and scaling, also re-running data visual
 November 16th, 3:49pm:
 - Completed run of most recent data, reaching 0.29 R^2 on e65 data.
     -  Addressing stiff latent dynamic issues (smooth term increases from 0.97 -> 2.05)
+
 November 16th, 2:46pm:
 - Added scripts v2 (`v2_neural_vae.py`) and v3 (`v3_neural_vae.py`) of the scripts, renamed v1 from `neural_ode_vae.py` to `v1_neural_vae.py`. 
 - v1 takes a global approach to the model (baseline structure for v2 and v3), v2 uses MoE plus changes to the underlying architecture in both the encoder and the decoder (unsuccessful), v3 is a minimally modified version of v1 that uses an MoE based encoder. 

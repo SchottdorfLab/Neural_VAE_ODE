@@ -28,7 +28,7 @@ if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
 # Import from your training script
-from neural_ode_vae import get_device, ODEVAE, make_sequences, SeqDataset
+from v2_neural_vae import get_device, ODEVAE, make_sequences, SeqDataset
 
 # ---------- Define path constants ----------
 PATHS = {

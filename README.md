@@ -5,6 +5,10 @@
 ## Current Challenges:
 Moving the data from the simulated data and scaling, also re-running data visualizations on the new model output. 
 ## Most Recent Updates:
+November 16th, 2:46pm:
+- Added scripts v2 (`v2_neural_vae.py`) and v3 (`v3_neural_vae.py`) of the scripts, renamed v1 from `neural_ode_vae.py` to `v1_neural_vae.py`. 
+- v1 takes a global approach to the model (baseline structure for v2 and v3), v2 uses MoE plus changes to the underlying architecture in both the encoder and the decoder (unsuccessful), v3 is a minimally modified version of v1 that uses an MoE based encoder. 
+- v3 ran a 0.78 R^2 on simulated data, testing ongoing on e65 data.
 November 10th, 9:15am:
 - Added sandbox and experiment 1 (Dr. Schottdorf) from the matlab code on E65. 
 

@@ -133,6 +133,62 @@ def group_indices_by_trial(trial_vec):
             groups.append(idx)
     return trials, groups
 
+def time_block_split(t, k=5, margin=0.0):
+    """
+    Python analogue of Dr. Schottdorf's tspartition, but at the *trial* level.
+
+    t:      1D array of times for each trial (sorted ascending).
+    k:      number of folds (we'll use the last block as validation).
+    margin: temporal margin around the validation block (in same units as t).
+
+    Returns:
+        train_idx, val_idx  (both are 1D index arrays into t / trials / X)
+    """
+    t = np.asarray(t, dtype=float)
+    n = len(t)
+    if n < k:
+        # fallback: simple last-3-trials holdout if too few points
+        split = max(1, n // 5)
+        train_idx = np.arange(0, n - split)
+        val_idx = np.arange(n - split, n)
+        return train_idx, val_idx
+
+    # ensure sorted
+    assert np.all(np.diff(t) >= 0), "time vector t must be sorted ascending"
+
+    # define k equal blocks in time
+    edges_time = np.linspace(t[0], t[-1], k + 1)
+    edges_idx = np.empty(k + 1, dtype=int)
+
+    # map each time edge to a nearest index
+    for i, te in enumerate(edges_time):
+        idx = np.searchsorted(t, te, side="left")
+        if idx >= n:
+            idx = n - 1
+        edges_idx[i] = idx
+    edges_idx[-1] = n  # last edge is exclusive
+
+    test_start = edges_idx[:-1]          # length k
+    test_end   = edges_idx[1:] - 1       # inclusive end indices
+
+    # use last block as validation (like your previous "holdout last trials")
+    fold = k - 1
+    val_mask = np.zeros(n, dtype=bool)
+    val_mask[test_start[fold]:test_end[fold] + 1] = True
+
+    train_mask = ~val_mask
+
+    # apply temporal margin: drop training trials that are too close in time
+    if margin > 0.0:
+        t_start = t[test_start[fold]]
+        t_end   = t[test_end[fold]]
+        within_margin = (t >= t_start - margin) & (t <= t_end + margin)
+        train_mask[within_margin] = False
+
+    train_idx = np.where(train_mask)[0]
+    val_idx   = np.where(val_mask)[0]
+    return train_idx, val_idx
+
 def resample_sequence(x, t_src, L, t0 = None, t1 = None): 
     """
     x: [Ts, N] values at times t_src[Ts]
@@ -514,115 +570,115 @@ def train(args):
             opt.step()
             tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item()
         nb = len(train_loader)
-        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | beta {beta:.3f}")
+        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | beta {beta:.3f}")
 
         if nan_flag:
             break
 
         # ______val
         model.eval()
-    with torch.no_grad(): 
-        vl, vr, vk, vs, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0
-        n_batches = 0
-        for xb in val_loader:
-            xb = xb.to(device)
+        with torch.no_grad(): 
+            vl, vr, vk, vs, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0
+            n_batches = 0
+            for xb in val_loader:
+                xb = xb.to(device)
+                xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+                loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth=args.lambda_smooth)
+                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item()
+
+                # --- R² computation per batch ---
+                r2_batch = compute_r2(xb.cpu(), xhat.cpu())
+                if not np.isnan(r2_batch):
+                    r2_total += r2_batch
+                n_batches += 1
+
+            nbv = len(val_loader)
+            mean_r2 = r2_total / max(1, n_batches)
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | R² {mean_r2:.4f}")
+
+            if vl/nbv < best_val: 
+                    best_val = vl/nbv
+                    ckpt = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
+
+                    # obtains the hash of the input file for logging
+                    data_hash = compute_file_sha(PATHS["data"])
+
+                    # verifies no nans, then saaves the model 
+                    if not nan_flag and vl/nbv < best_val:
+                        torch.save({
+                            "state_dict": model.state_dict(),
+                            "tvec": tvec_np,
+                            "meta": meta,
+                            "args": vars(args),
+                            "timestamp": datetime.datetime.now().isoformat(),
+                            "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+                            "data_hash": data_hash,
+                        }, ckpt)
+
+        # print("  saved best model to", ckpt)
+
+        # quick preview image (first batch first trial)
+        try:
+            xb = next(iter(val_loader)).to(device)
+            xhat, *_ = model(xb, tvec)
+            xb_np   = xb[0].detach().cpu().numpy()      # [L, N]
+            xhat_np = xhat[0].detach().cpu().numpy()
+            # plot mean across neurons for a quick sanity check
+            plt.figure(figsize=(8,3))
+            plt.plot(xb_np.mean(axis=1), label="GT mean")
+            plt.plot(xhat_np.mean(axis=1), label="Recon mean", alpha=0.8)
+            plt.legend(); plt.title("Validation mean activity (GT vs Recon)")
+            out_png = PATHS["preview"]
+            plt.tight_layout(); plt.savefig(out_png, dpi=160); plt.close()
+            # print(f"      wrote {out_png}")
+        except Exception as e:
+            print("      (preview plot skipped:", e, ")")
+
+            # --- Reconstruction accuracy over time (R² and MSE per timestep) ---
+        '''
+        try:
+            xb = next(iter(val_loader)).to(device)
             xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
-            loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth=args.lambda_smooth)
-            vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item()
+            xb_np = xb[0].detach().cpu().numpy()      # [L, N]
+            xhat_np = xhat[0].detach().cpu().numpy()  # [L, N]
 
-            # --- R² computation per batch ---
-            r2_batch = compute_r2(xb.cpu(), xhat.cpu())
-            if not np.isnan(r2_batch):
-                r2_total += r2_batch
-            n_batches += 1
+            # Compute R² and MSE per time step
+            r2_t = []
+            mse_t = []
+            for t in range(xb_np.shape[0]):
+                r2_t.append(r2_score(xb_np[t], xhat_np[t]))
+                mse_t.append(np.mean((xb_np[t] - xhat_np[t])**2))
 
-        nbv = len(val_loader)
-        mean_r2 = r2_total / max(1, n_batches)
-        print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | R² {mean_r2:.4f}")
+            r2_t = np.array(r2_t)
+            mse_t = np.array(mse_t)
 
-        if vl/nbv < best_val: 
-                best_val = vl/nbv
-                ckpt = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
+            time_axis = np.arange(len(r2_t)) / args.fps  # convert frames → seconds
 
-                # obtains the hash of the input file for logging
-                data_hash = compute_file_sha(PATHS["data"])
+            fig, ax1 = plt.subplots(figsize=(8, 4))
+            color_r2 = 'tab:blue'
+            color_mse = 'tab:red'
 
-                # verifies no nans, then saaves the model 
-                if not nan_flag and vl/nbv < best_val:
-                    torch.save({
-                        "state_dict": model.state_dict(),
-                        "tvec": tvec_np,
-                        "meta": meta,
-                        "args": vars(args),
-                        "timestamp": datetime.datetime.now().isoformat(),
-                        "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
-                        "data_hash": data_hash,
-                    }, ckpt)
+            ax1.set_xlabel('Time (s)')
+            ax1.set_ylabel('R²', color=color_r2)
+            ax1.plot(time_axis, r2_t, color=color_r2, label='R²(t)')
+            ax1.tick_params(axis='y', labelcolor=color_r2)
+            ax1.set_ylim(-1, 1.1)
 
-                print("  saved best model to", ckpt)
+            ax2 = ax1.twinx()
+            ax2.set_ylabel('MSE', color=color_mse)
+            ax2.plot(time_axis, mse_t, color=color_mse, linestyle='--', label='MSE(t)')
+            ax2.tick_params(axis='y', labelcolor=color_mse)
 
-                # quick preview image (first batch first trial)
-                try:
-                    xb = next(iter(val_loader)).to(device)
-                    xhat, *_ = model(xb, tvec)
-                    xb_np   = xb[0].detach().cpu().numpy()      # [L, N]
-                    xhat_np = xhat[0].detach().cpu().numpy()
-                    # plot mean across neurons for a quick sanity check
-                    plt.figure(figsize=(8,3))
-                    plt.plot(xb_np.mean(axis=1), label="GT mean")
-                    plt.plot(xhat_np.mean(axis=1), label="Recon mean", alpha=0.8)
-                    plt.legend(); plt.title("Validation mean activity (GT vs Recon)")
-                    out_png = PATHS["preview"]
-                    plt.tight_layout(); plt.savefig(out_png, dpi=160); plt.close()
-                    print(f"      wrote {out_png}")
-                except Exception as e:
-                    print("      (preview plot skipped:", e, ")")
+            plt.title('Reconstruction Accuracy Over Time')
+            fig.tight_layout()
+            plt.legend(loc='upper right')
+            plt.savefig(os.path.join(PATHS["out_dir"], "recon_accuracy_over_time.png"), dpi=160)
+            plt.close()
+            print("      wrote reconstruction accuracy plot → recon_accuracy_over_time.png")
 
-                    # --- Reconstruction accuracy over time (R² and MSE per timestep) ---
-                '''
-                try:
-                    xb = next(iter(val_loader)).to(device)
-                    xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
-                    xb_np = xb[0].detach().cpu().numpy()      # [L, N]
-                    xhat_np = xhat[0].detach().cpu().numpy()  # [L, N]
-
-                    # Compute R² and MSE per time step
-                    r2_t = []
-                    mse_t = []
-                    for t in range(xb_np.shape[0]):
-                        r2_t.append(r2_score(xb_np[t], xhat_np[t]))
-                        mse_t.append(np.mean((xb_np[t] - xhat_np[t])**2))
-
-                    r2_t = np.array(r2_t)
-                    mse_t = np.array(mse_t)
-
-                    time_axis = np.arange(len(r2_t)) / args.fps  # convert frames → seconds
-
-                    fig, ax1 = plt.subplots(figsize=(8, 4))
-                    color_r2 = 'tab:blue'
-                    color_mse = 'tab:red'
-
-                    ax1.set_xlabel('Time (s)')
-                    ax1.set_ylabel('R²', color=color_r2)
-                    ax1.plot(time_axis, r2_t, color=color_r2, label='R²(t)')
-                    ax1.tick_params(axis='y', labelcolor=color_r2)
-                    ax1.set_ylim(-1, 1.1)
-
-                    ax2 = ax1.twinx()
-                    ax2.set_ylabel('MSE', color=color_mse)
-                    ax2.plot(time_axis, mse_t, color=color_mse, linestyle='--', label='MSE(t)')
-                    ax2.tick_params(axis='y', labelcolor=color_mse)
-
-                    plt.title('Reconstruction Accuracy Over Time')
-                    fig.tight_layout()
-                    plt.legend(loc='upper right')
-                    plt.savefig(os.path.join(PATHS["out_dir"], "recon_accuracy_over_time.png"), dpi=160)
-                    plt.close()
-                    print("      wrote reconstruction accuracy plot → recon_accuracy_over_time.png")
-
-                except Exception as e:
-                    print("      (reconstruction accuracy plot skipped:", e, ")")
-                '''
+        except Exception as e:
+            print("      (reconstruction accuracy plot skipped:", e, ")")
+        '''
 
     # --- Step 3: Latent manifold embedding (MIND-style) ---
     try:
@@ -655,35 +711,36 @@ def train(args):
 
     print("done.")
     # Check out decoder bias terms
+
     for name, param in model.dec.named_parameters():
         if 'bias' in name:
             print(name, param.data.mean().item())
-    
+
     final_metrics = {
     "recon": vr / nbv,
     "kl": vk / nbv,
     "smooth": vs / nbv,
     "r2": mean_r2
-}
+    }
     # --- Log run metadata to JSON file --- #
     run_metadata = {
-        "timestamp": datetime.datetime.now().isoformat(),
-        "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
-        "hyperparameters": vars(args),
-        "final_metrics": {
-            "best_val_loss": best_val,
-            "final_r2": mean_r2,
-            "recon": vr / nbv,
-            "kl": vk / nbv,
-            "smooth": vs / nbv,
-            "data_hash": data_hash,
-        }
+    "timestamp": datetime.datetime.now().isoformat(),
+    "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+    "hyperparameters": vars(args),
+    "final_metrics": {
+        "best_val_loss": best_val,
+        "final_r2": mean_r2,
+        "recon": vr / nbv,
+        "kl": vk / nbv,
+        "smooth": vs / nbv,
+        "data_hash": data_hash,
+    }
     }
 
     json_path = os.path.join(args.out_dir, "run_metadata.json")
     with open(json_path, "w") as f:
         json.dump(to_jsonable(final_metrics), f, indent=2)
-    print(f"Saved run metadata → {json_path}")
+        print(f"Saved run metadata → {json_path}")
 
     torch.save(final_metrics, PATHS["final_metrics"])
     print(f"Final R²: {mean_r2:.4f}")

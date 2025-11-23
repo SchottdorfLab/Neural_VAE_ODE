@@ -133,62 +133,6 @@ def group_indices_by_trial(trial_vec):
             groups.append(idx)
     return trials, groups
 
-def time_block_split(t, k=5, margin=0.0):
-    """
-    Python analogue of Dr. Schottdorf's tspartition, but at the *trial* level.
-
-    t:      1D array of times for each trial (sorted ascending).
-    k:      number of folds (we'll use the last block as validation).
-    margin: temporal margin around the validation block (in same units as t).
-
-    Returns:
-        train_idx, val_idx  (both are 1D index arrays into t / trials / X)
-    """
-    t = np.asarray(t, dtype=float)
-    n = len(t)
-    if n < k:
-        # fallback: simple last-3-trials holdout if too few points
-        split = max(1, n // 5)
-        train_idx = np.arange(0, n - split)
-        val_idx = np.arange(n - split, n)
-        return train_idx, val_idx
-
-    # ensure sorted
-    assert np.all(np.diff(t) >= 0), "time vector t must be sorted ascending"
-
-    # define k equal blocks in time
-    edges_time = np.linspace(t[0], t[-1], k + 1)
-    edges_idx = np.empty(k + 1, dtype=int)
-
-    # map each time edge to a nearest index
-    for i, te in enumerate(edges_time):
-        idx = np.searchsorted(t, te, side="left")
-        if idx >= n:
-            idx = n - 1
-        edges_idx[i] = idx
-    edges_idx[-1] = n  # last edge is exclusive
-
-    test_start = edges_idx[:-1]          # length k
-    test_end   = edges_idx[1:] - 1       # inclusive end indices
-
-    # use last block as validation (like your previous "holdout last trials")
-    fold = k - 1
-    val_mask = np.zeros(n, dtype=bool)
-    val_mask[test_start[fold]:test_end[fold] + 1] = True
-
-    train_mask = ~val_mask
-
-    # apply temporal margin: drop training trials that are too close in time
-    if margin > 0.0:
-        t_start = t[test_start[fold]]
-        t_end   = t[test_end[fold]]
-        within_margin = (t >= t_start - margin) & (t <= t_end + margin)
-        train_mask[within_margin] = False
-
-    train_idx = np.where(train_mask)[0]
-    val_idx   = np.where(val_mask)[0]
-    return train_idx, val_idx
-
 def resample_sequence(x, t_src, L, t0 = None, t1 = None): 
     """
     x: [Ts, N] values at times t_src[Ts]
@@ -570,7 +514,7 @@ def train(args):
             opt.step()
             tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item()
         nb = len(train_loader)
-        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | beta {beta:.3f}")
+        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | beta {beta:.3f}")
 
         if nan_flag:
             break
@@ -594,7 +538,7 @@ def train(args):
 
             nbv = len(val_loader)
             mean_r2 = r2_total / max(1, n_batches)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | R² {mean_r2:.4f}")
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | R² {mean_r2:.4f}")
 
             if vl/nbv < best_val: 
                     best_val = vl/nbv

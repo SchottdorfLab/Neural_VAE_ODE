@@ -4,6 +4,7 @@
 # Written by Kathleen Higgins
 # Worked as of 2025-09-10
 # src/train_neural_ode_vae.py
+
 import os, math, argparse, datetime
 import numpy as np
 import torch
@@ -305,7 +306,134 @@ class LatentODEFunc(nn.Module):
         dz = self.f2(h)
         # simple residual-normalized field for stability
         return self.ln(dz)
-        
+
+class LocalAttentionDecoder(nn.Module):
+    """
+    A decoder that reconstructs each neuron using a weighted combination
+    of nearby neurons in latent space — approximating LLE-like locality.
+
+    For each neuron i:
+        x_i(t) = f( concat[z_t, sum_j w_ij * z_t] )
+    """
+    def __init__(self, latent_dim, n_neurons, k_neighbors=16, hidden=256):
+        super().__init__()
+        self.n_neurons = n_neurons
+        self.k = min(k_neighbors, n_neurons)
+
+        # Learnable embeddings to define similarity between neurons
+        self.emb = nn.Embedding(n_neurons, latent_dim)
+
+        # Decoder MLP
+        self.net = nn.Sequential(
+            nn.Linear(latent_dim * 2, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1)
+        )
+
+    def forward(self, z_traj):
+        """
+        z_traj: [B, L, D]
+        Output: [B, L, N]
+        """
+        B, L, D = z_traj.shape
+        device   = z_traj.device
+        N        = self.n_neurons
+
+        # --------------------------------------------------------
+        # 1. Compute pairwise similarity between neuron embeddings
+        # --------------------------------------------------------
+        emb = self.emb.weight                     # [N, D]
+        sim = emb @ emb.t()                       # [N, N]
+
+        # --------------------------------------------------------
+        # 2. Get top-k nearest neighbors for each neuron
+        # --------------------------------------------------------
+        _, idx = torch.topk(sim, k=self.k+1, dim=-1)
+        idx = idx[:, 1:]                           # remove self-neuron
+        # idx: [N, k]
+
+        # --------------------------------------------------------
+        # 3. Compute attention weights for neighbors
+        # --------------------------------------------------------
+        neigh_emb = emb[idx]                      # [N, k, D]
+
+        # attention score for neighbor j of neuron i
+        # dot product: (i·j)
+        attn = torch.softmax(
+            (emb.unsqueeze(1) * neigh_emb).sum(-1),   # [N, k]
+            dim=-1
+        )
+
+        # --------------------------------------------------------
+        # 4. Compute local latent: weighted sum of neighbor latents
+        # --------------------------------------------------------
+        # z_traj: [B, L, D]
+        # expand to: [B, L, 1, D] → [B, L, N, D]
+        z_expanded = z_traj[:, :, None, :].expand(B, L, N, D)
+
+        # build neighbor latent tensor: [B, L, N, k, D]
+        z_neigh = z_traj[:, :, None, None, :].expand(B, L, N, self.k, D)
+
+        # attn: [N, k] → expand: [1, 1, N, k, 1]
+        attn_expanded = attn[None, None, :, :, None]
+
+        # local aggregate: [B, L, N, D]
+        z_loc = (attn_expanded * z_neigh).sum(dim=3)
+
+        # --------------------------------------------------------
+        # 5. Decode each neuron: concat(global, local)
+        # --------------------------------------------------------
+        dec_in = torch.cat([z_expanded, z_loc], dim=-1)  # [B, L, N, 2D]
+
+        out = self.net(dec_in.reshape(B*L*N, 2*D)).view(B, L, N)
+        return out
+    
+class NeuronAwareDecoder(nn.Module):
+    def __init__(self, latent_dim, n_neurons, emb_dim=16, hidden=256):
+        """
+        latent_dim: dim of z_t
+        n_neurons:  number of output channels (N)
+        emb_dim:    size of per-neuron embedding vector
+        hidden:     hidden width of the MLP
+        """
+        super().__init__()
+        self.n_neurons = n_neurons
+        self.emb = nn.Embedding(n_neurons, emb_dim)
+
+        self.net = nn.Sequential(
+            nn.Linear(latent_dim + emb_dim, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1)  # predict one value per neuron
+        )
+
+    def forward(self, z_traj):  # z_traj: [B, L, D]
+        B, L, D = z_traj.shape
+        device = z_traj.device
+        N = self.n_neurons
+
+        # neuron indices 0..N-1
+        neuron_idx = torch.arange(N, device=device)         # [N]
+        neuron_emb = self.emb(neuron_idx)                   # [N, E]
+
+        # broadcast latent trajectory over neurons
+        # z_exp: [B, L, N, D]
+        z_exp = z_traj.unsqueeze(2).expand(B, L, N, D)
+
+        # broadcast embeddings over (B, L)
+        # e_exp: [B, L, N, E]
+        e_exp = neuron_emb.view(1, 1, N, -1).expand(B, L, N, neuron_emb.shape[1])
+
+        # combine and run through MLP
+        inp = torch.cat([z_exp, e_exp], dim=-1)             # [B, L, N, D+E]
+        inp = inp.reshape(B * L * N, D + neuron_emb.shape[1])
+
+        out = self.net(inp).view(B, L, N)                   # [B, L, N]
+        return out
+       
 class Decoder(nn.Module):
     def __init__(self, latent_dim, n_out):
         super().__init__()
@@ -322,11 +450,26 @@ class Decoder(nn.Module):
         return x.reshape(B, L, -1)
     
 class ODEVAE(nn.Module):
-    def __init__(self, n_neurons, latent_dim, num_experts):
+    def __init__(self, n_neurons, latent_dim, num_experts, decoder_type="mlp", k_neighbors=16):
         super().__init__()
         self.enc = Encoder(n_neurons, latent_dim)
-        self.odefunc = MoELatentODEFunc(latent_dim, num_experts=args.num_experts)
-        self.dec = Decoder(latent_dim, n_neurons)
+        self.odefunc = MoELatentODEFunc(latent_dim, num_experts=num_experts)
+
+        # select decoder
+        if decoder_type.lower() == "mlp":
+            self.dec = Decoder(latent_dim, n_neurons)
+
+        elif decoder_type.lower() == "neuronaware":
+            self.dec = NeuronAwareDecoder(latent_dim, n_neurons)
+
+        elif decoder_type.lower() == "localattn":
+            self.dec = LocalAttentionDecoder(
+                latent_dim=latent_dim,
+                n_neurons=n_neurons,
+                k_neighbors=k_neighbors
+            )
+        else:
+            raise ValueError(f"Unknown decoder_type: {decoder_type}")
 
     def reparam(self, mu, logvar):
         eps = torch.randn_like(mu)
@@ -478,7 +621,13 @@ def train(args):
     train_loader = td.DataLoader(SeqDataset(X_train), batch_size = args.batch_size, shuffle=True, drop_last = True)
     val_loader = td.DataLoader(SeqDataset(X_val), batch_size = args.batch_size, shuffle=False)
 
-    model = ODEVAE(n_neurons=N, latent_dim=args.latent_dim, num_experts = args.num_experts).to(device)
+    model = ODEVAE(
+    n_neurons=N,
+    latent_dim=args.latent_dim,
+    num_experts=args.num_experts,
+    decoder_type=args.decoder_type,
+    k_neighbors=getattr(args, "k_neighbors", 16),
+        ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)
 

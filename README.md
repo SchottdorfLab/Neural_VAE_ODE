@@ -2,8 +2,6 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
-## Current Challenges:
-Moving the data from the simulated data and scaling, also re-running data visualizations on the new model output. 
 ## Most Recent Updates:
 November 16th, 3:49pm:
 - Completed run of most recent data, reaching 0.29 R^2 on e65 data.

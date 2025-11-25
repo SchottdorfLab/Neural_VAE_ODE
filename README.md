@@ -3,15 +3,17 @@
 * Built for: Schottdorf Lab
 
 ## Most Recent Updates:
-November 16th, 3:49pm:
-- Completed run of most recent data, reaching 0.29 R^2 on e65 data.
-    -  Addressing stiff latent dynamic issues (smooth term increases from 0.97 -> 2.05)
+
 November 25th, 4:58pm:
 - Reaching an R^2 value of 0.48 on real-world data. Added mutliple versions of decoders, the best decoder currently takes an MoE approach (MoeDecoder)
 - Next step is to build v4 of the model, focusing on capturing neuron-level irregularities better and fully switching experts, with a decreased focus on smooth latent dynamics (smoothess 0.98 -> 0.86).
 - The model is capturing the shape of neural activity better (R^2 is rising), but not capturing local variability/spikes well (MSE stays high). 
 - Still indicating some averaging across neurons (looking @ the recon loss value)
 
+November 16th, 3:49pm:
+- Completed run of most recent data, reaching 0.29 R^2 on e65 data.
+    -  Addressing stiff latent dynamic issues (smooth term increases from 0.97 -> 2.05)
+    
 November 16th, 2:46pm:
 - Added scripts v2 (`v2_neural_vae.py`) and v3 (`v3_neural_vae.py`) of the scripts, renamed v1 from `neural_ode_vae.py` to `v1_neural_vae.py`. 
 - v1 takes a global approach to the model (baseline structure for v2 and v3), v2 uses MoE plus changes to the underlying architecture in both the encoder and the decoder (unsuccessful), v3 is a minimally modified version of v1 that uses an MoE based encoder. 

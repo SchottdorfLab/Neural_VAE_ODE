@@ -238,6 +238,7 @@ class Encoder(nn.Module):
     def forward(self, x0): # x0: [B, N]
         h = self.net(x0)
         return self.mu(h), self.logvar(h)
+    
 class MoELatentODEFunc(nn.Module):
     def __init__(self, latent_dim, num_experts=4, hidden=128):
         super().__init__()
@@ -291,7 +292,7 @@ class MoELatentODEFunc(nn.Module):
 
         # layernorm for stability (important!)
         return self.ln(dz)
-    
+
 class LatentODEFunc(nn.Module):
     def __init__(self, latent_dim):
         super().__init__()
@@ -433,7 +434,62 @@ class NeuronAwareDecoder(nn.Module):
 
         out = self.net(inp).view(B, L, N)                   # [B, L, N]
         return out
-       
+
+class MoEDecoder(nn.Module):
+    """
+    Decoder MoE:
+      - E shared decoder experts: f_e(z_t) -> R^N
+      - Each neuron i has its own softmax over experts w_{i,e}.
+      - Output: x(t) = sum_e w[:, e] * f_e(z_t).
+    """
+    def __init__(self, latent_dim, n_neurons, num_experts=4, hidden=256):
+        super().__init__()
+        self.num_experts = num_experts
+        self.n_neurons = n_neurons
+
+        # E experts: each maps latent_dim -> n_neurons
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(latent_dim, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, n_neurons)
+            )
+            for _ in range(num_experts)
+        ])
+
+        # Per-neuron logits over experts: [N, E]
+        # Softmax over dim=-1 gives w_{i,e}
+        self.neuron_logits = nn.Parameter(
+            torch.zeros(n_neurons, num_experts)
+        )
+
+    def forward(self, z_traj):  # [B, L, D]
+        B, L, D = z_traj.shape
+        E = self.num_experts
+        N = self.n_neurons
+
+        # compute experts' outputs
+        z_flat = z_traj.reshape(B * L, D)  # [B*L, D]
+        expert_outs = []
+
+        for e in self.experts:
+            y = e(z_flat).view(B, L, N)    # [B, L, N]
+            expert_outs.append(y)
+
+        # [E, B, L, N]
+        expert_outs = torch.stack(expert_outs, dim=0)
+
+        # neuron-specific mixture weights: [N, E] -> softmax over experts
+        w = torch.softmax(self.neuron_logits, dim=-1)       # [N, E]
+        # reshape for broadcasting with [E, B, L, N]
+        w = w.permute(1, 0).view(E, 1, 1, N)                # [E, 1, 1, N]
+
+        # weighted sum over experts
+        y = (expert_outs * w).sum(dim=0)                    # [B, L, N]
+        return y
+
 class Decoder(nn.Module):
     def __init__(self, latent_dim, n_out):
         super().__init__()
@@ -450,10 +506,13 @@ class Decoder(nn.Module):
         return x.reshape(B, L, -1)
     
 class ODEVAE(nn.Module):
-    def __init__(self, n_neurons, latent_dim, num_experts, decoder_type="mlp", k_neighbors=16):
+    def __init__(self, n_neurons, latent_dim, num_experts, decoder_type="mlp", k_neighbors=16, dec_num_experts = 5):
         super().__init__()
         self.enc = Encoder(n_neurons, latent_dim)
         self.odefunc = MoELatentODEFunc(latent_dim, num_experts=num_experts)
+        # add noise during training to prevent the ODE from overfitting tiny 
+        # geometric details
+        # self.latent_noise_std = 0.0
 
         # select decoder
         if decoder_type.lower() == "mlp":
@@ -467,6 +526,13 @@ class ODEVAE(nn.Module):
                 latent_dim=latent_dim,
                 n_neurons=n_neurons,
                 k_neighbors=k_neighbors
+            )
+        elif decoder_type.lower() == "moe":
+            self.dec = MoEDecoder(
+                latent_dim=latent_dim,
+                n_neurons=n_neurons,
+                num_experts=dec_num_experts,
+                hidden=256
             )
         else:
             raise ValueError(f"Unknown decoder_type: {decoder_type}")
@@ -627,6 +693,7 @@ def train(args):
     num_experts=args.num_experts,
     decoder_type=args.decoder_type,
     k_neighbors=getattr(args, "k_neighbors", 16),
+    dec_num_experts=getattr(args, "dec_num_experts", 4)
         ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)
@@ -643,6 +710,14 @@ def train(args):
         tl, tr, tk, ts = 0.0, 0.0, 0.0, 0.0
         for xb in train_loader:
             xb = xb.to(device) # [B, L, N]
+
+            # this is trial-wise baseline correction, getting rid of the first 5 frames
+            # so the latent doesn't waste space capacity on slow drifs/offsets
+            if getattr(args, "baseline_correct", False):
+                # subtract per-trial baseline over first 5 frames
+                baseline = xb[:, :5, :].mean(dim=1, keepdim=True)  # [B, 1, N]
+                xb = xb - baseline
+
             opt.zero_grad()
             xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
             # KL warmup!
@@ -674,6 +749,12 @@ def train(args):
             vl, vr, vk, vs, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
             for xb in val_loader:
+                # this is trial-wise baseline correction, getting rid of the first 5 frames
+                # so the latent doesn't waste space capacity on slow drifs/offsets
+                if getattr(args, "baseline_correct", False):
+                    # subtract per-trial baseline over first 5 frames
+                    baseline = xb[:, :5, :].mean(dim=1, keepdim=True)  # [B, 1, N]
+                    xb = xb - baseline
                 xb = xb.to(device)
                 xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
                 loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth=args.lambda_smooth)

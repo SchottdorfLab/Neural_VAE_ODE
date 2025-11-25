@@ -1,3 +1,23 @@
+=== Run at 2025-11-25 12:34:18 ===
+Commit: ea3b282722a82b24baff92cfffbaecb9c89d30ca
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.81452
+Final R² value: 0.4710
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-11-25 10:48:57 ===
+Commit: ea3b282722a82b24baff92cfffbaecb9c89d30ca
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.01331
+Final R² value: 0.2630
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-11-23 17:34:36 ===
 Commit: adf370a5432ddbcd2be42f5636585700a9187c00
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz

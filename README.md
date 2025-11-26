@@ -3,6 +3,8 @@
 * Built for: Schottdorf Lab
 
 ## Most Recent Updates:
+***November 25th, 10:55pm***
+- Increased # of experts to 8, now reaching a 0.4851 R^2 value. 
 
 ***November 25th, 4:58pm:***
 - Reaching an R^2 value of 0.48 on real-world data. Added mutliple versions of decoders, the best decoder currently takes an MoE approach (MoeDecoder)

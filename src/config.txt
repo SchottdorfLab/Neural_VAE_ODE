@@ -25,6 +25,6 @@ cv_folds = 4
 k_neighbors = 16 
 decoder_type = moe
 baseline_correct = true
-dec_num_experts = 4
+dec_num_experts = 8
 gating_entropy_coef = 0.01
 gating_entropy_warmup = 20

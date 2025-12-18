@@ -586,14 +586,42 @@ class ODEVAE(nn.Module):
         return xhat, mu, logvar, z_traj, zdiff
     
 #___________________loss_________________#
-def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0):
+def compute_lle_loss(z_traj, k=8, max_points=256, temperature=0.1):
+    # soft LLE: reconstruct each point from neighbors using softmax weights
+    z_flat = z_traj.reshape(-1, z_traj.shape[-1])
+    n = z_flat.shape[0]
+    if n <= k:
+        return z_traj.new_tensor(0.0)
+    if n > max_points:
+        idx = torch.randperm(n, device=z_traj.device)[:max_points]
+        z_flat = z_flat[idx]
+        n = z_flat.shape[0]
+    dists = torch.cdist(z_flat, z_flat)
+    eye = torch.eye(n, device=z_traj.device, dtype=torch.bool)
+    dists = dists.masked_fill(eye, float("inf"))
+    knn_dist, knn_idx = torch.topk(dists, k=k, largest=False)
+    neigh = z_flat[knn_idx]
+    weights = torch.softmax(-knn_dist / max(temperature, 1e-6), dim=-1)
+    recon = (weights.unsqueeze(-1) * neigh).sum(dim=1)
+    return torch.mean((z_flat - recon) ** 2)
+
+def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0):
     # --- Safety clamp to prevent numerical overflow ---
     logvar = torch.clamp(logvar, min=-10.0, max=10.0)
 
     recon = torch.mean((xhat - x) ** 2)
     kl = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     smooth = torch.mean(zdiff**2) if lambda_smooth > 0 else x.new_tensor(0.0)
-    return recon + beta*kl + lambda_smooth*smooth, recon, kl, smooth
+    if transition_loss is None or lambda_transition <= 0:
+        transition = x.new_tensor(0.0)
+    else:
+        transition = transition_loss
+    if lle_loss is None or lambda_lle <= 0:
+        lle = x.new_tensor(0.0)
+    else:
+        lle = lle_loss
+    total = recon + beta*kl + lambda_smooth*smooth + lambda_transition*transition + lambda_lle*lle
+    return total, recon, kl, smooth, transition, lle
 
 
 #_________________training_______________#
@@ -673,7 +701,7 @@ def train(args):
     for epoch in range(1, args.epochs+1):
         #_____ train 
         model.train()
-        tl, tr, tk, ts = 0.0, 0.0, 0.0, 0.0
+        tl, tr, tk, ts, tt, tll = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         for xb in train_loader:
             xb = xb.to(device) # [B, L, N]
 
@@ -691,7 +719,45 @@ def train(args):
                 beta = args.beta * min(1.0, epoch /args.kl_warmup_epochs)
             else:
                 beta = args.beta
-            loss, rec,kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=beta, lambda_smooth=args.lambda_smooth)
+            transition_loss = None
+            lambda_transition = getattr(args, "lambda_transition", 0.0)
+            if getattr(args, "lambda_transition_warmup_epochs", 0) > 0:
+                lambda_transition *= min(1.0, epoch / args.lambda_transition_warmup_epochs)
+            if lambda_transition > 0:
+                # match decoded transition dynamics without re-decoding z_pred
+                dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
+                dx_true = xb[:, 1:, :] - xb[:, :-1, :]
+                if getattr(args, "transition_landmark_count", 0) > 0:
+                    trial_features = xb.mean(dim=1).detach().cpu().numpy()
+                    lm_idx = greedy_landmarks(
+                        trial_features,
+                        k=min(args.transition_landmark_count, xb.shape[0])
+                    )
+                    dx_hat = dx_hat[lm_idx]
+                    dx_true = dx_true[lm_idx]
+                transition_loss = torch.mean((dx_hat - dx_true) ** 2)
+            lle_loss = None
+            lambda_lle = getattr(args, "lambda_lle", 0.0)
+            if lambda_lle > 0:
+                lle_loss = compute_lle_loss(
+                    z_traj,
+                    k=getattr(args, "lle_k", 8),
+                    max_points=getattr(args, "lle_max_points", 256),
+                    temperature=getattr(args, "lle_temperature", 0.1),
+                )
+            loss, rec, kl, sm, trn, lle = vae_loss(
+                xhat,
+                xb,
+                mu,
+                logvar,
+                zdiff,
+                beta=beta,
+                lambda_smooth=args.lambda_smooth,
+                transition_loss=transition_loss,
+                lambda_transition=lambda_transition,
+                lle_loss=lle_loss,
+                lambda_lle=lambda_lle,
+            )
             
             # ---- NaN check ----
             if torch.isnan(loss):
@@ -702,9 +768,9 @@ def train(args):
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             opt.step()
-            tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item()
+            tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item(); tt += trn.item(); tll += lle.item()
         nb = len(train_loader)
-        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | beta {beta:.3f}")
+        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | trans {tt/nb:.5f} | lle {tll/nb:.5f} | beta {beta:.3f}")
 
         if nan_flag:
             break
@@ -712,7 +778,7 @@ def train(args):
         # ______val
         model.eval()
         with torch.no_grad(): 
-            vl, vr, vk, vs, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0
+            vl, vr, vk, vs, vt, vlle, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
             for xb in val_loader:
                 # this is trial-wise baseline correction, getting rid of the first 5 frames
@@ -723,8 +789,45 @@ def train(args):
                     xb = xb - baseline
                 xb = xb.to(device)
                 xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
-                loss, rec, kl, sm = vae_loss(xhat, xb, mu, logvar, zdiff, beta=args.beta, lambda_smooth=args.lambda_smooth)
-                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item()
+                transition_loss = None
+                lambda_transition = getattr(args, "lambda_transition", 0.0)
+                if getattr(args, "lambda_transition_warmup_epochs", 0) > 0:
+                    lambda_transition *= min(1.0, epoch / args.lambda_transition_warmup_epochs)
+                if lambda_transition > 0:
+                    dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
+                    dx_true = xb[:, 1:, :] - xb[:, :-1, :]
+                    if getattr(args, "transition_landmark_count", 0) > 0:
+                        trial_features = xb.mean(dim=1).detach().cpu().numpy()
+                        lm_idx = greedy_landmarks(
+                            trial_features,
+                            k=min(args.transition_landmark_count, xb.shape[0])
+                        )
+                        dx_hat = dx_hat[lm_idx]
+                        dx_true = dx_true[lm_idx]
+                    transition_loss = torch.mean((dx_hat - dx_true) ** 2)
+                lle_loss = None
+                lambda_lle = getattr(args, "lambda_lle", 0.0)
+                if lambda_lle > 0:
+                    lle_loss = compute_lle_loss(
+                        z_traj,
+                        k=getattr(args, "lle_k", 8),
+                        max_points=getattr(args, "lle_max_points", 256),
+                        temperature=getattr(args, "lle_temperature", 0.1),
+                    )
+                loss, rec, kl, sm, trn, lle = vae_loss(
+                    xhat,
+                    xb,
+                    mu,
+                    logvar,
+                    zdiff,
+                    beta=args.beta,
+                    lambda_smooth=args.lambda_smooth,
+                    transition_loss=transition_loss,
+                    lambda_transition=lambda_transition,
+                    lle_loss=lle_loss,
+                    lambda_lle=lambda_lle,
+                )
+                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item()
 
                 # --- R² computation per batch ---
                 r2_batch = compute_r2(xb.cpu(), xhat.cpu())
@@ -734,7 +837,7 @@ def train(args):
 
             nbv = len(val_loader)
             mean_r2 = r2_total / max(1, n_batches)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | R² {mean_r2:.4f}")
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | R² {mean_r2:.4f}")
 
             if vl/nbv < best_val: 
                     best_val = vl/nbv
@@ -860,7 +963,8 @@ def train(args):
     "recon": vr / nbv,
     "kl": vk / nbv,
     "smooth": vs / nbv,
-    "r2": mean_r2
+    "r2": mean_r2,
+    "lle": vlle / nbv,
     }
     # --- Log run metadata to JSON file --- #
     run_metadata = {
@@ -873,6 +977,8 @@ def train(args):
         "recon": vr / nbv,
         "kl": vk / nbv,
         "smooth": vs / nbv,
+        "transition": vt / nbv,
+        "lle": vlle / nbv,
         "data_hash": data_hash,
     }
     }

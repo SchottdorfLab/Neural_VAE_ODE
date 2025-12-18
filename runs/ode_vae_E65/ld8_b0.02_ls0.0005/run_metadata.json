@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-12-18T00:30:06.352348",
+  "git_commit": "c3e99ff1e8c10b963dafe5e61914de585a00eef2",
+  "hyperparameters": {
+    "data_path": "/Users/kathleenhiggins/Neural_VAE_ODE/npz_e65_data/E65_data.npz",
+    "trial_len_s": 12,
+    "fps": 10,
+    "drop_first_trials": 10,
+    "latent_dim": 8,
+    "batch_size": 8,
+    "epochs": 150,
+    "lr": 0.002,
+    "weight_decay": 1e-05,
+    "beta": 0.02,
+    "kl_warmup_epochs": 30,
+    "lambda_smooth": 0.0005,
+    "holdout_trials": 3,
+    "use_pca": true,
+    "pca_variance": 0.95,
+    "landmark_count": 100,
+    "out_dir": "/Users/kathleenhiggins/Neural_VAE_ODE/runs/ode_vae_E65",
+    "pca_dim": 20,
+    "num_experts": 4,
+    "hidden": 128,
+    "gating_temperature": 1.0,
+    "decoder_emb_dim": 16,
+    "decoder_hidden": 256,
+    "cv_folds": 4,
+    "k_neighbors": 16,
+    "decoder_type": "moe",
+    "baseline_correct": true,
+    "dec_num_experts": 8,
+    "gating_entropy_coef": 0.01,
+    "gating_entropy_warmup": 20,
+    "seed": 1,
+    "early_stopping_patience": 15,
+    "early_stopping_min_delta": 0.0,
+    "sweep_enabled": true,
+    "sweep_latent_dim": [
+      5,
+      8
+    ],
+    "sweep_beta": 0.02,
+    "sweep_lambda_smooth": [
+      0.0005,
+      0.0002
+    ]
+  },
+  "final_metrics": {
+    "best_val_loss": 0.6831144094467163,
+    "best_r2": 0.05687367916107178,
+    "best_epoch": 3,
+    "final_r2": -0.20215129852294922,
+    "recon": 0.869816243648529,
+    "kl": 1.1269400119781494,
+    "smooth": 0.9552358984947205,
+    "data_hash": "114e1a6e74fec028effce8f0f510d3abdd8b77945c28831c98f06e34da073c89"
+  }
+}

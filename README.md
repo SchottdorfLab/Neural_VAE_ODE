@@ -3,6 +3,13 @@
 * Built for: Schottdorf Lab
 
 ## Most Recent Updates:
+***December 18th, 1:17am:***:
+- Added transition‑aware regularization with warmup (lambda_transition, lambda_transition_warmup_epochs) and optional trial‑level landmark sampling for the transition loss (transition_landmark_count).
+- Transition loss now compares decoded dynamics (xhat[t+1]-xhat[t]) rather than re‑decoding predicted latents.
+- Added a soft LLE constraint in latent space (lambda_lle, lle_k, lle_max_points, lle_temperature) to encourage local linearity without strict next‑step accuracy. This was the crucial piece of the most recent changes. 
+- Fixed LLE distance computation to avoid in‑place ops that break autograd.
+- Removed the graph‑based latent smoothness term (kNN graph loss) (decreased R^2 value). 
+
 ***November 25th, 10:55pm:***
 - Increased # of experts to 8, now reaching a 0.4851 R^2 value. 
 

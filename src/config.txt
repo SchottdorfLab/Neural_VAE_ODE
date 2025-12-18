@@ -35,3 +35,14 @@ sweep_enabled = true
 sweep_latent_dim = 5, 8
 sweep_beta = 0.02
 sweep_lambda_smooth = 0.0005, 0.0002
+lambda_transition = 0.01
+lambda_transition_warmup_epochs = 30
+lambda_lle = 0.01
+lle_k = 8
+lle_max_points = 256
+lle_temperature = 0.1
+lambda_graph = 0.01
+graph_k = 8
+graph_max_points = 256
+graph_temperature = 0.1
+

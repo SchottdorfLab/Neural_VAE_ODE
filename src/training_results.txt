@@ -1,3 +1,64 @@
+=== Run at 2025-12-18 00:32:56 ===
+Commit: c3e99ff1e8c10b963dafe5e61914de585a00eef2
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.74546
+Final R² value: 0.4740
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-12-18 00:30:44 ===
+Commit: c3e99ff1e8c10b963dafe5e61914de585a00eef2
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.74546
+Final R² value: 0.4740
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Sweep at 2025-12-17 23:39:30 ===
+Commit: c3e99ff1e8c10b963dafe5e61914de585a00eef2
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Epochs: 150 | LR: 0.002 | Batch size: 8
+Holdout: 3 | KL warmup: 30
+Sweep results:
+ld5_b0.02_ls0.0005: best_val=1.98164 | best_R²=0.2124 | duration=0:00:35.171353
+ld5_b0.02_ls0.0002: best_val=2.14788 | best_R²=0.3504 | duration=0:00:18.860358
+ld8_b0.02_ls0.0005: best_val=1.80935 | best_R²=0.4641 | duration=0:00:56.867206
+ld8_b0.02_ls0.0002: best_val=1.92027 | best_R²=0.4341 | duration=0:00:42.504857
+---------------------------------------------
+=== Run at 2025-12-17 23:34:46 ===
+Commit: c3e99ff1e8c10b963dafe5e61914de585a00eef2
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.83094
+Final R² value: 0.4616
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-12-17 23:31:42 ===
+Commit: c3e99ff1e8c10b963dafe5e61914de585a00eef2
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.96702
+Final R² value: 0.4228
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
+=== Run at 2025-12-17 23:24:01 ===
+Commit: c3e99ff1e8c10b963dafe5e61914de585a00eef2
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.74546
+Final R² value: 0.4740
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-11-25 18:02:36 ===
 Commit: 76d157b3cc56d888aadc1bd8808685fd3872c5a5
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz

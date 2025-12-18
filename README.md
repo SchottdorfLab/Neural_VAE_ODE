@@ -3,7 +3,7 @@
 * Built for: Schottdorf Lab
 
 ## Most Recent Updates:
-***November 25th, 10:55pm***
+***November 25th, 10:55pm:***
 - Increased # of experts to 8, now reaching a 0.4851 R^2 value. 
 
 ***November 25th, 4:58pm:***

@@ -3,7 +3,18 @@
 * Built for: Schottdorf Lab
 
 ## Most Recent Updates:
-***December 18th, 1:17am:***:
+***January 6th, 6:12pm:***
+- Added a v6 of the script. It removes PCA use. v5 still uses PCA.
+- Updated both v5 and v6 to do an R2 sweep path across dimensions. 
+- `v6_neural_vae.py`: "new R² sweep path that uses MATLAB’s random trial split (90/10), repeats per dimension, and plots black per‑trial dots + red overall dot for each latent dimension." 
+- `v5_neural_vae.py`: "same sweep logic, but trains in PCA space and computes R² in raw neuron space via inverse PCA + de‑normalization (Option B)." 
+
+- `config.txt`: added r2_sweep_* settings (disabled by default).
+- Notes on choices made: 
+    - Trial split matches MATLAB: random 10% test with seed 42. 
+    - Multiple repeats per dimension = re-randomized splits (seed + repeat index).
+    - v5 sweep uses training-only normalization and PCA, then evaluates R2 in raw neuron space ("option B")
+***December 18th, 1:17am:***
 - Added transition‑aware regularization with warmup (lambda_transition, lambda_transition_warmup_epochs) and optional trial‑level landmark sampling for the transition loss (transition_landmark_count).
 - Transition loss now compares decoded dynamics (xhat[t+1]-xhat[t]) rather than re‑decoding predicted latents.
 - Added a soft LLE constraint in latent space (lambda_lle, lle_k, lle_max_points, lle_temperature) to encourage local linearity without strict next‑step accuracy. This was the crucial piece of the most recent changes. 

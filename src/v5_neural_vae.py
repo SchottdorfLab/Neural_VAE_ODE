@@ -1,6 +1,7 @@
 # Written by Kathleen Higgins
 # Worked as of 2025-09-10
 # src/v5_neural_vae.py
+# most recent version of the neural ODE VAE for neural data
 
 import os, math, argparse, datetime
 import numpy as np

@@ -1,3 +1,13 @@
+=== Run at 2026-01-06 17:00:28 ===
+Commit: e549fa00452cd88aebcaf904b2d0097cae2363d5
+Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.84581
+Final R² value: 0.4368
+Saved model: /Users/kathleenhiggins/Neural_VAE_ODE/src/pt_files/ode_vae_best.pt
+---------------------------------------------
 === Run at 2025-12-18 01:13:45 ===
 Commit: 1a25ba17779961af3896454e7a16e7d45fa8a2b1
 Data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz

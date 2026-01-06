@@ -1,3 +1,26 @@
+"""
+v1_neural_vae.py — Baseline Neural ODE VAE (single vector field)
+
+Pipeline:
+- Loads neural activity from an .npz (default path in PATHS).
+- Builds fixed-length per-trial sequences by grouping frames by Trial and resampling to L = trial_len_s * fps.
+- Session-level z-scoring per neuron; optional dropping of early trials.
+- Optional landmark subsampling using greedy coverage (MIND-inspired) on flattened sequences.
+- Normalizes time vector to [0,1] for numerical stability.
+
+Model:
+- Encoder: MLP that takes x(t0) and outputs (mu, logvar) for z0.
+- Latent dynamics: single Neural ODE vector field f(z) (LatentODEFunc) integrated with torchdiffeq odeint.
+- Decoder: MLP mapping latent trajectory z(t) -> reconstructed activity x̂(t).
+
+Training objective:
+- Reconstruction MSE + beta * KL(z0 || N(0,I)) + lambda_smooth * ||dz/dt||^2 smoothness penalty.
+- Includes MPS-aware integration fallback (rk4 fixed-step on MPS, dopri5 otherwise).
+
+Outputs:
+- Saves best model checkpoint + preview plot + final metrics to pt_files/.
+"""
+
 # note: using float32 inputs and added some code to get apple's MPS backend to work,
 # becuase torchdiffeq likes to create float64 tensors for tolerances (rtol, atol) which MPS doesn't support. 
 

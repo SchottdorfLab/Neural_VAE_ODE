@@ -1,3 +1,29 @@
+"""
+v4_neural_vae.py — MoE Latent Neural ODE VAE + decoder variants (MPS-safe)
+
+Pipeline:
+- Loads E65 .npz by default; PCA preprocessing to keep a target variance fraction (hard-coded 0.95 here).
+- Builds fixed-length per-trial sequences via trial grouping + resampling; session-level z-scoring.
+- Optional landmark subsampling (greedy coverage) for faster training.
+- Normalizes time vector to [0,1].
+
+Model:
+- Encoder: MLP x(t0) -> (mu, logvar).
+- Latent dynamics: MoELatentODEFunc (mixture of expert ODE vector fields with learned gating).
+- Decoder options (selected by decoder_type):
+  - MLP decoder (global)
+  - NeuronAware decoder (adds per-neuron embeddings)
+  - LocalAttention decoder (LLE-like locality via learned neighbor attention)
+  - MoE decoder (per-neuron mixture over decoder experts)
+
+Training objective:
+- Reconstruction MSE + beta * KL + lambda_smooth * ||dz/dt||².
+- Uses MPS-safe integration logic (rk4 fixed-step by default on MPS; adaptive dopri5 otherwise).
+
+Outputs:
+- Checkpoints/metrics/plots written to pt_files/, plus run logging.
+"""
+
 # note: using float32 inputs and added some code to get apple's MPS backend to work,
 # becuase torchdiffeq likes to create float64 tensors for tolerances (rtol, atol) which MPS doesn't support. 
 

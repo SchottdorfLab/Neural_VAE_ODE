@@ -1,3 +1,23 @@
+"""
+v2_neural_vae.py — Switching Neural ODE VAE (mixture/gated latent dynamics)
+
+Pipeline:
+- Same overall sequence construction approach as v1 (trial grouping + resampling).
+- Typically uses z-scoring and time normalization; supports MPS-safe integration settings.
+
+Model:
+- Encoder: MLP x(t0) -> (mu, logvar).
+- Latent dynamics: SwitchingLatentODEFunc = K candidate vector fields f_k(z) with a learned gating network g(z);
+  dz/dt = sum_k softmax(g(z))_k * f_k(z).
+- Decoder: MLP z(t) -> x̂(t).
+
+Training objective:
+- Reconstruction MSE + beta * KL + lambda_smooth * latent smoothness (finite-difference on z(t)).
+
+Intended difference vs v1:
+- Adds “multiple regimes” dynamics in latent space (analogous to multiple local models).
+"""
+
 # note: using float32 inputs and added some code to get apple's MPS backend to work,
 # becuase torchdiffeq likes to create float64 tensors for tolerances (rtol, atol) which MPS doesn't support. 
 

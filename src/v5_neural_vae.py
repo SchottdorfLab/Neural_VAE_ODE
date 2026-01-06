@@ -1,3 +1,34 @@
+"""
+v5_neural_vae.py — MoE Latent Neural ODE VAE + transition regularization + soft LLE (CUDA-first)
+
+What it does today:
+- Data: loads E65 .npz from PATHS["data"] (note: config.txt also exists but the script is still largely path-driven).
+- Preprocessing: PCA to retain ~95% variance (hard-coded), then trial grouping + resampling to fixed length.
+- Normalizes per neuron (session z-score) and time-normalizes tvec to [0,1].
+- Optional landmark subsampling via greedy coverage on flattened sequences (speed optimization).
+- Optional per-trial baseline correction (subtract mean of first 5 frames).
+
+Model architecture:
+- Encoder: MLP x(t0) -> (mu, logvar).
+- Latent dynamics: MoELatentODEFunc (mixture of expert ODE vector fields).
+- Decoder options (decoder_type): MLP / NeuronAware / LocalAttention / MoE decoder.
+
+Loss / regularizers (in addition to recon + KL + smoothness):
+- Transition-aware regularization (lambda_transition):
+  penalizes mismatch of decoded dynamics Δx̂(t)=x̂(t+1)-x̂(t) vs Δx(t) (with linear warmup).
+  Optionally computed on only a subset of trials per batch (transition_landmark_count) to avoid over-regularizing noisy trials.
+- Soft LLE latent constraint (lambda_lle):
+  flattens latent trajectory points, finds kNN in latent space, and reconstructs each point from neighbors
+  using softmax weights; penalizes reconstruction error to encourage locally linear structure.
+
+Compute/compatibility:
+- Device selection is CUDA-first, then CPU (no MPS path).
+- Uses torchdiffeq odeint (dopri5) for latent integration.
+
+Outputs:
+- Saves metrics/plots/checkpoints under pt_files/ and logs training to training_results.txt.
+"""
+
 # Written by Kathleen Higgins
 # Worked as of 2025-09-10
 # src/v5_neural_vae.py

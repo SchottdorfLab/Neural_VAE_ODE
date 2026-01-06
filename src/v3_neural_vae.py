@@ -1,3 +1,26 @@
+"""
+v3_neural_vae.py — ODE-VAE with train-only standardization/PCA + raw-space evaluation
+
+Pipeline (more careful evaluation than v1/v2):
+- Extracts raw per-trial sequences first (make_sequences_raw): trial grouping + resampling, before PCA/z-score.
+- Splits trials into train/val at the trial level first.
+- Fits normalization (mu/sd) on TRAIN ONLY, applies to train+val.
+- Fits PCA on TRAIN ONLY (configurable pca_dim), transforms sequences into PCA space for modeling.
+- Evaluates R² by inverse-transforming reconstructions back to raw neuron space via PCA.inverse_transform.
+
+Model:
+- Encoder: MLP x_pca(t0) -> (mu, logvar).
+- Latent dynamics: MoE-style latent ODE (MoELatentODEFunc) (mixture of expert vector fields with soft gating).
+- Decoder: typically MLP in PCA space (z(t) -> x̂_pca(t)); raw-space recon is via inverse PCA.
+
+Training objective:
+- Reconstruction MSE (in PCA space) + beta * KL + lambda_smooth * ||dz/dt||².
+- Validation metrics computed in raw space (inverse PCA) for better interpretability.
+
+Extras:
+- Latent manifold visualization using MDS on landmarked latent points (MIND-inspired).
+"""
+
 # note: using float32 inputs and added some code to get apple's MPS backend to work,
 # becuase torchdiffeq likes to create float64 tensors for tolerances (rtol, atol) which MPS doesn't support. 
 

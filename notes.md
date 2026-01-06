@@ -1,6 +1,12 @@
 # Notes:
 By Kathleen Higgins
 
+## January 6th, 2026, 5:49pm:
+Quick reminder, to login to the Schottdorf lab computer, it's:
+```
+ssh schot@128.175.181.203
+```
+And I authenticate using a key and a password. 
 
 ## January 6th, 2026, 5:23pm
 Okay, so there are a couple problems.

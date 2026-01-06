@@ -226,6 +226,230 @@ def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_fr
     X = np.stack(X, axis=0).astype(np.float32) # [B, L, N]
     return X, t_rs.astype(np.float32), {"trials_used": np.array(good_trial_ids), "mu": mu, "sd": sd, "N": N}
 
+def make_sequences_raw(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_frames=10):
+    """
+    Build fixed-length per-trial sequences WITHOUT z-scoring.
+    Returns:
+    X_raw: [B, L, N], tvec: [L], trial_ids: [B]
+    """
+    roi = npz["roi"]
+    if roi.shape[0] < roi.shape[1]:
+        roi = roi.T
+    trial = npz["Trial"].astype(int)
+    time = npz["Time"].astype(float)
+
+    trials, groups = group_indices_by_trial(trial)
+    if drop_first_trials > 0 and len(trials) > drop_first_trials:
+        keep_mask = trials >= trials[0] + drop_first_trials
+        groups = [g for g, keep in zip(groups, keep_mask) if keep]
+        trials = trials[keep_mask]
+
+    L = int(round(trial_len_s * fps))
+    X_raw = []
+    trial_ids = []
+    for tr, idx in zip(trials, groups):
+        if idx.size < min_frames:
+            continue
+        x_tr = roi[idx, :]
+        t_tr = time[idx] - time[idx][0]
+        x_rs, t_rs = resample_sequence(x_tr, t_tr, L, t0=0.0, t1=trial_len_s)
+        X_raw.append(x_rs)
+        trial_ids.append(tr)
+
+    if len(X_raw) == 0:
+        raise ValueError("No trials produced sequences. Check trial/time vectors and args.")
+    X_raw = np.stack(X_raw, axis=0).astype(np.float32)
+    return X_raw, t_rs.astype(np.float32), np.array(trial_ids)
+
+def normalize_sequences(X_raw, mu=None, sd=None):
+    flat = X_raw.reshape(-1, X_raw.shape[-1])
+    if mu is None:
+        mu = flat.mean(axis=0, keepdims=True)
+    if sd is None:
+        sd = flat.std(axis=0, keepdims=True) + 1e-8
+    X_norm = (X_raw - mu) / sd
+    return X_norm, mu, sd
+
+def baseline_correct_np(X):
+    baseline = X[:, :5, :].mean(axis=1, keepdims=True)
+    return X - baseline
+
+def baseline_correct_torch(X):
+    baseline = X[:, :5, :].mean(dim=1, keepdim=True)
+    return X - baseline
+
+def r2_var_explained(x, xhat):
+    x = np.asarray(x)
+    xhat = np.asarray(xhat)
+    denom = np.var(x)
+    if denom == 0:
+        return np.nan
+    return 1.0 - (np.var(x - xhat) / denom)
+
+def split_trials_like_matlab(trial_ids, seed=42, test_frac=0.1):
+    rng = np.random.default_rng(seed)
+    mask = rng.random(len(trial_ids)) > test_frac
+    train_idx = np.where(mask)[0]
+    test_idx = np.where(~mask)[0]
+    return train_idx, test_idx
+
+def train_model_on_sequences(args, X_train, tvec, latent_dim):
+    device = get_device()
+    model = ODEVAE(
+        n_neurons=X_train.shape[-1],
+        latent_dim=latent_dim,
+        num_experts=args.num_experts,
+        decoder_type=args.decoder_type,
+        k_neighbors=getattr(args, "k_neighbors", 16),
+        dec_num_experts=getattr(args, "dec_num_experts", 4),
+    ).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    tvec_t = torch.from_numpy(tvec).to(device)
+    loader = td.DataLoader(SeqDataset(X_train), batch_size=args.batch_size, shuffle=True, drop_last=True)
+    epochs = getattr(args, "r2_sweep_epochs", args.epochs)
+
+    for epoch in range(1, epochs + 1):
+        model.train()
+        for xb in loader:
+            xb = xb.to(device)
+            if getattr(args, "baseline_correct", False):
+                xb = baseline_correct_torch(xb)
+            opt.zero_grad()
+            xhat, mu, logvar, z_traj, zdiff = model(xb, tvec_t)
+            if args.kl_warmup_epochs > 0:
+                beta = args.beta * min(1.0, epoch / args.kl_warmup_epochs)
+            else:
+                beta = args.beta
+            transition_loss = None
+            lambda_transition = getattr(args, "lambda_transition", 0.0)
+            if getattr(args, "lambda_transition_warmup_epochs", 0) > 0:
+                lambda_transition *= min(1.0, epoch / args.lambda_transition_warmup_epochs)
+            if lambda_transition > 0:
+                dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
+                dx_true = xb[:, 1:, :] - xb[:, :-1, :]
+                if getattr(args, "transition_landmark_count", 0) > 0:
+                    trial_features = xb.mean(dim=1).detach().cpu().numpy()
+                    lm_idx = greedy_landmarks(
+                        trial_features,
+                        k=min(args.transition_landmark_count, xb.shape[0])
+                    )
+                    dx_hat = dx_hat[lm_idx]
+                    dx_true = dx_true[lm_idx]
+                transition_loss = torch.mean((dx_hat - dx_true) ** 2)
+            lle_loss = None
+            lambda_lle = getattr(args, "lambda_lle", 0.0)
+            if lambda_lle > 0:
+                lle_loss = compute_lle_loss(
+                    z_traj,
+                    k=getattr(args, "lle_k", 8),
+                    max_points=getattr(args, "lle_max_points", 256),
+                    temperature=getattr(args, "lle_temperature", 0.1),
+                )
+            loss, *_ = vae_loss(
+                xhat,
+                xb,
+                mu,
+                logvar,
+                zdiff,
+                beta=beta,
+                lambda_smooth=args.lambda_smooth,
+                transition_loss=transition_loss,
+                lambda_transition=lambda_transition,
+                lle_loss=lle_loss,
+                lambda_lle=lambda_lle,
+            )
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+    return model
+
+def predict_sequences(model, X, tvec, args):
+    device = get_device()
+    model.eval()
+    preds = []
+    tvec_t = torch.from_numpy(tvec).to(device)
+    loader = td.DataLoader(SeqDataset(X), batch_size=args.batch_size, shuffle=False)
+    with torch.no_grad():
+        for xb in loader:
+            xb = xb.to(device)
+            if getattr(args, "baseline_correct", False):
+                xb = baseline_correct_torch(xb)
+            xhat, *_ = model(xb, tvec_t)
+            preds.append(xhat.cpu().numpy())
+    return np.concatenate(preds, axis=0)
+
+def run_r2_sweep(args):
+    npz = np.load(PATHS["data"])
+    X_raw, tvec_np, trial_ids = make_sequences_raw(
+        npz,
+        trial_len_s=args.trial_len_s,
+        fps=args.fps,
+        drop_first_trials=args.drop_first_trials,
+        min_frames=10,
+    )
+    dims = getattr(args, "r2_sweep_dims", list(range(1, 11)))
+    if isinstance(dims, str):
+        dims = [int(x.strip()) for x in dims.split(",") if x.strip()]
+    elif not isinstance(dims, list):
+        dims = [int(dims)]
+    repeats = getattr(args, "r2_sweep_repeats", 3)
+    seed = getattr(args, "r2_sweep_seed", 42)
+
+    results = {}
+    for d in dims:
+        results[int(d)] = {"overall": [], "trials": []}
+        for rep in range(repeats):
+            train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=seed + rep, test_frac=0.1)
+            if len(test_idx) == 0 or len(train_idx) == 0:
+                continue
+            X_train_raw = X_raw[train_idx]
+            X_test_raw = X_raw[test_idx]
+            X_train, mu, sd = normalize_sequences(X_train_raw)
+            X_test, _, _ = normalize_sequences(X_test_raw, mu, sd)
+
+            if getattr(args, "baseline_correct", False):
+                X_train = baseline_correct_np(X_train)
+                X_test = baseline_correct_np(X_test)
+                X_test_eval = baseline_correct_np(X_test_raw)
+                xhat_bias = False
+            else:
+                X_test_eval = X_test_raw
+                xhat_bias = True
+
+            model = train_model_on_sequences(args, X_train, tvec_np, latent_dim=int(d))
+            xhat = predict_sequences(model, X_test, tvec_np, args)
+
+            if xhat_bias:
+                xhat_raw = xhat * sd + mu
+            else:
+                xhat_raw = xhat * sd
+
+            r2_all = r2_var_explained(X_test_eval, xhat_raw)
+            results[int(d)]["overall"].append(r2_all)
+            for i in range(X_test_eval.shape[0]):
+                r2_i = r2_var_explained(X_test_eval[i], xhat_raw[i])
+                if not np.isnan(r2_i):
+                    results[int(d)]["trials"].append(r2_i)
+
+    # plot (MATLAB-style)
+    plt.figure(figsize=(6, 4))
+    for d in dims:
+        d = int(d)
+        ys = results[d]["trials"]
+        plt.scatter([d] * len(ys), ys, facecolors="none", edgecolors="k", alpha=0.6, s=30)
+        if results[d]["overall"]:
+            plt.scatter(d, np.mean(results[d]["overall"]), color="red", s=40, zorder=3)
+    plt.xlabel("Embedding dimension")
+    plt.ylabel("Crossval R²")
+    plt.xlim(0, max(dims) + 1)
+    plt.ylim(0, 1)
+    out_path = os.path.join(PATHS["out_dir"], "r2_sweep.png")
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160)
+    plt.close()
+    print(f"Wrote R² sweep plot → {out_path}")
+    return results
+
 def greedy_landmarks(X, k=200):
     """
     Greedy selection of k landmarks from X to maximize coverage.
@@ -1062,6 +1286,10 @@ if __name__ == "__main__":
     best_run = max(results, key=lambda x: x[2])
     print(f"\nBest seed: {best_run[0]} → R²={best_run[2]:.4f}")
     '''
+
+    if getattr(args, "r2_sweep_enabled", False):
+        run_r2_sweep(args)
+        raise SystemExit(0)
 
     seed = 1  # using the best seed from the results from the sweep above 
     results = []

@@ -35,6 +35,8 @@ Outputs:
 # most recent version of the neural ODE VAE for neural data
 
 import os, math, argparse, datetime
+import sys
+import atexit
 import numpy as np
 import torch
 import torch.nn as nn
@@ -113,8 +115,42 @@ PATHS = {
     "preview":       os.path.join(SRC_DIR, "preview.png"),
     "training_log":  os.path.join(SRC_DIR, "training_results.txt"),
     "config":        os.path.join(SRC_DIR, "config.txt"),
+    "run_output":    os.path.join(SRC_DIR, "script_output.txt"),
 }
 os.makedirs(PATHS["out_dir"], exist_ok=True)
+
+
+class Tee:
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data):
+        for stream in self.streams:
+            stream.write(data)
+            stream.flush()
+
+    def flush(self):
+        for stream in self.streams:
+            stream.flush()
+
+    def isatty(self):
+        return any(getattr(stream, "isatty", lambda: False)() for stream in self.streams)
+
+
+def setup_run_logging(log_path):
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    log_file = open(log_path, "w", encoding="utf-8")
+    sys.stdout = Tee(sys.stdout, log_file)
+    sys.stderr = Tee(sys.stderr, log_file)
+
+    def _close_log():
+        try:
+            log_file.flush()
+            log_file.close()
+        except Exception:
+            pass
+
+    atexit.register(_close_log)
 
 
 def load_config_from_txt(path):
@@ -1265,6 +1301,7 @@ def train(args):
 
 #__________________main_____________#
 if __name__ == "__main__":
+    setup_run_logging(PATHS["run_output"])
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=os.path.join(SRC_DIR, "config.txt"), help="Path to config file")
     args_cli = ap.parse_args()

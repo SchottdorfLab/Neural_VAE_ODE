@@ -1,5 +1,8 @@
 # Notes:
 By Kathleen Higgins
+## January 7th, 2:30pm:
+- Added print statement to the top of scripts v1 through v6 to (theoretically) copy all outputs in the terminal while running the script to a designated output file. 
+- This output file is overwritten for each new run of any script v1 through v6. 
 ## January 7th, 11:20am:
 - Do you remember how the lab computer just randomly decided to disconnect from DNS? Well, it's connected now when I showed up this morning, fully working with DNS, same IP address, and it completely closed out my terminal windows---it may have restarted and flushed its DNS cache. 
 - Ran v6 of the script. 

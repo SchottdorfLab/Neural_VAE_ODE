@@ -1,5 +1,18 @@
 # Notes:
 By Kathleen Higgins
+## January 7th, 11:20am:
+- Do you remember how the lab computer just randomly decided to disconnect from DNS? Well, it's connected now when I showed up this morning, fully working with DNS, same IP address, and it completely closed out my terminal windows---it may have restarted and flushed its DNS cache. 
+- Ran v6 of the script. 
+- Updated of v6 from v5:
+    - No PCA
+    - Changed v6 to hold out last K trials, if later trials differ (drift, task, changes), val loss spikes while train keeps improving. 
+    - Landmark subsampling bias. Greedy coverage on flattened sequences can over-represent "exteme" trials; the model then underfits the average val trials. 
+    - Just general issues with regularizers dominating generalization (same stuff as before)
+    - Normalization mismatch: v6 uses make_sequences (z-scores per neuron after overriding ROI, if the val trials have different per-neuron stats, z-score is leaking into train stats into val and hurting reconstruction.)
+**Fixes**: 
+- Re-enable PCA
+- Change split to random trial split or whatever I had before
+- Change back to the previous version fo landmark subsampling (this is my hunch)
 
 ## January 6th, 6:12pm:
 - Added a v6 of the script. It removes PCA use. v5 still uses PCA.

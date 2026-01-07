@@ -1284,6 +1284,7 @@ def train(args):
 #__________________main_____________#
 if __name__ == "__main__":
     setup_run_logging(PATHS["run_output"])
+    print(f"Running script: {os.path.basename(__file__)}")
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=os.path.join(SRC_DIR, "config.txt"), help="Path to config file")
     args_cli = ap.parse_args()

@@ -1302,6 +1302,7 @@ def train(args):
 #__________________main_____________#
 if __name__ == "__main__":
     setup_run_logging(PATHS["run_output"])
+    print(f"Running script: {os.path.basename(__file__)}")
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=os.path.join(SRC_DIR, "config.txt"), help="Path to config file")
     args_cli = ap.parse_args()
@@ -1360,8 +1361,8 @@ if __name__ == "__main__":
 
     # read existing logs if any
     if os.path.exists(log_file):
-        with open(log_file, "r") as f:
-            result_lines = f.readlines()
+    with open(log_file, "r", encoding="utf-8") as f:
+        result_lines = f.readlines()
 
     # add new entry at the top
     new_entry = (
@@ -1379,7 +1380,7 @@ if __name__ == "__main__":
     result_lines.insert(0, new_entry)
 
     # write back to file
-    with open(log_file, "w") as f:
+    with open(log_file, "w", encoding="utf-8") as f:
         f.writelines(result_lines)
 
     print(f"Results logged to {log_file}")

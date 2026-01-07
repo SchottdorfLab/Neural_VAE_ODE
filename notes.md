@@ -1,5 +1,11 @@
 # Notes:
 By Kathleen Higgins
+
+## January 7th, 2:38pm:
+- Quick notes: first run of v6 was absolutely unreal, in terms of how horrible it was (6.... reconstruction error, relatively low trial error). Not sure why?
+- With v5, I'm seeing an R2 value of 0.45. I believe that's a relative drop compared to previous work at 0.5, and if I am remembering correctly, I also previously saw a much lower reconstruction error. So that lower score is as R2 is being computed in raw neuron space, via inverse PCA and de-normalization.
+- Decided to keep evaluation of R2 in raw neuron space, not in PCA space---I'm training in PCA space, and then evaluating R2 in the raw neuron space in v5, which is the more "true" metric for reconstruction quality, because it reflects the original neuron scale and variability, not fidelity ot the compressed (PCA) representation. 
+
 ## January 7th, 2:30pm:
 - Added print statement to the top of scripts v1 through v6 to (theoretically) copy all outputs in the terminal while running the script to a designated output file. 
 - This output file is overwritten for each new run of any script v1 through v6. 

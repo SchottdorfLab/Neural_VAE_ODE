@@ -1,5 +1,28 @@
 # Notes:
 By Kathleen Higgins
+## January 7th, 8:02pm:
+- Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. "Sunshine". Here is some output from the terminal print statement. 
+```
+(base) PS C:\Users\schot\Neural_VAE_ODE> ssh-keygen -t ed25519 -C "kathigg@udel.edu"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (C:\Users\schot/.ssh/id_ed25519): key.txt
+Your identification has been saved in key.txt
+SHA256:sS82S+X1J60n7GJ2HdLZa/lllqZNtsX0A6r2Vtj3Ar0 kathigg@udel.edu
+The key's randomart image is:
++--[ED25519 256]--+
+|                 |
+|                 |
+|        .        |
+|         o       |
+|        S . +o. +|
+|         + oo=oO+|
+|        = o..o=O#|
+|       o =..+ EXO|
+|        o.o+ =+*o|
++----[SHA256]-----+
+
+(base) PS C:\Users\schot\Neural_VAE_ODE>
+```
 
 ## January 7th, 2:38pm:
 - Quick notes: first run of v6 was absolutely unreal, in terms of how horrible it was (6.... reconstruction error, relatively low trial error). Not sure why?

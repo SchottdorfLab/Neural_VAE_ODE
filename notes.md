@@ -1,5 +1,34 @@
 # Notes:
 By Kathleen Higgins
+## January 7th, 8:02pm:
+- Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. "Sunshine". Here is some output from the terminal print statement. 
+```
+(base) PS C:\Users\schot\Neural_VAE_ODE> ssh-keygen -t ed25519 -C "kathigg@udel.edu"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (C:\Users\schot/.ssh/id_ed25519): key.txt
+Your identification has been saved in key.txt
+SHA256:sS82S+X1J60n7GJ2HdLZa/lllqZNtsX0A6r2Vtj3Ar0 kathigg@udel.edu
+The key's randomart image is:
++--[ED25519 256]--+
+|                 |
+|                 |
+|        .        |
+|         o       |
+|        S . +o. +|
+|         + oo=oO+|
+|        = o..o=O#|
+|       o =..+ EXO|
+|        o.o+ =+*o|
++----[SHA256]-----+
+
+(base) PS C:\Users\schot\Neural_VAE_ODE>
+```
+
+## January 7th, 2:38pm:
+- Quick notes: first run of v6 was absolutely unreal, in terms of how horrible it was (6.... reconstruction error, relatively low trial error). Not sure why?
+- With v5, I'm seeing an R2 value of 0.45. I believe that's a relative drop compared to previous work at 0.5, and if I am remembering correctly, I also previously saw a much lower reconstruction error. So that lower score is as R2 is being computed in raw neuron space, via inverse PCA and de-normalization.
+- Decided to keep evaluation of R2 in raw neuron space, not in PCA space---I'm training in PCA space, and then evaluating R2 in the raw neuron space in v5, which is the more "true" metric for reconstruction quality, because it reflects the original neuron scale and variability, not fidelity ot the compressed (PCA) representation. 
+
 ## January 7th, 2:30pm:
 - Added print statement to the top of scripts v1 through v6 to (theoretically) copy all outputs in the terminal while running the script to a designated output file. 
 - This output file is overwritten for each new run of any script v1 through v6. 

@@ -14,7 +14,7 @@
     - Trial split matches MATLAB: random 10% test with seed 42. 
     - Multiple repeats per dimension = re-randomized splits (seed + repeat index).
     - v5 sweep uses training-only normalization and PCA, then evaluates R2 in raw neuron space ("option B")
-    
+
 ***December 18th, 1:17am:***
 - Added transition‑aware regularization with warmup (lambda_transition, lambda_transition_warmup_epochs) and optional trial‑level landmark sampling for the transition loss (transition_landmark_count).
 - Transition loss now compares decoded dynamics (xhat[t+1]-xhat[t]) rather than re‑decoding predicted latents.

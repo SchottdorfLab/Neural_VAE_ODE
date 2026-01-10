@@ -1,6 +1,33 @@
 # Notes:
 By Kathleen Higgins
 
+## January 10th, 1:45pm:
+https://www.biorxiv.org/content/10.1101/418939v2.full#F5
+```
+Paper techniques that can actually move R² in your ODE‑VAE
+These are the most “transferable” MIND ideas for improving reconstruction quality (not just adding bells/whistles):
+
+Match the paper’s calcium preprocessing (if E65 is calcium, it is ~15 Hz)
+They smooth with an 11‑bin Gaussian and threshold at 4σ (robust σ per neuron).
+For recon traces, they do baseline subtraction before smoothing/threshold.
+Why it helps R²: it de‑emphasizes tiny amplitude noise and emphasizes structured transients that are more reproducible trial‑to‑trial.
+Use the paper’s exact cross‑validation structure
+Hold out random trials, repeat ~10 times, average R² (and plot per‑trial dots).
+Your training currently uses small holdout counts sometimes; high variance in val can hide real improvements and encourages overfitting.
+Stop throwing away data points (MIND fits manifolds to all points)
+In MIND they fit on essentially all eligible timepoints; landmarks are for efficiency/graph construction, not to shrink the dataset.
+In your ODE‑VAE, subsampling trials/timepoints can reduce generalization and hurt R².
+Add an explicitly local “mapping” component (MIND uses LLE / local regression)
+Your decoders are global (MLP/MoE/neuron-aware). MIND’s advantage often comes from local reconstruction in manifold space.
+A strong hybrid for R²: decoder = global MLP + a local neighbor-based residual (kNN/LLE-like over a small set of prototype latent states). This directly targets the “local irregularities/spikes” problem without forcing the ODE to memorize them.
+Use robust per-neuron scaling/weighting (robust σ)
+The paper normalizes/thresholds per neuron using robust σ. In an MSE objective, high-variance neurons dominate unless you normalize correctly.
+A simple improvement aimed at R²: compute recon loss in “variance-normalized units” (roughly SSE/var), which aligns training more closely with maximizing R².
+Align your time discretization with the data
+E65 is ~15 Hz (Δt≈67 ms). If you resample heavily or use a mismatched fps, you can blur transitions and lose R².
+Using the native frame grid (or resampling to a consistent but realistic L) usually improves both dynamics fit and reconstruction.
+```
+
 ## January 10th, 11:31am:
 "Based on the diagram and the pasted paper text, answer two questions: 1. What metrics should I be focusing on to answer similar questions to those addressed in the text? 2. What techniques could I add from this paper that would improve metrics?"
 

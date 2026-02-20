@@ -1,5 +1,61 @@
 # Notes:
 By Kathleen Higgins
+
+## January 10th, 1:45pm:
+https://www.biorxiv.org/content/10.1101/418939v2.full#F5
+```
+Paper techniques that can actually move R² in your ODE‑VAE
+These are the most “transferable” MIND ideas for improving reconstruction quality (not just adding bells/whistles):
+
+Match the paper’s calcium preprocessing (if E65 is calcium, it is ~15 Hz)
+They smooth with an 11‑bin Gaussian and threshold at 4σ (robust σ per neuron).
+For recon traces, they do baseline subtraction before smoothing/threshold.
+Why it helps R²: it de‑emphasizes tiny amplitude noise and emphasizes structured transients that are more reproducible trial‑to‑trial.
+Use the paper’s exact cross‑validation structure
+Hold out random trials, repeat ~10 times, average R² (and plot per‑trial dots).
+Your training currently uses small holdout counts sometimes; high variance in val can hide real improvements and encourages overfitting.
+Stop throwing away data points (MIND fits manifolds to all points)
+In MIND they fit on essentially all eligible timepoints; landmarks are for efficiency/graph construction, not to shrink the dataset.
+In your ODE‑VAE, subsampling trials/timepoints can reduce generalization and hurt R².
+Add an explicitly local “mapping” component (MIND uses LLE / local regression)
+Your decoders are global (MLP/MoE/neuron-aware). MIND’s advantage often comes from local reconstruction in manifold space.
+A strong hybrid for R²: decoder = global MLP + a local neighbor-based residual (kNN/LLE-like over a small set of prototype latent states). This directly targets the “local irregularities/spikes” problem without forcing the ODE to memorize them.
+Use robust per-neuron scaling/weighting (robust σ)
+The paper normalizes/thresholds per neuron using robust σ. In an MSE objective, high-variance neurons dominate unless you normalize correctly.
+A simple improvement aimed at R²: compute recon loss in “variance-normalized units” (roughly SSE/var), which aligns training more closely with maximizing R².
+Align your time discretization with the data
+E65 is ~15 Hz (Δt≈67 ms). If you resample heavily or use a mismatched fps, you can blur transitions and lose R².
+Using the native frame grid (or resampling to a consistent but realistic L) usually improves both dynamics fit and reconstruction.
+```
+
+## January 10th, 11:31am:
+"Based on the diagram and the pasted paper text, answer two questions: 1. What metrics should I be focusing on to answer similar questions to those addressed in the text? 2. What techniques could I add from this paper that would improve metrics?"
+
+1. Metrics to focus on (to answer the same questions as the paper):
+### Cross‑validated decoding index (Pearson r) on vectorized neuron×time blocks
+- For “population reconstruction” (panels a–b): correlate vec(X_test) vs vec(X̂_test) and average across repeated held‑out trials/splits.
+- This is the paper’s primary “decoding index” metric.
+### Variance‑explained R² on the same blocks (optional but useful)
+- `1 − var(X−X̂)/var(X)`; MATLAB uses this for the “Crossval R²” plot you showed.
+- Track both r and R² because r is scale‑invariant while R² penalizes bias/scale errors.
+### Saturation curves vs embedding dimension d
+- Plot decoding index (and/or R²) as a function of latent_dim and look for where it plateaus (their “minimum dimensions needed” idea).
+### Intrinsic dimension estimate from distance scaling (if you want the “correlation dimension” analysis)
+- Build a geodesic distance matrix ρ(i,j) (in MIND it’s from transition probabilities) and fit the slope of log N(r) vs log r over a scaling range to estimate intrinsic d.
+### Single‑neuron predictability metric (panel c/e)
+- For held‑out neuron i: correlation between true and predicted neuron activity across time (and trials), averaged over 5 folds and multiple neurons.
+## 2. Paper techniques worth adding (to improve those metrics)
+### Match the evaluation preprocessing used in the paper (biggest “apples‑to‑apples” improvement)
+- Apply the same calcium-style transform before scoring: 11‑bin Gaussian smoothing + 4σ threshold per neuron using robust σ, and baseline subtraction for recon traces. This often increases correlation‑based decoding index because it emphasizes transient timing over small amplitude errors.
+### Trial‑level cross‑validation protocol
+- Use repeated random held‑out trials (10 repeats like the paper) and report mean±SEM. Your current setup can be made directly comparable by scoring r on vectorized blocks.
+### Held‑out neuron decoding evaluation
+- Add the panel‑c style test: fit latents on N−1 neurons, then learn g(latents)→neuron_i. In the paper they use Gaussian Process Regression with an RBF kernel; in Python you could start with a small smooth regressor (or a GP if tractable) and measure cross‑validated r.
+### Noise/thresholded observation model
+- MIND explicitly accounts for calcium transient nonlinearity via thresholding. For your VAE, consider an observation model that’s closer to calcium data (e.g., zero‑inflated / hurdle / rectified Gaussian, or simply threshold‑aware loss). This can improve correlation‑based reconstruction metrics.
+### Intrinsic-dimension analysis via geodesic distances
+- If you want the “d≈4–6” type claim, add a geodesic-distance–based intrinsic dimension estimator (kNN graph shortest paths in latent space is a practical proxy), then do the N(r) ~ r^d slope fit and bootstrap CIs.
+
 ## January 7th, 8:02pm:
 - Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. "Sunshine". Here is some output from the terminal print statement. 
 ```

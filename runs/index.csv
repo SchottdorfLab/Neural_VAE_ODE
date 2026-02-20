@@ -1,1 +1,2 @@
 run_id,timestamp,script,config,commit,dirty,exit_code,r2,note
+2026-02-20_171252_89f5757,2026-02-20_171252,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171252_89f5757\config.txt,89f575704ef4360b1c74c6833b9f878d0d7327ab,True,120,0.450567,baseline v5

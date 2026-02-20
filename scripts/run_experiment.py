@@ -109,6 +109,29 @@ def _extract_r2(metrics):
             return metrics[key]
     return ""
 
+def _to_jsonable(obj):
+    try:
+        import numpy as np  # type: ignore
+        if isinstance(obj, (np.floating, np.float32, np.float64)):
+            return float(obj)
+        if isinstance(obj, (np.integer, np.int32, np.int64)):
+            return int(obj)
+        if isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+    except Exception:
+        pass
+    try:
+        import torch  # type: ignore
+        if isinstance(obj, torch.Tensor):
+            return obj.detach().cpu().tolist()
+    except Exception:
+        pass
+    if isinstance(obj, dict):
+        return {k: _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_jsonable(v) for v in obj]
+    return obj
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -257,7 +280,7 @@ def main():
     run_meta["metrics"] = metrics
 
     # Write run.json
-    run_json_path.write_text(json.dumps(run_meta, indent=2), encoding="utf-8")
+    run_json_path.write_text(json.dumps(_to_jsonable(run_meta), indent=2), encoding="utf-8")
 
     # Update index.csv
     write_header = not index_path.exists()

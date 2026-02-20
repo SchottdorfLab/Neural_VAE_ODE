@@ -1,5 +1,5 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171252_89f5757\config.txt
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171149_89f5757\config.txt
 Device: cuda
 Traceback (most recent call last):
   File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1354, in <module>

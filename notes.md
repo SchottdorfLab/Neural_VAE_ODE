@@ -1,6 +1,38 @@
 # Notes:
 By Kathleen Higgins
 
+## Feburary 20th; 4:52pm:
+
+CONFIGURABLE COMMAND TEMPLATE:
+```
+python scripts/run_experiment.py --script src/v5_neural_vae.py --config configs/v5_base.txt --run-id 2026-02-20_v5_pca --note "baseline v5"
+```
+
+- I got really fed up with constantly losing track of the work that I did before, and not knowing what changes I had made and what scores they gave me.
+- Considering this, I established some code to help me out. To run it, you type the following (this is just an example on v5)
+
+```
+python scripts/run_experiment.py --script src/v5_neural_vae.py --config configs/v5_base.txt --note "baseline v5"
+```
+- What this does is it creates runs/<runid> with: 
+    - run.json wwhich contains metadata, code summary, and metrics. 
+    - run.log
+    - config.txt 
+    - config_original.txt
+    - copied artifacts ex. best checkpoint, preview, metrics 
+    - Also appends a row to index.csv. 
+- I also wanted to add an AI/ML summary of code changes that reads stdin and returns a one-sentance summary. 
+- To do this, you can set LLM_SUMMARY_CMD to any CLI that reads from stdin: 
+
+```
+$env:LLM_SUMMARY_CMD = "ollama run llama3"
+python scripts/run_experiment.py --script src/v5_neural_vae.py --config configs/v5_base.txt
+```
+- What this script does: it pipes a prompt and a git diff into that command and stores the first line under run.json under code_change_summary. If no LLM is set, it falls back to a deterministic one-line summary based on git diff --stat. 
+## February 20th, 4:49pm:
+Thoughts:
+- Also compute r, not just R2, so we can have a one-to-one comparison with Dr. Schottdorf's code in the MIND algorithm. 
+
 ## January 10th, 1:45pm:
 https://www.biorxiv.org/content/10.1101/418939v2.full#F5
 ```

@@ -1,0 +1,34 @@
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index d1fe9cf..86e24e1 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -126,7 +126,11 @@ class Tee:
+ 
+     def write(self, data):
+         for stream in self.streams:
+-            stream.write(data)
++            try:
++                stream.write(data)
++            except UnicodeEncodeError:
++                safe = data.encode("ascii", "replace").decode("ascii", "replace")
++                stream.write(safe)
+             stream.flush()
+ 
+     def flush(self):
+diff --git a/src/v6_neural_vae.py b/src/v6_neural_vae.py
+index 7af79c1..037b1b4 100644
+--- a/src/v6_neural_vae.py
++++ b/src/v6_neural_vae.py
+@@ -126,7 +126,11 @@ class Tee:
+ 
+     def write(self, data):
+         for stream in self.streams:
+-            stream.write(data)
++            try:
++                stream.write(data)
++            except UnicodeEncodeError:
++                safe = data.encode("ascii", "replace").decode("ascii", "replace")
++                stream.write(safe)
+             stream.flush()
+ 
+     def flush(self):

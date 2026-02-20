@@ -1,13 +1,1 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171252_89f5757\config.txt
-Device: cuda
-Traceback (most recent call last):
-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1354, in <module>
-    best_val, mean_r2 = train(args)
-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 950, in train
-    print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 129, in write
-    stream.write(data)
-  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\encodings\cp1252.py", line 19, in encode
-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
-UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 16: character maps to <undefined>

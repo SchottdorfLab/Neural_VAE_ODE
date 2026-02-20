@@ -1361,26 +1361,26 @@ if __name__ == "__main__":
 
     # read existing logs if any
     if os.path.exists(log_file):
-    with open(log_file, "r", encoding="utf-8") as f:
-        result_lines = f.readlines()
+        with open(log_file, "r", encoding="utf-8") as f:
+            result_lines = f.readlines()
 
-    # add new entry at the top
-    new_entry = (
-    f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
-    f"Commit: {os.popen('git rev-parse HEAD').read().strip() or 'unknown'}\n"
-    f"Data: {PATHS['data']}\n"
-    f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
-    f"Batch size: {args.batch_size} | Beta: {args.beta} | Smooth λ: {args.lambda_smooth}\n"
-    f"Holdout: {args.holdout_trials} | KL warmup: {args.kl_warmup_epochs}\n"
-    f"Final validation loss: {best_val:.5f}\n"
-    f"Final R² value: {mean_r2:.4f}\n"
-    f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
-    f"---------------------------------------------\n"
-    )
-    result_lines.insert(0, new_entry)
+            # add new entry at the top
+            new_entry = (
+            f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
+            f"Commit: {os.popen('git rev-parse HEAD').read().strip() or 'unknown'}\n"
+            f"Data: {PATHS['data']}\n"
+            f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
+            f"Batch size: {args.batch_size} | Beta: {args.beta} | Smooth λ: {args.lambda_smooth}\n"
+            f"Holdout: {args.holdout_trials} | KL warmup: {args.kl_warmup_epochs}\n"
+            f"Final validation loss: {best_val:.5f}\n"
+            f"Final R² value: {mean_r2:.4f}\n"
+            f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
+            f"---------------------------------------------\n"
+            )
+            result_lines.insert(0, new_entry)
 
-    # write back to file
-    with open(log_file, "w", encoding="utf-8") as f:
-        f.writelines(result_lines)
+            # write back to file
+            with open(log_file, "w", encoding="utf-8") as f:
+                f.writelines(result_lines)
 
-    print(f"Results logged to {log_file}")
+            print(f"Results logged to {log_file}")

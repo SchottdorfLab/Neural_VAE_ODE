@@ -126,7 +126,11 @@ class Tee:
 
     def write(self, data):
         for stream in self.streams:
-            stream.write(data)
+            try:
+                stream.write(data)
+            except UnicodeEncodeError:
+                safe = data.encode("ascii", "replace").decode("ascii", "replace")
+                stream.write(safe)
             stream.flush()
 
     def flush(self):
@@ -139,6 +143,12 @@ class Tee:
 
 def setup_run_logging(log_path):
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    try:
+        # Prefer UTF-8 for console output on Windows to avoid UnicodeEncodeError.
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
     log_file = open(log_path, "w", encoding="utf-8")
     sys.stdout = Tee(sys.stdout, log_file)
     sys.stderr = Tee(sys.stderr, log_file)

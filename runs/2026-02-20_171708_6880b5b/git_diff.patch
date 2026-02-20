@@ -1,0 +1,191 @@
+diff --git a/src/preview.png b/src/preview.png
+index 3642ab4..aa2eb9d 100644
+Binary files a/src/preview.png and b/src/preview.png differ
+diff --git a/src/script_output.txt b/src/script_output.txt
+index 107903c..d26ed81 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,13 +1,113 @@
+ Running script: v5_neural_vae.py
+-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171252_89f5757\config.txt
++Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171609_6880b5b\config.txt
+ Device: cuda
++PCA reduced 375 â†’ 129 dims (95.02% variance)
++Selecting 100 landmark trials (greedy coverage)...
++Subsampled to 100 sequences.
++Built sequences: B=100, :=120, N=129
++[001] train loss 2.50342 | recon 2.50286 | kl 0.07071 | smooth 0.99352 | trans 0.02564 | lle 0.00047 | beta 0.001
++      valid loss 3.35045 | recon 3.34388 | kl 0.30322 | smooth 0.98628 | trans 0.03234 | lle 0.00007 | RÂ² 0.0293
++[002] train loss 2.27018 | recon 2.26746 | kl 1.65813 | smooth 0.97958 | trans 0.02560 | lle 0.00047 | beta 0.001
++      valid loss 3.43912 | recon 3.40214 | kl 1.82363 | smooth 0.96776 | trans 0.03234 | lle 0.00007 | RÂ² 0.0124
++[003] train loss 2.16575 | recon 2.15975 | kl 2.74257 | smooth 0.95452 | trans 0.02577 | lle 0.00045 | beta 0.002
++      valid loss 3.40201 | recon 3.37127 | kl 1.51153 | smooth 0.94585 | trans 0.03234 | lle 0.00007 | RÂ² 0.0213
++[004] train loss 2.14836 | recon 2.14315 | kl 1.76070 | smooth 0.94873 | trans 0.02554 | lle 0.00046 | beta 0.003
++      valid loss 3.49970 | recon 3.45811 | kl 2.05348 | smooth 0.95299 | trans 0.03234 | lle 0.00008 | RÂ² -0.0039
++[005] train loss 2.15857 | recon 2.15070 | kl 2.20351 | smooth 0.94666 | trans 0.02578 | lle 0.00051 | beta 0.003
++      valid loss 3.41782 | recon 3.38662 | kl 1.53305 | smooth 0.95733 | trans 0.03234 | lle 0.00008 | RÂ² 0.0169
++[006] train loss 2.11776 | recon 2.10566 | kl 2.89283 | smooth 0.95153 | trans 0.02582 | lle 0.00043 | beta 0.004
++      valid loss 3.32011 | recon 3.28496 | kl 1.73081 | smooth 0.95194 | trans 0.03233 | lle 0.00008 | RÂ² 0.0464
++[007] train loss 2.02261 | recon 2.00782 | kl 3.05341 | smooth 0.94966 | trans 0.02548 | lle 0.00047 | beta 0.005
++      valid loss 3.15486 | recon 3.12389 | kl 1.52102 | smooth 0.94045 | trans 0.03232 | lle 0.00008 | RÂ² 0.0931
++[008] train loss 2.05851 | recon 2.04400 | kl 2.61919 | smooth 0.93615 | trans 0.02573 | lle 0.00050 | beta 0.005
++      valid loss 3.04404 | recon 3.00726 | kl 1.81129 | smooth 0.93471 | trans 0.03232 | lle 0.00008 | RÂ² 0.1270
++[009] train loss 1.95638 | recon 1.93762 | kl 3.03596 | smooth 0.93575 | trans 0.02564 | lle 0.00049 | beta 0.006
++      valid loss 2.81189 | recon 2.76815 | kl 2.15887 | smooth 0.92896 | trans 0.03231 | lle 0.00007 | RÂ² 0.1964
++[010] train loss 1.96706 | recon 1.94501 | kl 3.22460 | smooth 0.93921 | trans 0.02586 | lle 0.00048 | beta 0.007
++      valid loss 2.86327 | recon 2.82775 | kl 1.74683 | smooth 0.94276 | trans 0.03231 | lle 0.00008 | RÂ² 0.1791
++[011] train loss 1.90063 | recon 1.87659 | kl 3.20071 | smooth 0.93883 | trans 0.02579 | lle 0.00048 | beta 0.007
++      valid loss 3.10111 | recon 3.06564 | kl 1.74416 | smooth 0.94546 | trans 0.03231 | lle 0.00008 | RÂ² 0.1100
++[012] train loss 1.80227 | recon 1.77467 | kl 3.37763 | smooth 0.94385 | trans 0.02555 | lle 0.00047 | beta 0.008
++      valid loss 3.21390 | recon 3.18707 | kl 1.31178 | smooth 0.93140 | trans 0.03233 | lle 0.00008 | RÂ² 0.0748
++[013] train loss 1.78415 | recon 1.75422 | kl 3.38594 | smooth 0.94378 | trans 0.02529 | lle 0.00049 | beta 0.009
++      valid loss 3.29138 | recon 3.26204 | kl 1.43622 | smooth 0.95029 | trans 0.03233 | lle 0.00009 | RÂ² 0.0530
++[014] train loss 1.72871 | recon 1.69414 | kl 3.64031 | smooth 0.94917 | trans 0.02540 | lle 0.00046 | beta 0.009
++      valid loss 2.97688 | recon 2.93227 | kl 2.19885 | smooth 0.95073 | trans 0.03231 | lle 0.00008 | RÂ² 0.1488
++[015] train loss 1.71899 | recon 1.68593 | kl 3.24501 | smooth 0.96169 | trans 0.02556 | lle 0.00047 | beta 0.010
++      valid loss 2.85028 | recon 2.79614 | kl 2.67501 | smooth 0.95926 | trans 0.03231 | lle 0.00008 | RÂ² 0.1883
++[016] train loss 1.65727 | recon 1.61359 | kl 4.03647 | smooth 0.96790 | trans 0.02569 | lle 0.00053 | beta 0.011
++      valid loss 2.83392 | recon 2.79106 | kl 2.11014 | smooth 0.97274 | trans 0.03231 | lle 0.00011 | RÂ² 0.1898
++[017] train loss 1.56980 | recon 1.52706 | kl 3.71510 | smooth 0.97501 | trans 0.02580 | lle 0.00046 | beta 0.011
++      valid loss 2.67267 | recon 2.63462 | kl 1.86898 | smooth 0.96806 | trans 0.03231 | lle 0.00009 | RÂ² 0.2352
++[018] train loss 1.55847 | recon 1.51297 | kl 3.73835 | smooth 0.97540 | trans 0.02575 | lle 0.00050 | beta 0.012
++      valid loss 2.41380 | recon 2.36334 | kl 2.48946 | smooth 0.97042 | trans 0.03229 | lle 0.00007 | RÂ² 0.3139
++[019] train loss 1.49163 | recon 1.44512 | kl 3.61999 | smooth 0.98046 | trans 0.02538 | lle 0.00045 | beta 0.013
++      valid loss 2.20790 | recon 2.14818 | kl 2.95113 | smooth 0.97857 | trans 0.03229 | lle 0.00008 | RÂ² 0.3764
++[020] train loss 1.49764 | recon 1.44938 | kl 3.56878 | smooth 0.98231 | trans 0.02572 | lle 0.00046 | beta 0.013
++      valid loss 2.21893 | recon 2.15502 | kl 3.16057 | smooth 0.96614 | trans 0.03229 | lle 0.00009 | RÂ² 0.3744
++[021] train loss 1.38283 | recon 1.33239 | kl 3.55413 | smooth 0.97858 | trans 0.02573 | lle 0.00046 | beta 0.014
++      valid loss 2.23363 | recon 2.17798 | kl 2.74692 | smooth 0.97030 | trans 0.03229 | lle 0.00007 | RÂ² 0.3677
++[022] train loss 1.36532 | recon 1.31676 | kl 3.26462 | smooth 0.98279 | trans 0.02565 | lle 0.00047 | beta 0.015
++      valid loss 2.10272 | recon 2.04061 | kl 3.06949 | smooth 0.96851 | trans 0.03228 | lle 0.00009 | RÂ² 0.4076
++[023] train loss 1.33175 | recon 1.27607 | kl 3.58569 | smooth 0.99070 | trans 0.02578 | lle 0.00049 | beta 0.015
++      valid loss 2.18467 | recon 2.12406 | kl 2.99365 | smooth 0.98019 | trans 0.03228 | lle 0.00008 | RÂ² 0.3834
++[024] train loss 1.30330 | recon 1.24598 | kl 3.53804 | smooth 0.99502 | trans 0.02569 | lle 0.00048 | beta 0.016
++      valid loss 2.15653 | recon 2.08971 | kl 3.30350 | smooth 0.98801 | trans 0.03229 | lle 0.00008 | RÂ² 0.3934
++[025] train loss 1.32490 | recon 1.25226 | kl 4.31520 | smooth 1.00815 | trans 0.02580 | lle 0.00053 | beta 0.017
++      valid loss 2.10274 | recon 2.04540 | kl 2.82841 | smooth 0.99955 | trans 0.03228 | lle 0.00007 | RÂ² 0.4062
++[026] train loss 1.22864 | recon 1.16785 | kl 3.46493 | smooth 1.01180 | trans 0.02567 | lle 0.00050 | beta 0.017
++      valid loss 2.21501 | recon 2.16135 | kl 2.64430 | smooth 0.99763 | trans 0.03228 | lle 0.00009 | RÂ² 0.3726
++[027] train loss 1.17111 | recon 1.09894 | kl 3.96776 | smooth 1.02709 | trans 0.02541 | lle 0.00048 | beta 0.018
++      valid loss 2.11434 | recon 2.05529 | kl 2.91320 | smooth 1.00371 | trans 0.03228 | lle 0.00007 | RÂ² 0.4034
++[028] train loss 1.19249 | recon 1.12691 | kl 3.47282 | smooth 1.03558 | trans 0.02559 | lle 0.00049 | beta 0.019
++      valid loss 2.13626 | recon 2.07983 | kl 2.78087 | smooth 1.02199 | trans 0.03228 | lle 0.00009 | RÂ² 0.3962
++[029] train loss 1.13999 | recon 1.06737 | kl 3.71584 | smooth 1.05111 | trans 0.02553 | lle 0.00049 | beta 0.019
++      valid loss 2.13096 | recon 2.09041 | kl 1.98619 | smooth 1.02515 | trans 0.03227 | lle 0.00009 | RÂ² 0.3932
++[030] train loss 1.13497 | recon 1.07310 | kl 3.05384 | smooth 1.05756 | trans 0.02545 | lle 0.00048 | beta 0.020
++      valid loss 2.41343 | recon 2.35285 | kl 2.98637 | smooth 1.07368 | trans 0.03229 | lle 0.00009 | RÂ² 0.3170
++[031] train loss 1.11323 | recon 1.03476 | kl 3.88376 | smooth 1.07035 | trans 0.02569 | lle 0.00050 | beta 0.020
++      valid loss 2.24118 | recon 2.18612 | kl 2.71073 | smooth 1.04319 | trans 0.03229 | lle 0.00010 | RÂ² 0.3654
++[032] train loss 1.12626 | recon 1.05275 | kl 3.63567 | smooth 1.08017 | trans 0.02557 | lle 0.00050 | beta 0.020
++      valid loss 2.22175 | recon 2.16178 | kl 2.95618 | smooth 1.04530 | trans 0.03227 | lle 0.00008 | RÂ² 0.3724
++[033] train loss 1.07141 | recon 0.98990 | kl 4.03510 | smooth 1.09289 | trans 0.02544 | lle 0.00055 | beta 0.020
++      valid loss 2.20691 | recon 2.15844 | kl 2.37966 | smooth 1.09451 | trans 0.03228 | lle 0.00008 | RÂ² 0.3734
++[034] train loss 1.08086 | recon 1.00722 | kl 3.64183 | smooth 1.10476 | trans 0.02550 | lle 0.00050 | beta 0.020
++      valid loss 2.21853 | recon 2.17506 | kl 2.13044 | smooth 1.07217 | trans 0.03227 | lle 0.00009 | RÂ² 0.3686
++[035] train loss 1.00737 | recon 0.93555 | kl 3.54961 | smooth 1.11952 | trans 0.02565 | lle 0.00053 | beta 0.020
++      valid loss 2.14180 | recon 2.09652 | kl 2.22036 | smooth 1.09507 | trans 0.03227 | lle 0.00008 | RÂ² 0.3914
++[036] train loss 0.98328 | recon 0.91384 | kl 3.43120 | smooth 1.12310 | trans 0.02556 | lle 0.00050 | beta 0.020
++      valid loss 2.11284 | recon 2.07367 | kl 1.91519 | smooth 1.09611 | trans 0.03227 | lle 0.00009 | RÂ² 0.3980
++[037] train loss 0.99051 | recon 0.91657 | kl 3.65505 | smooth 1.13819 | trans 0.02568 | lle 0.00055 | beta 0.020
++      valid loss 2.16939 | recon 2.11854 | kl 2.49796 | smooth 1.12714 | trans 0.03227 | lle 0.00008 | RÂ² 0.3850
++[038] train loss 0.93692 | recon 0.86334 | kl 3.63703 | smooth 1.14738 | trans 0.02555 | lle 0.00056 | beta 0.020
++      valid loss 2.19771 | recon 2.15002 | kl 2.33995 | smooth 1.14972 | trans 0.03227 | lle 0.00011 | RÂ² 0.3759
++[039] train loss 0.93544 | recon 0.86046 | kl 3.70745 | smooth 1.15470 | trans 0.02555 | lle 0.00054 | beta 0.020
++      valid loss 2.03953 | recon 1.99066 | kl 2.39902 | smooth 1.12765 | trans 0.03227 | lle 0.00009 | RÂ² 0.4221
++[040] train loss 0.93413 | recon 0.86098 | kl 3.61484 | smooth 1.17074 | trans 0.02561 | lle 0.00054 | beta 0.020
++      valid loss 2.09886 | recon 2.04828 | kl 2.48367 | smooth 1.16702 | trans 0.03227 | lle 0.00011 | RÂ² 0.4054
++[041] train loss 0.89365 | recon 0.82389 | kl 3.44577 | smooth 1.17995 | trans 0.02572 | lle 0.00053 | beta 0.020
++      valid loss 2.11373 | recon 2.06400 | kl 2.44163 | smooth 1.15285 | trans 0.03226 | lle 0.00008 | RÂ² 0.4008
++[042] train loss 0.87569 | recon 0.79731 | kl 3.87647 | smooth 1.19177 | trans 0.02571 | lle 0.00053 | beta 0.020
++      valid loss 2.11097 | recon 2.05629 | kl 2.68853 | smooth 1.18191 | trans 0.03226 | lle 0.00009 | RÂ² 0.4031
++[043] train loss 0.87906 | recon 0.80690 | kl 3.56473 | smooth 1.21683 | trans 0.02562 | lle 0.00062 | beta 0.020
++      valid loss 2.03828 | recon 1.98805 | kl 2.46582 | smooth 1.19223 | trans 0.03225 | lle 0.00008 | RÂ² 0.4229
++[044] train loss 0.84302 | recon 0.77155 | kl 3.52943 | smooth 1.22682 | trans 0.02563 | lle 0.00054 | beta 0.020
++      valid loss 2.19113 | recon 2.14532 | kl 2.24409 | smooth 1.22313 | trans 0.03227 | lle 0.00009 | RÂ² 0.3772
++[045] train loss 0.82734 | recon 0.75404 | kl 3.62059 | smooth 1.24767 | trans 0.02572 | lle 0.00053 | beta 0.020
++      valid loss 2.12820 | recon 2.07467 | kl 2.62981 | smooth 1.23107 | trans 0.03227 | lle 0.00011 | RÂ² 0.3977
++[046] train loss 0.81771 | recon 0.74559 | kl 3.56122 | smooth 1.25551 | trans 0.02552 | lle 0.00061 | beta 0.020
++      valid loss 2.06060 | recon 2.01933 | kl 2.01668 | smooth 1.23513 | trans 0.03226 | lle 0.00011 | RÂ² 0.4138
++[047] train loss 0.78551 | recon 0.71429 | kl 3.51636 | smooth 1.27412 | trans 0.02536 | lle 0.00060 | beta 0.020
++      valid loss 2.10213 | recon 2.05264 | kl 2.42735 | smooth 1.25516 | trans 0.03225 | lle 0.00009 | RÂ² 0.4041
+ Traceback (most recent call last):
+-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1354, in <module>
+-    best_val, mean_r2 = train(args)
+-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 950, in train
+-    print(f"PCA reduced {roi.shape[1]} â†’ {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
+-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 129, in write
+-    stream.write(data)
+-  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\encodings\cp1252.py", line 19, in encode
+-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+-UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 16: character maps to <undefined>
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1358, in <module>
++    raise SystemExit(0)
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1077, in train
++    # ---- NaN check ----
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\_tensor.py", line 581, in backward
++    torch.autograd.backward(
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\autograd\__init__.py", line 347, in backward
++    _engine_run_backward(
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\autograd\graph.py", line 825, in _engine_run_backward
++    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
++KeyboardInterrupt
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index d1fe9cf..b628577 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -126,7 +126,11 @@ class Tee:
+ 
+     def write(self, data):
+         for stream in self.streams:
+-            stream.write(data)
++            try:
++                stream.write(data)
++            except UnicodeEncodeError:
++                safe = data.encode("ascii", "replace").decode("ascii", "replace")
++                stream.write(safe)
+             stream.flush()
+ 
+     def flush(self):
+@@ -139,6 +143,12 @@ class Tee:
+ 
+ def setup_run_logging(log_path):
+     os.makedirs(os.path.dirname(log_path), exist_ok=True)
++    try:
++        # Prefer UTF-8 for console output on Windows to avoid UnicodeEncodeError.
++        sys.stdout.reconfigure(encoding="utf-8")
++        sys.stderr.reconfigure(encoding="utf-8")
++    except Exception:
++        pass
+     log_file = open(log_path, "w", encoding="utf-8")
+     sys.stdout = Tee(sys.stdout, log_file)
+     sys.stderr = Tee(sys.stderr, log_file)
+diff --git a/src/v6_neural_vae.py b/src/v6_neural_vae.py
+index 7af79c1..29b2c55 100644
+--- a/src/v6_neural_vae.py
++++ b/src/v6_neural_vae.py
+@@ -126,7 +126,11 @@ class Tee:
+ 
+     def write(self, data):
+         for stream in self.streams:
+-            stream.write(data)
++            try:
++                stream.write(data)
++            except UnicodeEncodeError:
++                safe = data.encode("ascii", "replace").decode("ascii", "replace")
++                stream.write(safe)
+             stream.flush()
+ 
+     def flush(self):
+@@ -139,6 +143,12 @@ class Tee:
+ 
+ def setup_run_logging(log_path):
+     os.makedirs(os.path.dirname(log_path), exist_ok=True)
++    try:
++        # Prefer UTF-8 for console output on Windows to avoid UnicodeEncodeError.
++        sys.stdout.reconfigure(encoding="utf-8")
++        sys.stderr.reconfigure(encoding="utf-8")
++    except Exception:
++        pass
+     log_file = open(log_path, "w", encoding="utf-8")
+     sys.stdout = Tee(sys.stdout, log_file)
+     sys.stderr = Tee(sys.stderr, log_file)

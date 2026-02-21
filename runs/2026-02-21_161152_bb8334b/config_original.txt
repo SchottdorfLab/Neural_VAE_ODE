@@ -28,7 +28,7 @@ encoder_type = transformer
 encoder_hidden = 256
 encoder_layers = 1
 encoder_heads = 2
-encoder_ffn_dim = 512
+encoder_ffn_dim = 256
 encoder_dropout = 0.0
 encoder_pool = first
 
@@ -62,3 +62,6 @@ r2_sweep_epochs = 100
 lambda_transition = 0.005
 lambda_lle = 0.005
 lambda_smooth = 0.0002
+
+ode_time_dependent = true
+ode_time_embed_dim = 16

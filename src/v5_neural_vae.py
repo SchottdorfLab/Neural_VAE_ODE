@@ -665,14 +665,25 @@ class SequenceEncoderAttention(nn.Module):
         return self.mu(pooled), self.logvar(pooled)
     
 class MoELatentODEFunc(nn.Module):
-    def __init__(self, latent_dim, num_experts=4, hidden=128):
+    def __init__(self, latent_dim, num_experts=4, hidden=128, time_dependent=False, time_embed_dim=16):
         super().__init__()
         self.num_experts = num_experts
         self.latent_dim = latent_dim
+        self.time_dependent = time_dependent
+        self.time_embed_dim = time_embed_dim
+
+        in_dim = latent_dim
+        if self.time_dependent:
+            in_dim = latent_dim + time_embed_dim
+            self.time_mlp = nn.Sequential(
+                nn.Linear(1, time_embed_dim),
+                nn.SiLU(),
+                nn.Linear(time_embed_dim, time_embed_dim),
+            )
 
         # ----- gating network -----
         self.gate = nn.Sequential(
-            nn.Linear(latent_dim, hidden),
+            nn.Linear(in_dim, hidden),
             nn.SiLU(),
             nn.Linear(hidden, num_experts)   # logits
         )
@@ -680,7 +691,7 @@ class MoELatentODEFunc(nn.Module):
         # ----- expert ODE vector fields -----
         self.experts = nn.ModuleList([
             nn.Sequential(
-                nn.Linear(latent_dim, hidden),
+                nn.Linear(in_dim, hidden),
                 nn.SiLU(),
                 nn.Linear(hidden, hidden),
                 nn.SiLU(),
@@ -698,14 +709,27 @@ class MoELatentODEFunc(nn.Module):
         returns z': [B, D]
         """
 
+        if self.time_dependent:
+            # t is a scalar or tensor; expand to [B, 1]
+            if not torch.is_tensor(t):
+                t = torch.tensor(t, device=z.device, dtype=z.dtype)
+            if t.dim() == 0:
+                t = t.expand(z.size(0)).unsqueeze(1)
+            elif t.dim() == 1:
+                t = t.unsqueeze(1)
+            t_feat = self.time_mlp(t)
+            z_in = torch.cat([z, t_feat], dim=-1)
+        else:
+            z_in = z
+
         # ----- gating -----
-        logits = self.gate(z)                       # [B, num_experts]
+        logits = self.gate(z_in)                    # [B, num_experts]
         weights = torch.softmax(logits, dim=-1)     # convex combination
 
         # ----- compute each expert’s derivative -----
         # result: list of E tensors, each [B, D]
         expert_outs = torch.stack(
-            [expert(z) for expert in self.experts],  # [E, B, D]
+            [expert(z_in) for expert in self.experts],  # [E, B, D]
             dim=0
         )
 
@@ -947,6 +971,8 @@ class ODEVAE(nn.Module):
         encoder_heads=4,
         encoder_ffn_dim=512,
         encoder_pool="mean",
+        ode_time_dependent=False,
+        ode_time_embed_dim=16,
     ):
         super().__init__()
         enc_type = str(encoder_type).lower()
@@ -985,7 +1011,12 @@ class ODEVAE(nn.Module):
             self.enc_type = "sequence"
         else:
             raise ValueError(f"Unknown encoder_type: {encoder_type}")
-        self.odefunc = MoELatentODEFunc(latent_dim, num_experts=num_experts)
+        self.odefunc = MoELatentODEFunc(
+            latent_dim,
+            num_experts=num_experts,
+            time_dependent=ode_time_dependent,
+            time_embed_dim=ode_time_embed_dim,
+        )
         # add noise during training to prevent the ODE from overfitting tiny 
         # geometric details
         # self.latent_noise_std = 0.0
@@ -1180,6 +1211,8 @@ def train(args):
     encoder_heads=getattr(args, "encoder_heads", 4),
     encoder_ffn_dim=getattr(args, "encoder_ffn_dim", 512),
     encoder_pool=getattr(args, "encoder_pool", "mean"),
+    ode_time_dependent=getattr(args, "ode_time_dependent", False),
+    ode_time_embed_dim=getattr(args, "ode_time_embed_dim", 16),
         ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)

@@ -100,6 +100,28 @@ def compute_r2(y_true, y_pred):
         return np.nan  # Avoid divide-by-zero for constant sequences
     return 1 - (ss_res / ss_tot)
 
+def compute_r(y_true, y_pred):
+    """
+    Compute Pearson correlation coefficient (r) between ground truth and prediction.
+    Works with torch tensors or numpy arrays.
+    """
+    if isinstance(y_true, torch.Tensor):
+        y_true = y_true.detach().cpu().numpy()
+    if isinstance(y_pred, torch.Tensor):
+        y_pred = y_pred.detach().cpu().numpy()
+
+    y_true = np.asarray(y_true).reshape(-1)
+    y_pred = np.asarray(y_pred).reshape(-1)
+    if y_true.size == 0 or y_pred.size == 0:
+        return np.nan
+
+    x = y_true - np.mean(y_true)
+    y = y_pred - np.mean(y_pred)
+    denom = np.sqrt(np.sum(x * x) * np.sum(y * y))
+    if denom == 0:
+        return np.nan
+    return np.sum(x * y) / denom
+
 # --- Root directory auto-detection --- #
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SRC_DIR)
@@ -1008,6 +1030,7 @@ def train(args):
     tvec = torch.from_numpy(tvec_np).to(device)
 
     best_val = math.inf
+    mean_r = np.nan
     os.makedirs(args.out_dir, exist_ok = True)
 
     # a global break safeguard, stops training if NaNs are detected
@@ -1093,8 +1116,9 @@ def train(args):
         # ______val
         model.eval()
         with torch.no_grad(): 
-            vl, vr, vk, vs, vt, vlle, r2_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            vl, vr, vk, vs, vt, vlle, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
+            r_count = 0
             for xb in val_loader:
                 # this is trial-wise baseline correction, getting rid of the first 5 frames
                 # so the latent doesn't waste space capacity on slow drifs/offsets
@@ -1148,11 +1172,16 @@ def train(args):
                 r2_batch = compute_r2(xb.cpu(), xhat.cpu())
                 if not np.isnan(r2_batch):
                     r2_total += r2_batch
+                r_batch = compute_r(xb.cpu(), xhat.cpu())
+                if not np.isnan(r_batch):
+                    r_total += r_batch
+                    r_count += 1
                 n_batches += 1
 
             nbv = len(val_loader)
             mean_r2 = r2_total / max(1, n_batches)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | R² {mean_r2:.4f}")
+            mean_r = r_total / max(1, r_count)
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f}")
 
             if vl/nbv < best_val: 
                     best_val = vl/nbv
@@ -1278,6 +1307,7 @@ def train(args):
     "recon": vr / nbv,
     "kl": vk / nbv,
     "smooth": vs / nbv,
+    "r": mean_r,
     "r2": mean_r2,
     "lle": vlle / nbv,
     }
@@ -1288,6 +1318,7 @@ def train(args):
     "hyperparameters": vars(args),
     "final_metrics": {
         "best_val_loss": best_val,
+        "final_r": mean_r,
         "final_r2": mean_r2,
         "recon": vr / nbv,
         "kl": vk / nbv,
@@ -1304,6 +1335,7 @@ def train(args):
         print(f"Saved run metadata → {json_path}")
 
     torch.save(final_metrics, PATHS["final_metrics"])
+    print(f"Final r: {mean_r:.4f}")
     print(f"Final R²: {mean_r2:.4f}")
     return best_val, mean_r2
 
@@ -1383,6 +1415,7 @@ if __name__ == "__main__":
             f"Batch size: {args.batch_size} | Beta: {args.beta} | Smooth λ: {args.lambda_smooth}\n"
             f"Holdout: {args.holdout_trials} | KL warmup: {args.kl_warmup_epochs}\n"
             f"Final validation loss: {best_val:.5f}\n"
+            f"Final r value: {mean_r:.4f}\n"
             f"Final R² value: {mean_r2:.4f}\n"
             f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
             f"---------------------------------------------\n"

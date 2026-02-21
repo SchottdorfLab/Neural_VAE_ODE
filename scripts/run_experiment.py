@@ -109,6 +109,14 @@ def _extract_r2(metrics):
             return metrics[key]
     return ""
 
+def _extract_r(metrics):
+    if not isinstance(metrics, dict):
+        return ""
+    for key in ("r", "final_r", "mean_r"):
+        if key in metrics:
+            return metrics[key]
+    return ""
+
 def _to_jsonable(obj):
     try:
         import numpy as np  # type: ignore
@@ -295,6 +303,7 @@ def main():
                 "commit",
                 "dirty",
                 "exit_code",
+                "r",
                 "r2",
                 "note",
             ])
@@ -306,6 +315,7 @@ def main():
             git_commit,
             str(git_dirty),
             proc.returncode,
+            _extract_r(metrics),
             _extract_r2(metrics),
             args.note,
         ])

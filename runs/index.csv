@@ -1,4 +1,7 @@
-run_id,timestamp,script,config,commit,dirty,exit_code,r2,note
-2026-02-20_171252_89f5757,2026-02-20_171252,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171252_89f5757\config.txt,89f575704ef4360b1c74c6833b9f878d0d7327ab,True,120,0.450567,baseline v5
-2026-02-20_171708_6880b5b,2026-02-20_171708,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171708_6880b5b\config.txt,6880b5b162af04a8b6fcfbab2db698681ff0ad81,True,120,0.45056700706481934,baseline v5
-2026-02-20_172318_6880b5b,2026-02-20_172318,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_172318_6880b5b\config.txt,6880b5b162af04a8b6fcfbab2db698681ff0ad81,True,120,0.45056700706481934,baseline v5
+run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+2026-02-20_171252_89f5757,2026-02-20_171252,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171252_89f5757\config.txt,89f575704ef4360b1c74c6833b9f878d0d7327ab,True,120,,0.450567,baseline v5
+2026-02-20_171708_6880b5b,2026-02-20_171708,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_171708_6880b5b\config.txt,6880b5b162af04a8b6fcfbab2db698681ff0ad81,True,120,,0.45056700706481934,baseline v5
+2026-02-20_172318_6880b5b,2026-02-20_172318,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_172318_6880b5b\config.txt,6880b5b162af04a8b6fcfbab2db698681ff0ad81,True,120,,0.45056700706481934,baseline v5
+2026-02-20_200745_60640d0,2026-02-20_200745,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_200745_60640d0\config.txt,60640d01ed2069b49e9b1f54a32dce9816a0d70c,True,1,,,baseline v5
+2026-02-20_200803_60640d0,2026-02-20_200803,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_200803_60640d0\config.txt,60640d01ed2069b49e9b1f54a32dce9816a0d70c,True,1,,,"update with pearson r, same data as before"
+2026-02-20_200838_60640d0,2026-02-20_200838,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-20_200838_60640d0\config.txt,60640d01ed2069b49e9b1f54a32dce9816a0d70c,True,1,,,"update with pearson r, same data as before"

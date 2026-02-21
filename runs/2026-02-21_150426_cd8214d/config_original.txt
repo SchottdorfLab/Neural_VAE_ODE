@@ -27,10 +27,10 @@ decoder_type = moe
 
 encoder_type = transformer
 encoder_hidden = 256
-encoder_layers = 1
+encoder_layers = 2
 encoder_heads = 4
 encoder_ffn_dim = 512
-encoder_dropout = 0.0
+encoder_dropout = 0.1
 encoder_pool = mean
 
 

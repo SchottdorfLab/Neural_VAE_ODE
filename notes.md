@@ -1,7 +1,10 @@
 # Notes:
 By Kathleen Higgins
 
-## Feburary 20th; 4:52pm:
+## February 20th; 8:14pm:
+- Added pearson r (but not running it tonight because if I get a bad score I will literally panic)
+
+## February 20th; 4:52pm:
 
 CONFIGURABLE COMMAND TEMPLATE:
 ```

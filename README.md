@@ -2,8 +2,6 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
-## Most Recent Updates:
-
 ## February 21st, 3:21pm: 
 - Using a transformer model, better with scores (yay!)
 - Previous run had been a little too heavy for the transformer model with a dropout of 0.1 and two layers, I switched it to a layer of 1 and no dropout and we're rolling vastly better, to the extent that we're better than non-transformer "first" version. 
@@ -16,6 +14,7 @@ Final R²: 0.4736
 ```
 
 ## February 21st, 3:16pm:
+```
 What the latest transformer run shows
 From run_metadata.json:
 

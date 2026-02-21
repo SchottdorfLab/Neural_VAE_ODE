@@ -1,6 +1,31 @@
 # Notes:
 By Kathleen Higgins
 
+## February 21st, 1:42pm: 
+**What's mu?**
+Mu is the mean of the encoder's approximate posterior over the initial latent state---i.e. q(z0 | x) if using a first-frame system, or if we're using a sequence encoder, it's q(z0 | z1:L). 
+- The encoder outputs mu and logvar.
+- The model samples z0 via the reparameterizatino trick (described more below). eps comes from the normal distribution N(0, I). 
+- mu therefore represents the central, e.g. most likely latent initial condition inferred from the input sequence. 
+
+Some more quick notes on that:
+- If you set eps = 0, then z0 = mu is the deterministic latent initial state.
+- logvar controls uncertainty around that mean, a larger logvar means more stochasticity. 
+***To summarize: mu is the inferred latent "starting point" for the ODE trajectory.***
+
+**What's z0?**
+- z0 is the initial latent state for a trial. 
+- It is the latent starting point that the ODE evolves over time. 
+- We sample z0 with the reparameterization trick: z0 = mu + exp(0.5 * logvar) * eps
+- That z0 is then fed into the latent ODE, which produces the full latent trajectory z(t) over the trial. 
+- The decoder maps z(t) back to predicted neural activity x̂(t). 
+
+## February 21st, 1:39pm:
+Quick explanation of the different encoder types implemented in v5 (previously, we'd been using one that only uses the first frame, e.g. encoder_type = first).
+
+Now, we've introduced three new encoder types, which all avoid the "first-frame only" issue. Any of these will allow the model to condition q(z0) on the full sequence x1:L. 
+
+
 ## February 21st, 1:29pm:
 - Final r: 0.6734
 - Final R²: 0.4506

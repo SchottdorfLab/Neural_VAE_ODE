@@ -14,7 +14,7 @@ holdout_trials = 3
 use_pca = true
 pca_variance = 0.95
 landmark_count = 100
-out_dir = C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_131843_0458e66
+out_dir = C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_150426_cd8214d
 pca_dim = 20
 num_experts = 4
 hidden = 128
@@ -24,6 +24,17 @@ decoder_hidden = 256
 cv_folds = 4
 k_neighbors = 16 
 decoder_type = moe
+
+encoder_type = transformer
+encoder_hidden = 256
+encoder_layers = 2
+encoder_heads = 4
+encoder_ffn_dim = 512
+encoder_dropout = 0.1
+encoder_pool = mean
+
+
+encoder_bidirectional = false
 baseline_correct = true
 dec_num_experts = 8
 gating_entropy_coef = 0.01
@@ -31,7 +42,7 @@ gating_entropy_warmup = 20
 seed = 1
 early_stopping_patience = 15
 early_stopping_min_delta = 0.0
-sweep_enabled = true
+sweep_enabled = false
 sweep_latent_dim = 5, 8
 sweep_beta = 0.02
 sweep_lambda_smooth = 0.0005, 0.0002

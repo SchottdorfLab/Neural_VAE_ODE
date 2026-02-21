@@ -4,6 +4,85 @@
 
 ## Most Recent Updates:
 
+## February 21st, 3:21pm: 
+- Using a transformer model, better with scores (yay!)
+- Previous run had been a little too heavy for the transformer model with a dropout of 0.1 and two layers, I switched it to a layer of 1 and no dropout and we're rolling vastly better, to the extent that we're better than non-transformer "first" version. 
+
+New metrics:
+```
+Final r: 0.6915
+Final R²: 0.4736
+
+```
+
+## February 21st, 3:16pm:
+What the latest transformer run shows
+From run_metadata.json:
+
+r2 = 0.3994 (lower than baseline ~0.4506)
+r = 0.6325
+recon = 2.0688 (worse)
+kl = 1.9649 (lower)
+smooth = 1.7922 (lower)
+Compared to the non‑transformer run (run_metadata.json), recon got worse and KL dropped a lot. Lower KL typically means the posterior is closer to the prior → less information in z0, which hurts reconstruction.
+
+Why it’s likely lower
+
+Mean pooling + transformer can wash out dynamics
+encoder_pool = mean produces a time‑average representation, but z0 is an initial condition. You’re summarizing the entire sequence into one vector, which can blur the info needed to reconstruct early dynamics.
+
+Transformer is data‑hungry
+You only have ~100 sequences. A 2‑layer transformer with dropout can underfit or overly smooth in this regime.
+
+Strong regularizers stay on
+Smoothness/transition/LLE penalties are still active. With a more expressive encoder, these can over‑constrain and push toward overly smooth latents, reducing recon and R².
+
+Concrete fixes to try first
+
+Change pooling to anchor t0 but still use full sequence
+Set encoder_pool = first. This uses attention over all frames but takes the first position embedding as the summary (better aligned with z0).
+
+Shrink the transformer
+Start small:
+
+encoder_layers = 1
+encoder_heads = 2
+encoder_hidden = 128
+encoder_ffn_dim = 256
+encoder_dropout = 0.0
+Reduce regularizers for the first transformer sweep
+Try:
+
+lambda_transition = 0.0
+lambda_lle = 0.0
+lambda_smooth = 0.0002
+Then re‑introduce once the encoder shows a gain.
+
+Lower LR
+Transformers often like smaller LR:
+
+lr = 0.001
+Check best‑epoch vs final‑epoch
+The run metadata uses the last epoch’s mean_r2, not necessarily the best. If R² peaked earlier, you’re comparing the wrong point.
+```
+
+## February 21st, 3:06pm:
+- Just ran using the transformer 
+## February 21st, 3:01pm:
+Quick note of the previous first config values:
+```
+encoder_type = first
+encoder_hidden = 256
+encoder_layers = 1
+encoder_bidirectional = false
+encoder_dropout = 0.0
+encoder_heads = 4
+encoder_ffn_dim = 512
+encoder_pool = mean
+```
+
+Also a reminder that the new config information is stored in v5_base.txt, and not in config.txt anymore. Config.txt can still be used if you're running directly on the script, but if you're running using the experiments, that's not going to work.
+
 ## February 21st, 1:42pm: 
 **What's mu?**
 Mu is the mean of the encoder's approximate posterior over the initial latent state---i.e. q(z0 | x) if using a first-frame system, or if we're using a sequence encoder, it's q(z0 | z1:L). 

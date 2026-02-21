@@ -2,7 +2,7 @@ data_path = ../npz_e65_data/E65_data.npz
 trial_len_s = 12
 fps = 10
 drop_first_trials = 10
-latent_dim = 5
+latent_dim = 7
 batch_size = 8
 epochs = 150
 lr = 0.002
@@ -24,14 +24,17 @@ decoder_hidden = 256
 cv_folds = 4
 k_neighbors = 16 
 decoder_type = moe
+
 encoder_type = transformer
 encoder_hidden = 256
 encoder_layers = 1
-encoder_bidirectional = false
-encoder_dropout = 0.1
 encoder_heads = 4
 encoder_ffn_dim = 512
-encoder_pool = mean
+encoder_dropout = 0.0
+encoder_pool = first
+
+
+encoder_bidirectional = false
 baseline_correct = true
 dec_num_experts = 8
 gating_entropy_coef = 0.01

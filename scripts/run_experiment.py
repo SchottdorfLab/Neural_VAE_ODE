@@ -31,6 +31,8 @@ def _run(cmd, cwd=None, check=True, input_text=None):
         cwd=cwd,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         input=input_text,
     )
     if check and result.returncode != 0:
@@ -244,6 +246,8 @@ def main():
             stdout=logf,
             stderr=subprocess.STDOUT,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     run_meta["exit_code"] = proc.returncode
 

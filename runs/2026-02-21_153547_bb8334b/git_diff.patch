@@ -1,0 +1,152 @@
+diff --git a/README.md b/README.md
+index 64e93f0..7c5d06f 100644
+--- a/README.md
++++ b/README.md
+@@ -221,7 +221,7 @@ Using the native frame grid (or resampling to a consistent but realistic L) usua
+ - If you want the “d≈4–6” type claim, add a geodesic-distance–based intrinsic dimension estimator (kNN graph shortest paths in latent space is a practical proxy), then do the N(r) ~ r^d slope fit and bootstrap CIs.
+ 
+ ## January 7th, 8:02pm:
+-- Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. "Sunshine". Here is some output from the terminal print statement. 
++- Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. Here is some output from the terminal print statement. 
+ ```
+ (base) PS C:\Users\schot\Neural_VAE_ODE> ssh-keygen -t ed25519 -C "kathigg@udel.edu"
+ Generating public/private ed25519 key pair.
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index 3f6bfdf..0ffa30d 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -2,7 +2,7 @@ data_path = ../npz_e65_data/E65_data.npz
+ trial_len_s = 12
+ fps = 10
+ drop_first_trials = 10
+-latent_dim = 5
++latent_dim = 7
+ batch_size = 8
+ epochs = 150
+ lr = 0.002
+@@ -31,7 +31,7 @@ encoder_layers = 1
+ encoder_heads = 4
+ encoder_ffn_dim = 512
+ encoder_dropout = 0.0
+-encoder_pool = mean
++encoder_pool = first
+ 
+ 
+ encoder_bidirectional = false
+diff --git a/runs/index.csv b/runs/index.csv
+index d115b93..db5c7e6 100644
+--- a/runs/index.csv
++++ b/runs/index.csv
+@@ -11,3 +11,4 @@ run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+ 2026-02-21_142916_cd8214d,2026-02-21_142916,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_142916_cd8214d\config.txt,cd8214d72ad2eb9bae285cbdcb5221fadc1799ff,True,120,0.6734338998794556,0.45056700706481934,transformer encoder
+ 2026-02-21_150426_cd8214d,2026-02-21_150426,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_150426_cd8214d\config.txt,cd8214d72ad2eb9bae285cbdcb5221fadc1799ff,True,120,0.6325183510780334,0.3994354009628296,transformer encoder
+ 2026-02-21_151155_cd8214d,2026-02-21_151155,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_151155_cd8214d\config.txt,cd8214d72ad2eb9bae285cbdcb5221fadc1799ff,True,120,0.6914682984352112,0.4736021161079407,"transformer, with updated layers to 1 and updated dropout to 0."
++2026-02-21_152848_bb8334b,2026-02-21_152848,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_152848_bb8334b\config.txt,bb8334b4af60303bafc45f86b2d0a9e9963f276d,True,120,0.6914682984352112,0.4736021161079407,"transformer, with encoder pool now set to first and updated dimensions to 7"
+diff --git a/scripts/run_experiment.py b/scripts/run_experiment.py
+index e7a7420..e0d245c 100644
+--- a/scripts/run_experiment.py
++++ b/scripts/run_experiment.py
+@@ -31,6 +31,8 @@ def _run(cmd, cwd=None, check=True, input_text=None):
+         cwd=cwd,
+         capture_output=True,
+         text=True,
++        encoding="utf-8",
++        errors="replace",
+         input=input_text,
+     )
+     if check and result.returncode != 0:
+@@ -244,6 +246,8 @@ def main():
+             stdout=logf,
+             stderr=subprocess.STDOUT,
+             text=True,
++            encoding="utf-8",
++            errors="replace",
+         )
+     run_meta["exit_code"] = proc.returncode
+ 
+diff --git a/src/config.txt b/src/config.txt
+deleted file mode 100644
+index 7fe507d..0000000
+--- a/src/config.txt
++++ /dev/null
+@@ -1,60 +0,0 @@
+-data_path = ../npz_e65_data/E65_data.npz
+-trial_len_s = 12
+-fps = 10
+-drop_first_trials = 10
+-latent_dim = 5
+-batch_size = 8
+-epochs = 150
+-lr = 0.002
+-weight_decay = 0.00001
+-beta = 0.02
+-kl_warmup_epochs = 30
+-lambda_smooth = 0.0005
+-holdout_trials = 3
+-use_pca = true
+-pca_variance = 0.95
+-landmark_count = 100
+-out_dir = ../runs/ode_vae_E65
+-pca_dim = 20
+-num_experts = 4
+-hidden = 128
+-gating_temperature = 1.0
+-decoder_emb_dim = 16
+-decoder_hidden = 256
+-cv_folds = 4
+-k_neighbors = 16 
+-decoder_type = moe
+-encoder_type = transformer
+-encoder_hidden = 256
+-encoder_layers = 1
+-encoder_bidirectional = false
+-encoder_dropout = 0.1
+-encoder_heads = 4
+-encoder_ffn_dim = 512
+-encoder_pool = mean
+-baseline_correct = true
+-dec_num_experts = 8
+-gating_entropy_coef = 0.01
+-gating_entropy_warmup = 20
+-seed = 1
+-early_stopping_patience = 15
+-early_stopping_min_delta = 0.0
+-sweep_enabled = false
+-sweep_latent_dim = 5, 8
+-sweep_beta = 0.02
+-sweep_lambda_smooth = 0.0005, 0.0002
+-lambda_transition = 0.01
+-lambda_transition_warmup_epochs = 30
+-lambda_lle = 0.01
+-lle_k = 8
+-lle_max_points = 256
+-lle_temperature = 0.1
+-lambda_graph = 0.01
+-graph_k = 8
+-graph_max_points = 256
+-graph_temperature = 0.1
+-r2_sweep_enabled = false
+-r2_sweep_dims = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+-r2_sweep_repeats = 3
+-r2_sweep_seed = 42
+-r2_sweep_epochs = 100
+diff --git a/src/script_output.txt b/src/script_output.txt
+index 690bc3c..f891ddd 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,5 +1,5 @@
+ Running script: v5_neural_vae.py
+-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_151155_cd8214d\config.txt
++Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_152848_bb8334b\config.txt
+ Device: cuda
+ PCA reduced 375 → 129 dims (95.02% variance)
+ Selecting 100 landmark trials (greedy coverage)...
+@@ -333,7 +333,7 @@ experts.6.4.bias 0.003194165416061878
+ experts.7.0.bias 0.005786352790892124
+ experts.7.2.bias -0.01710359752178192
+ experts.7.4.bias 0.0021687408443540335
+-Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_151155_cd8214d\run_metadata.json
++Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_152848_bb8334b\run_metadata.json
+ Final r: 0.6915
+ Final R²: 0.4736
+ Traceback (most recent call last):

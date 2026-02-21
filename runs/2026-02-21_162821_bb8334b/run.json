@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-02-21_162821_bb8334b",
+  "timestamp": "2026-02-21_162821",
+  "script": "C:\\Users\\schot\\Neural_VAE_ODE\\src\\v5_neural_vae.py",
+  "config": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\config.txt",
+  "config_original": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\config_original.txt",
+  "note": "trying witha bidirectional",
+  "git_commit": "bb8334b4af60303bafc45f86b2d0a9e9963f276d",
+  "git_short": "bb8334b",
+  "git_dirty": true,
+  "git_status": "M README.md\n M configs/v5_base.txt\n M runs/index.csv\n M scripts/run_experiment.py\n D src/config.txt\n M src/preview.png\n M src/pt_files/final_metrics.pt\n M src/pt_files/latent_manifold_mds.png\n M src/script_output.txt\n M src/v5_neural_vae.py\n?? runs/2026-02-21_153547_bb8334b/\n?? runs/2026-02-21_154245_bb8334b/\n?? runs/2026-02-21_161152_bb8334b/\n?? runs/2026-02-21_162126_bb8334b/\n?? src/archived_ode_models/config.txt",
+  "git_diff_patch": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\git_diff.patch",
+  "code_change_summary": "Changed 10 files: README.md (12 lines), configs/v5_base.txt (23 lines), runs/index.csv (5 lines), scripts/run_experiment.py (4 lines), src/config.txt (60 lines)....",
+  "exit_code": 120,
+  "artifacts": [
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\preview.png",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\training_results.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\script_output.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\ode_vae_best.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\final_metrics.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\trained_pca.pkl",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-21_162821_bb8334b\\latent_manifold_mds.png"
+  ],
+  "metrics": {
+    "recon": 1.9218460321426392,
+    "kl": 2.5718910694122314,
+    "smooth": 2.98576021194458,
+    "r": 0.6739253401756287,
+    "r2": 0.4420887231826782,
+    "lle": 0.00013250623305793852
+  }
+}

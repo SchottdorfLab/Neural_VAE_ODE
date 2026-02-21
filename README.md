@@ -2,6 +2,35 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 21st, 4:45pm:
+- IMPORTANT COMMAND ALERT. I got tired of constantly having to go back and copy-paste my latest config file, so I added this:
+```
+python scripts/restore_last_config.py --dest configs/v5_base.txt
+```
+And also, you can add flags to decide how far back you want to go with the config file, e.g.:
+```
+python scripts/restore_last_config.py --dest configs/v5_base.txt --offset 2
+```
+Offset 1 is the latest, offset 2 is previous. 
+
+
+## February 21st, 4:37pm:
+- Note to self: running bidirectional with a transformer makes it worse (weird??)
+```
+Final r: 0.6739
+Final R²: 0.4421
+```
+
+## February 21st, 4:04pm:
+- Latest run with modifications to lr, lambda_transition, lambda_lle, etc. made scores go slightly down---not sure why. I'm tired of hyperparameter tuning and I'd like to get larger stuff to work. So i'm going to try the other versions. 
+
+## February 21st, 3:39pm:
+- With an updated dimensionality of 7 and a new pool of first:
+```
+Final r: 0.6969
+Final R²: 0.4834
+```
+So better again. 
 ## February 21st, 3:21pm: 
 - Using a transformer model, better with scores (yay!)
 - Previous run had been a little too heavy for the transformer model with a dropout of 0.1 and two layers, I switched it to a layer of 1 and no dropout and we're rolling vastly better, to the extent that we're better than non-transformer "first" version. 
@@ -221,7 +250,7 @@ Using the native frame grid (or resampling to a consistent but realistic L) usua
 - If you want the “d≈4–6” type claim, add a geodesic-distance–based intrinsic dimension estimator (kNN graph shortest paths in latent space is a practical proxy), then do the N(r) ~ r^d slope fit and bootstrap CIs.
 
 ## January 7th, 8:02pm:
-- Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. "Sunshine". Here is some output from the terminal print statement. 
+- Realized all my commits from the Schottdorf lab computer are coming from Mubariz. That's not good. Setting up stuff to work with my Github, and needed a specific key. Here is some output from the terminal print statement. 
 ```
 (base) PS C:\Users\schot\Neural_VAE_ODE> ssh-keygen -t ed25519 -C "kathigg@udel.edu"
 Generating public/private ed25519 key pair.

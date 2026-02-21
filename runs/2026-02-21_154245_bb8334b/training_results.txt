@@ -1,0 +1,40 @@
+=== Run at 2026-02-20 17:23:20 ===
+Commit: db2ecb17f3ffcd24d2449fa5cdb080f1ea545948
+Data: C:\Users\schot\Neural_VAE_ODE\src\npz_e65_data\E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.85077
+Final R² value: 0.4506
+Saved model: C:\Users\schot\Neural_VAE_ODE\src\pt_files\ode_vae_best.pt
+---------------------------------------------
+=== Run at 2026-02-20 17:17:11 ===
+Commit: 6880b5b162af04a8b6fcfbab2db698681ff0ad81
+Data: C:\Users\schot\Neural_VAE_ODE\src\npz_e65_data\E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.85077
+Final R² value: 0.4506
+Saved model: C:\Users\schot\Neural_VAE_ODE\src\pt_files\ode_vae_best.pt
+---------------------------------------------
+=== Run at 2026-02-20 16:35:42 ===
+Commit: a927433a0a479c4de25256ee334b38e76ec11fc5
+Data: C:\Users\schot\Neural_VAE_ODE\src\npz_e65_data\E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.85077
+Final R² value: 0.4506
+Saved model: C:\Users\schot\Neural_VAE_ODE\src\pt_files\ode_vae_best.pt
+---------------------------------------------
+=== Run at 2026-02-20 16:32:16 ===
+Commit: a927433a0a479c4de25256ee334b38e76ec11fc5
+Data: C:\Users\schot\Neural_VAE_ODE\src\npz_e65_data\E65_data.npz
+Latent dim: 5 | Epochs: 150 | LR: 0.002
+Batch size: 8 | Beta: 0.02 | Smooth λ: 0.0005
+Holdout: 3 | KL warmup: 30
+Final validation loss: 1.85077
+Final R² value: 0.4506
+Saved model: C:\Users\schot\Neural_VAE_ODE\src\pt_files\ode_vae_best.pt
+---------------------------------------------

@@ -1,0 +1,9 @@
+Running script: v5_neural_vae.py
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-21_162126_bb8334b\config.txt
+Device: cuda
+PCA reduced 375 → 129 dims (95.02% variance)
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=129
+C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\transformer.py:379: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
+  warnings.warn(

@@ -1,6 +1,11 @@
 # Notes:
 By Kathleen Higgins
 
+## February 21st, 1:29pm:
+- Final r: 0.6734
+- Final R²: 0.4506
+***Note: first time I've been able to see pearson's r value***. 
+
 ## February 20th; 8:14pm:
 - Added pearson r (but not running it tonight because if I get a bad score I will literally panic)
 

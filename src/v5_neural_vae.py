@@ -9,7 +9,7 @@ What it does today:
 - Optional per-trial baseline correction (subtract mean of first 5 frames).
 
 Model architecture:
-- Encoder: MLP x(t0) -> (mu, logvar).
+- Encoder: MLP x(t0) -> (mu, logvar), optionally a sequence encoder over x(t1..L).
 - Latent dynamics: MoELatentODEFunc (mixture of expert ODE vector fields).
 - Decoder options (decoder_type): MLP / NeuronAware / LocalAttention / MoE decoder.
 
@@ -570,6 +570,99 @@ class Encoder(nn.Module):
     def forward(self, x0): # x0: [B, N]
         h = self.net(x0)
         return self.mu(h), self.logvar(h)
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_len=5000):
+        super().__init__()
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)  # [1, max_len, d_model]
+        self.register_buffer("pe", pe)
+
+    def forward(self, x):
+        # x: [B, L, D]
+        L = x.size(1)
+        return x + self.pe[:, :L, :]
+
+class SequenceEncoderGRU(nn.Module):
+    def __init__(self, n_in, latent_dim, hidden=256, layers=1, bidirectional=False, dropout=0.0):
+        super().__init__()
+        self.gru = nn.GRU(
+            input_size=n_in,
+            hidden_size=hidden,
+            num_layers=layers,
+            batch_first=True,
+            bidirectional=bidirectional,
+            dropout=dropout if layers > 1 else 0.0,
+        )
+        out_dim = hidden * (2 if bidirectional else 1)
+        self.mu = nn.Linear(out_dim, latent_dim)
+        self.logvar = nn.Linear(out_dim, latent_dim)
+        self.bidirectional = bidirectional
+
+    def forward(self, x_seq):  # x_seq: [B, L, N]
+        _, h_n = self.gru(x_seq)  # h_n: [layers*dirs, B, hidden]
+        if self.bidirectional:
+            h_last = torch.cat([h_n[-2], h_n[-1]], dim=-1)  # [B, hidden*2]
+        else:
+            h_last = h_n[-1]  # [B, hidden]
+        return self.mu(h_last), self.logvar(h_last)
+
+class SequenceEncoderTransformer(nn.Module):
+    def __init__(self, n_in, latent_dim, hidden=256, layers=2, heads=4, ffn_dim=512, dropout=0.1, pool="mean"):
+        super().__init__()
+        self.proj = nn.Linear(n_in, hidden)
+        self.pos = PositionalEncoding(hidden)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden,
+            nhead=heads,
+            dim_feedforward=ffn_dim,
+            dropout=dropout,
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=layers)
+        self.mu = nn.Linear(hidden, latent_dim)
+        self.logvar = nn.Linear(hidden, latent_dim)
+        self.pool = pool
+
+    def forward(self, x_seq):  # x_seq: [B, L, N]
+        x = self.proj(x_seq)          # [B, L, H]
+        x = self.pos(x)
+        x = x.transpose(0, 1)         # [L, B, H]
+        h = self.encoder(x)
+        h = h.transpose(0, 1)         # [B, L, H]
+        if self.pool == "last":
+            pooled = h[:, -1, :]
+        elif self.pool == "first":
+            pooled = h[:, 0, :]
+        else:
+            pooled = h.mean(dim=1)
+        return self.mu(pooled), self.logvar(pooled)
+
+class SequenceEncoderAttention(nn.Module):
+    def __init__(self, n_in, latent_dim, hidden=256, dropout=0.0):
+        super().__init__()
+        self.proj = nn.Sequential(
+            nn.Linear(n_in, hidden),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+        )
+        self.score = nn.Sequential(
+            nn.Linear(hidden, hidden),
+            nn.Tanh(),
+            nn.Linear(hidden, 1),
+        )
+        self.mu = nn.Linear(hidden, latent_dim)
+        self.logvar = nn.Linear(hidden, latent_dim)
+
+    def forward(self, x_seq):  # x_seq: [B, L, N]
+        h = self.proj(x_seq)                  # [B, L, H]
+        scores = self.score(h).squeeze(-1)    # [B, L]
+        attn = torch.softmax(scores, dim=1)   # [B, L]
+        pooled = (attn.unsqueeze(-1) * h).sum(dim=1)
+        return self.mu(pooled), self.logvar(pooled)
     
 class MoELatentODEFunc(nn.Module):
     def __init__(self, latent_dim, num_experts=4, hidden=128):
@@ -838,9 +931,60 @@ class Decoder(nn.Module):
         return x.reshape(B, L, -1)
     
 class ODEVAE(nn.Module):
-    def __init__(self, n_neurons, latent_dim, num_experts, decoder_type="mlp", k_neighbors=16, dec_num_experts = 4):
+    def __init__(
+        self,
+        n_neurons,
+        latent_dim,
+        num_experts,
+        decoder_type="mlp",
+        k_neighbors=16,
+        dec_num_experts=4,
+        encoder_type="first",
+        encoder_hidden=256,
+        encoder_layers=1,
+        encoder_bidirectional=False,
+        encoder_dropout=0.0,
+        encoder_heads=4,
+        encoder_ffn_dim=512,
+        encoder_pool="mean",
+    ):
         super().__init__()
-        self.enc = Encoder(n_neurons, latent_dim)
+        enc_type = str(encoder_type).lower()
+        if enc_type in ("first", "frame", "mlp"):
+            self.enc = Encoder(n_neurons, latent_dim)
+            self.enc_type = "first"
+        elif enc_type == "gru":
+            self.enc = SequenceEncoderGRU(
+                n_neurons,
+                latent_dim,
+                hidden=encoder_hidden,
+                layers=encoder_layers,
+                bidirectional=encoder_bidirectional,
+                dropout=encoder_dropout,
+            )
+            self.enc_type = "sequence"
+        elif enc_type in ("transformer", "trans"):
+            self.enc = SequenceEncoderTransformer(
+                n_neurons,
+                latent_dim,
+                hidden=encoder_hidden,
+                layers=encoder_layers,
+                heads=encoder_heads,
+                ffn_dim=encoder_ffn_dim,
+                dropout=encoder_dropout,
+                pool=encoder_pool,
+            )
+            self.enc_type = "sequence"
+        elif enc_type in ("attention", "attn", "temporal_attn"):
+            self.enc = SequenceEncoderAttention(
+                n_neurons,
+                latent_dim,
+                hidden=encoder_hidden,
+                dropout=encoder_dropout,
+            )
+            self.enc_type = "sequence"
+        else:
+            raise ValueError(f"Unknown encoder_type: {encoder_type}")
         self.odefunc = MoELatentODEFunc(latent_dim, num_experts=num_experts)
         # add noise during training to prevent the ODE from overfitting tiny 
         # geometric details
@@ -906,8 +1050,11 @@ class ODEVAE(nn.Module):
         tvec:  [L] strictly increasing (float tensor)
         """
         B, L, N = x_seq.shape
-        x0 = x_seq[:, 0, :]                    # [B, N]
-        mu, logvar = self.enc(x0)              # [B, D], [B, D]
+        if self.enc_type == "first":
+            x0 = x_seq[:, 0, :]                # [B, N]
+            mu, logvar = self.enc(x0)          # [B, D], [B, D]
+        else:
+            mu, logvar = self.enc(x_seq)       # [B, D], [B, D]
         z0 = self.reparam(mu, logvar).float()
         tvec = tvec.float()
 
@@ -1024,7 +1171,15 @@ def train(args):
     num_experts=args.num_experts,
     decoder_type=args.decoder_type,
     k_neighbors=getattr(args, "k_neighbors", 16),
-    dec_num_experts=getattr(args, "dec_num_experts", 4)
+    dec_num_experts=getattr(args, "dec_num_experts", 4),
+    encoder_type=getattr(args, "encoder_type", "first"),
+    encoder_hidden=getattr(args, "encoder_hidden", 256),
+    encoder_layers=getattr(args, "encoder_layers", 1),
+    encoder_bidirectional=getattr(args, "encoder_bidirectional", False),
+    encoder_dropout=getattr(args, "encoder_dropout", 0.0),
+    encoder_heads=getattr(args, "encoder_heads", 4),
+    encoder_ffn_dim=getattr(args, "encoder_ffn_dim", 512),
+    encoder_pool=getattr(args, "encoder_pool", "mean"),
         ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)

@@ -25,6 +25,24 @@ Quick explanation of the different encoder types implemented in v5 (previously, 
 
 Now, we've introduced three new encoder types, which all avoid the "first-frame only" issue. Any of these will allow the model to condition q(z0) on the full sequence x1:L. 
 
+**GRU**
+- encoder_type = gru
+- It runs a recurrent model over the full sequence and uses the finla hidden state to produce mu, logvar. 
+- It is a good default for modest data sizes, captures temporal order and dynamics, plus it's stable and cheap (slay).
+- Weaknesses is that it can underfit long-range structure compared to attention, less parallelizable. 
+
+**Transformer**
+- encoder_type = transformer
+- It projects each frame, adds positional encoding, runs a Transformer encoder, then pools over time (mean/first/last) to get mu, logvar.
+- Strengths: strong long-range modeling, highly parallel, flexible pooling.
+- Weaknesses: more parameters and compute plus it often needs more data or regularization to beat GRU.
+
+**Temporal Attention**
+- encoder_type = attn
+- It does: MLP per frame + learned attention weights over time, then a weighted su to get a single vector for mu, logvar.
+- Stengths: simplest "full sequence" model + it's cheap and it has interpretable attention weights.
+- Weaknesses: it doesn't model interactions between timepoints as richly as a transformer. 
+
 
 ## February 21st, 1:29pm:
 - Final r: 0.6734

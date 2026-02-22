@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-02-22_142537_bbc402e",
+  "timestamp": "2026-02-22_142537",
+  "script": "C:\\Users\\schot\\Neural_VAE_ODE\\src\\v5_neural_vae.py",
+  "config": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\config.txt",
+  "config_original": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\config_original.txt",
+  "note": "turned off lambda smooth for a test.",
+  "git_commit": "bbc402ef04e6f19ad7e96effdd269c455b40ecc5",
+  "git_short": "bbc402e",
+  "git_dirty": true,
+  "git_status": "M configs/v5_base.txt",
+  "git_diff_patch": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\git_diff.patch",
+  "code_change_summary": "Changed 60 files: README.md (53 lines), configs/v5_base.txt (8 lines), runs/2026-02-22_133143_3686bcc/config.txt (68 lines), runs/2026-02-22_133143_3686bcc/config_original.txt (68 lines), runs/2026-02-22_133143_3686bcc/final_metrics.pt (0 lines)....",
+  "exit_code": 120,
+  "artifacts": [
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\preview.png",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\training_results.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\script_output.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\ode_vae_best.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\final_metrics.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\trained_pca.pkl",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_142537_bbc402e\\latent_manifold_mds.png"
+  ],
+  "metrics": {
+    "recon": 1.8445258140563965,
+    "kl": 2.4836370944976807,
+    "smooth": 0.0,
+    "r": 0.6852681040763855,
+    "r2": 0.4645347595214844,
+    "lle": 0.00012958793377038091
+  }
+}

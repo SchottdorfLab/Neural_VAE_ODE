@@ -2,6 +2,21 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 2:34pm:
+I was really thinking about lambda smooth and whether adding that constraint is supressing legitimate neural variability, and whether it's fighting against the transition loss (matching dx/dt), but like it's already heavily reduced in terms of smoothness. 
+Ran it with 0, and stuff is a good bit more jittery, but it's kind of providng that the argument that it's redundant with the ODE isn't strictly correct. 
+
+The ODE gives differentiability, the smoothness term specifically controls trajectory speed. 
+
+With lambda_smooth = 0.0:
+```
+Final r: 0.6853
+Final R²: 0.4645
+```
+So slight drop. Not major. But I'm going to bring it back to what it was before. So the prediciton that lambda_smooth is hurting variance scores: disproven. 
+
+It's my own hypothesis, so I'm not insulted, but it's an interesting little nugget of data. What if we increased the lambda_smooth? Is it time to start fine-tuning hyperparameters by doing a hyperparameter sweep?
+
 ## February 22nd, 1:35pm:
 - Panic resolved. 
 ```

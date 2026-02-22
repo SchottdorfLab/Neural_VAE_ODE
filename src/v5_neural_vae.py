@@ -1336,6 +1336,7 @@ def train(args):
         mu = None
         sd = None
         xhat_bias = True
+        eval_metrics_space = getattr(args, "eval_metrics_space", "pca")
 
     # --- Normalize time vector to [0,1] for numerical stability ---
     tvec_np = tvec_np / tvec_np[-1]
@@ -1454,7 +1455,7 @@ def train(args):
             vl, vr, vk, vs, vt, vlle, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
             r_count = 0
-            val_preds = [] if use_mind_split else None
+            val_preds = [] if (use_mind_split or eval_metrics_space == "raw") else None
             for xb in val_loader:
                 # this is trial-wise baseline correction, getting rid of the first 5 frames
                 # so the latent doesn't waste space capacity on slow drifs/offsets
@@ -1504,7 +1505,7 @@ def train(args):
                 )
                 vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item()
 
-                if use_mind_split:
+                if use_mind_split or eval_metrics_space == "raw":
                     val_preds.append(xhat.cpu().numpy())
                 else:
                     # --- R² computation per batch ---
@@ -1533,8 +1534,20 @@ def train(args):
                 mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
                 mean_r = compute_r(X_val_eval, xhat_raw)
             else:
-                mean_r2 = r2_total / max(1, n_batches)
-                mean_r = r_total / max(1, r_count)
+                if eval_metrics_space == "raw" and pca is not None and mu is not None and sd is not None:
+                    xhat_pca = np.concatenate(val_preds, axis=0)
+                    xhat_norm = pca.inverse_transform(
+                        xhat_pca.reshape(-1, xhat_pca.shape[-1])
+                    ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+                    if xhat_bias:
+                        xhat_raw = xhat_norm * sd + mu
+                    else:
+                        xhat_raw = xhat_norm * sd
+                    mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
+                    mean_r = compute_r(X_val_eval, xhat_raw)
+                else:
+                    mean_r2 = r2_total / max(1, n_batches)
+                    mean_r = r_total / max(1, r_count)
             print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f}")
 
             if vl/nbv < best_val: 

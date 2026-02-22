@@ -1,5 +1,5 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_144320_bbc402e\config.txt
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_143828_bbc402e\config.txt
 Device: cuda
 PCA reduced 375 → 129 dims (95.02% variance)
 Selecting 100 landmark trials (greedy coverage)...
@@ -333,7 +333,7 @@ experts.6.4.bias 0.0017319450853392482
 experts.7.0.bias 0.04696118086576462
 experts.7.2.bias -0.016284283250570297
 experts.7.4.bias 0.00566458236426115
-Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_144320_bbc402e\run_metadata.json
+Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_143828_bbc402e\run_metadata.json
 Final r: 0.6913
 Final R²: 0.4743
 Traceback (most recent call last):

@@ -238,18 +238,31 @@ def main():
         "code_change_summary": code_summary,
     }
 
-    # Execute training script
-    with run_log_path.open("w", encoding="utf-8") as logf:
-        proc = subprocess.run(
-            [sys.executable, str(script_path), "--config", str(resolved_config)],
-            cwd=SRC_DIR,
-            stdout=logf,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
+    # Execute training script (stream to console, save log after run)
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    proc = subprocess.Popen(
+        [sys.executable, str(script_path), "--config", str(resolved_config)],
+        cwd=SRC_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=1,
+        env=env,
+    )
+    log_lines = []
+    if proc.stdout is not None:
+        for line in proc.stdout:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            log_lines.append(line)
+    proc.wait()
     run_meta["exit_code"] = proc.returncode
+
+    # Write log after run completes
+    run_log_path.write_text("".join(log_lines), encoding="utf-8")
 
     # Collect artifacts
     artifact_candidates = [

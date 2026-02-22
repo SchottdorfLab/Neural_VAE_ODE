@@ -2,6 +2,14 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 4:35pm:
+Fun command to see what percent of compute is being used on the GPU:
+```
+nvidia-smi --query-gpu=utilization.gpu --format=csv -l 1
+utilization.gpu [%]
+```
+Peak utiliage when I was watching was ~47%, average was about 40% utilization.
+
 ## February 22nd, 4:18pm:
 Quick note now that the original dimensional run of code from Matlab is done. If I'm not dreaming, I've finally beaten the MIND algorithm. Only took me four months, haha. But I'm sure as I submit this to Dr. Schottdorf, something will be off with my data eval and it'll all be blown up, but in the moment this is good. 
 From the run of the MIND algo:

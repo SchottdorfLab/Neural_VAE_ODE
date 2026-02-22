@@ -1149,49 +1149,105 @@ def train(args):
 
     meta = {}
 
-    # --- Step 1: PCA Preprocessing (MIND-style) ---
-    roi = npz["roi"]
-    if roi.shape[0] < roi.shape[1]:
-        roi = roi.T  # [T, N]
+    use_mind_split = getattr(args, "mind_split_enabled", False)
+    mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+    mind_seed = getattr(args, "mind_split_seed", 42)
 
-    #   Keep 95% variance
-    pca = PCA(n_components=0.95, svd_solver="full")
-    roi_pca = pca.fit_transform(roi)
-    print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
-    joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
-    # Replace ROI in npz-like structure
-    npz_mod = dict(npz)
-    npz_mod["roi"] = roi_pca
-    npz = npz_mod
-    X, tvec_np, meta = make_sequences(
-        npz, 
-        trial_len_s=args.trial_len_s,
-        fps=args.fps, 
-        drop_first_trials=args.drop_first_trials,
-        min_frames=10
-    ) # X: [B, L, N]
+    if use_mind_split:
+        # MIND-style split: random 10% trials for test, train-only normalization/PCA
+        X_raw, tvec_np, trial_ids = make_sequences_raw(
+            npz,
+            trial_len_s=args.trial_len_s,
+            fps=args.fps,
+            drop_first_trials=args.drop_first_trials,
+            min_frames=10,
+        )
+        train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=mind_seed, test_frac=mind_test_frac)
+        if len(test_idx) == 0 or len(train_idx) == 0:
+            raise ValueError("MIND split produced empty train or test set. Adjust mind_test_frac.")
+        X_train_raw = X_raw[train_idx]
+        X_val_raw = X_raw[test_idx]
+
+        X_train_norm, mu, sd = normalize_sequences(X_train_raw)
+        X_val_norm, _, _ = normalize_sequences(X_val_raw, mu, sd)
+
+        if getattr(args, "baseline_correct", False):
+            X_train_norm = baseline_correct_np(X_train_norm)
+            X_val_norm = baseline_correct_np(X_val_norm)
+            X_val_eval = baseline_correct_np(X_val_raw)
+            xhat_bias = False
+        else:
+            X_val_eval = X_val_raw
+            xhat_bias = True
+
+        pca = None
+        if getattr(args, "use_pca", True):
+            n_components = getattr(args, "pca_dim", 0)
+            if not (isinstance(n_components, int) and n_components > 0):
+                n_components = getattr(args, "pca_variance", 0.95)
+            pca = PCA(n_components=n_components, svd_solver="full")
+            flat_train = X_train_norm.reshape(-1, X_train_norm.shape[-1])
+            pca.fit(flat_train)
+            print(
+                f"PCA (train-only) reduced {X_train_norm.shape[-1]} → {pca.n_components_} dims "
+                f"({pca.explained_variance_ratio_.sum():.2%} variance)"
+            )
+            X_train = pca.transform(flat_train).reshape(X_train_norm.shape[0], X_train_norm.shape[1], -1)
+            X_val = pca.transform(X_val_norm.reshape(-1, X_val_norm.shape[-1])).reshape(X_val_norm.shape[0], X_val_norm.shape[1], -1)
+            joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+        else:
+            X_train = X_train_norm
+            X_val = X_val_norm
+        B, L, N = X_train.shape
+        print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
+    else:
+        # --- Step 1: PCA Preprocessing (MIND-style) ---
+        roi = npz["roi"]
+        if roi.shape[0] < roi.shape[1]:
+            roi = roi.T  # [T, N]
+
+        #   Keep 95% variance
+        pca = PCA(n_components=0.95, svd_solver="full")
+        roi_pca = pca.fit_transform(roi)
+        print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
+        joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+        # Replace ROI in npz-like structure
+        npz_mod = dict(npz)
+        npz_mod["roi"] = roi_pca
+        npz = npz_mod
+        X, tvec_np, meta = make_sequences(
+            npz, 
+            trial_len_s=args.trial_len_s,
+            fps=args.fps, 
+            drop_first_trials=args.drop_first_trials,
+            min_frames=10
+        ) # X: [B, L, N]
+
+        # --- Step 2: Landmark Subsampling (optional) ---
+        if getattr(args, "landmark_count", 0) > 0:
+            print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
+            # Flatten trials along time for selection
+            X_flat = X.reshape(-1, X.shape[-1])
+            lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+            X = X[lm_idx % X.shape[0]]  # map back to batch level
+            print(f"Subsampled to {X.shape[0]} sequences.")
+
+        B, L, N = X.shape
+        print(f"Built sequences: B={B}, :={L}, N={N}")
+
+        # train/val split (hold out last K trials)
+        holdout = min(args.holdout_trials, max(1, B //5))
+        X_train = X[:-holdout]
+        X_val = X[-holdout:]
+
+    if not use_mind_split:
+        X_val_eval = None
+        mu = None
+        sd = None
+        xhat_bias = True
 
     # --- Normalize time vector to [0,1] for numerical stability ---
     tvec_np = tvec_np / tvec_np[-1]
-
-    
-
-    # --- Step 2: Landmark Subsampling (optional) ---
-    if getattr(args, "landmark_count", 0) > 0:
-        print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
-        # Flatten trials along time for selection
-        X_flat = X.reshape(-1, X.shape[-1])
-        lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
-        X = X[lm_idx % X.shape[0]]  # map back to batch level
-        print(f"Subsampled to {X.shape[0]} sequences.")
-
-    B, L, N = X.shape
-    print(f"Built sequences: B={B}, :={L}, N={N}")
-
-    # train/val split (hold out last K trials)
-    holdout = min(args.holdout_trials, max(1, B //5))
-    X_train = X[:-holdout]
-    X_val = X[-holdout:]
 
     train_loader = td.DataLoader(SeqDataset(X_train), batch_size = args.batch_size, shuffle=True, drop_last = True)
     val_loader = td.DataLoader(SeqDataset(X_val), batch_size = args.batch_size, shuffle=False)
@@ -1307,6 +1363,7 @@ def train(args):
             vl, vr, vk, vs, vt, vlle, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
             r_count = 0
+            val_preds = [] if use_mind_split else None
             for xb in val_loader:
                 # this is trial-wise baseline correction, getting rid of the first 5 frames
                 # so the latent doesn't waste space capacity on slow drifs/offsets
@@ -1356,19 +1413,37 @@ def train(args):
                 )
                 vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item()
 
-                # --- R² computation per batch ---
-                r2_batch = compute_r2(xb.cpu(), xhat.cpu())
-                if not np.isnan(r2_batch):
-                    r2_total += r2_batch
-                r_batch = compute_r(xb.cpu(), xhat.cpu())
-                if not np.isnan(r_batch):
-                    r_total += r_batch
-                    r_count += 1
+                if use_mind_split:
+                    val_preds.append(xhat.cpu().numpy())
+                else:
+                    # --- R² computation per batch ---
+                    r2_batch = compute_r2(xb.cpu(), xhat.cpu())
+                    if not np.isnan(r2_batch):
+                        r2_total += r2_batch
+                    r_batch = compute_r(xb.cpu(), xhat.cpu())
+                    if not np.isnan(r_batch):
+                        r_total += r_batch
+                        r_count += 1
                 n_batches += 1
 
             nbv = len(val_loader)
-            mean_r2 = r2_total / max(1, n_batches)
-            mean_r = r_total / max(1, r_count)
+            if use_mind_split:
+                xhat_pca = np.concatenate(val_preds, axis=0)
+                if pca is not None:
+                    xhat_norm = pca.inverse_transform(
+                        xhat_pca.reshape(-1, xhat_pca.shape[-1])
+                    ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+                else:
+                    xhat_norm = xhat_pca
+                if xhat_bias:
+                    xhat_raw = xhat_norm * sd + mu
+                else:
+                    xhat_raw = xhat_norm * sd
+                mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
+                mean_r = compute_r(X_val_eval, xhat_raw)
+            else:
+                mean_r2 = r2_total / max(1, n_batches)
+                mean_r = r_total / max(1, r_count)
             print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f}")
 
             if vl/nbv < best_val: 

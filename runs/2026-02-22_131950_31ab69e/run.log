@@ -1,5 +1,5 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_132009_31ab69e\config.txt
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_131950_31ab69e\config.txt
 Device: cuda
 PCA (train-only) reduced 375 → 243 dims (95.06% variance)
 MIND split: train trials=163 | test trials=17
@@ -10,3 +10,4 @@ Traceback (most recent call last):
   File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1439, in train
     xhat_raw = xhat_norm * sd + mu
 TypeError: Concatenation operation is not implemented for NumPy arrays, use np.concatenate() instead. Please do not rely on this error; it may not be given on all Python implementations.
+Exception ignored in: Exception ignored in sys.unraisablehook

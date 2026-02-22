@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-02-22_122839_31ab69e",
+  "timestamp": "2026-02-22_122839",
+  "script": "C:\\Users\\schot\\Neural_VAE_ODE\\src\\v5_neural_vae.py",
+  "config": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\config.txt",
+  "config_original": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\config_original.txt",
+  "note": "trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND.",
+  "git_commit": "31ab69ee0654878aaed4aaa1a9c170b85e1ff944",
+  "git_short": "31ab69e",
+  "git_dirty": true,
+  "git_status": "M README.md\n M configs/v5_base.txt\n M runs/2026-02-22_120501_f934d5c/run.log\n M runs/index.csv\n M src/preview.png\n M src/pt_files/final_metrics.pt\n M src/pt_files/latent_manifold_mds.png\n M src/pt_files/trained_pca.pkl\n M src/script_output.txt\n M src/v5_neural_vae.py\n?? runs/2026-02-22_120501_f934d5c/final_metrics.pt\n?? runs/2026-02-22_120501_f934d5c/latent_manifold_mds.png\n?? runs/2026-02-22_120501_f934d5c/ode_vae_best.pt\n?? runs/2026-02-22_120501_f934d5c/preview.png\n?? runs/2026-02-22_120501_f934d5c/run.json\n?? runs/2026-02-22_120501_f934d5c/run_metadata.json\n?? runs/2026-02-22_120501_f934d5c/script_output.txt\n?? runs/2026-02-22_120501_f934d5c/trained_pca.pkl\n?? runs/2026-02-22_120501_f934d5c/training_results.txt\n?? runs/2026-02-22_122600_31ab69e/",
+  "git_diff_patch": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\git_diff.patch",
+  "code_change_summary": "Changed 9 files: configs/v5_base.txt (2 lines), runs/2026-02-22_120501_f934d5c/config.txt (64 lines), runs/2026-02-22_120501_f934d5c/config_original.txt (64 lines), runs/2026-02-22_120501_f934d5c/git_diff.patch (22 lines), runs/2026-02-22_120501_f934d5c/run.log (0 lines)....",
+  "exit_code": 120,
+  "artifacts": [
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\preview.png",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\training_results.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\script_output.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\ode_vae_best.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\final_metrics.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\trained_pca.pkl",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_122839_31ab69e\\latent_manifold_mds.png"
+  ],
+  "metrics": {
+    "recon": 26.580815315246582,
+    "kl": 4.902535756429036,
+    "smooth": 2.711522658665975,
+    "r": 0.22872048616409302,
+    "r2": -0.2524588108062744,
+    "lle": 0.0006284225370715527
+  }
+}

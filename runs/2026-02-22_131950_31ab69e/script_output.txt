@@ -1,5 +1,5 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_132009_31ab69e\config.txt
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_131950_31ab69e\config.txt
 Device: cuda
 PCA (train-only) reduced 375 → 243 dims (95.06% variance)
 MIND split: train trials=163 | test trials=17

@@ -2,6 +2,13 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 4:16pm: 
+Revolutionary. I turned off PCA. That is literally all it took. Without that pre-processing, the model was able to see the full variance of the data. 
+```
+Final r: 0.7794
+Final R²: 0.6049
+```
+
 ## February 22nd, 4:02pm:
 - If we do all of our computation in PCA space, the R2 scores are fantastic. 
 ```
@@ -10,6 +17,18 @@ Final R²: 0.7241
 ```
 Looking at the most recent massive jump in R and R2 in terms of scores if we run scores in PCA space, what does this mean about the model? What does this mean about its performance that it does really well in PCA space but poorly in reverse decoded PCA space?
 
+***Thoughts:***
+Short version: it means the model is good at reconstructing the low‑dimensional PCA representation, but that does not necessarily translate to accuracy in the original neuron space. That gap is expected when most variance is low‑rank but neuron‑wise structure (high‑dim detail) is not being captured.
+
+1. Model is learning dominant shared dynamics. 
+2. It's not reconstructing neuron-specific details well. 
+    - I believe that inverse PCA spreads errors across many neurons---small errors in PCA space can blow up in raw space. 
+3. Objective/metric mismatch.
+    - Training in PCA-space MSE, then grding on raw-space variance explained. 
+4. If R2 drops after inverse PCA, this suggests:
+    - Too few PCA components?
+    Model underfits higher-variance PCs?
+    - Learning manifold that doesn't algin with raw neuron variance structure 
 ## February 22nd, 3:59pm:
 - After changing no_leakage_preproc to true, updated scores:
 ```

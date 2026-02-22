@@ -13,7 +13,7 @@ holdout_trials = 3
 use_pca = true
 pca_variance = 0.95
 landmark_count = 100
-out_dir = ../runs/ode_vae_E65
+out_dir = C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_142537_bbc402e
 pca_dim = 0
 num_experts = 4
 hidden = 128
@@ -68,4 +68,4 @@ r2_sweep_epochs = 100
 
 lambda_transition = 0.005
 lambda_lle = 0.005
-lambda_smooth = 0.001
+lambda_smooth = 0.0

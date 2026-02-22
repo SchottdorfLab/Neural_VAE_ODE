@@ -1,0 +1,10 @@
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index a8a939b..82a72a7 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -68,4 +68,4 @@ r2_sweep_epochs = 100
+ 
+ lambda_transition = 0.005
+ lambda_lle = 0.005
+-lambda_smooth = 0.0002
++lambda_smooth = 0.0

@@ -472,7 +472,12 @@ def run_r2_sweep(args):
 
     results = {}
     for d in dims:
-        results[int(d)] = {"overall": [], "trials": []}
+        results[int(d)] = {
+            "overall_r2": [],
+            "trials_r2": [],
+            "overall_r": [],
+            "trials_r": [],
+        }
         for rep in range(repeats):
             train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=seed + rep, test_frac=0.1)
             if len(test_idx) == 0 or len(train_idx) == 0:
@@ -513,29 +518,54 @@ def run_r2_sweep(args):
                 xhat_raw = xhat_norm * sd
 
             r2_all = r2_var_explained(X_test_eval, xhat_raw)
-            results[int(d)]["overall"].append(r2_all)
+            r_all = compute_r(X_test_eval, xhat_raw)
+            if not np.isnan(r2_all):
+                results[int(d)]["overall_r2"].append(r2_all)
+            if not np.isnan(r_all):
+                results[int(d)]["overall_r"].append(r_all)
             for i in range(X_test_eval.shape[0]):
                 r2_i = r2_var_explained(X_test_eval[i], xhat_raw[i])
+                r_i = compute_r(X_test_eval[i], xhat_raw[i])
                 if not np.isnan(r2_i):
-                    results[int(d)]["trials"].append(r2_i)
+                    results[int(d)]["trials_r2"].append(r2_i)
+                if not np.isnan(r_i):
+                    results[int(d)]["trials_r"].append(r_i)
 
-    # plot (MATLAB-style)
+    # plot (MATLAB-style) for R2
     plt.figure(figsize=(6, 4))
     for d in dims:
         d = int(d)
-        ys = results[d]["trials"]
+        ys = results[d]["trials_r2"]
         plt.scatter([d] * len(ys), ys, facecolors="none", edgecolors="k", alpha=0.6, s=30)
-        if results[d]["overall"]:
-            plt.scatter(d, np.mean(results[d]["overall"]), color="red", s=40, zorder=3)
+        if results[d]["overall_r2"]:
+            plt.scatter(d, np.mean(results[d]["overall_r2"]), color="red", s=40, zorder=3)
     plt.xlabel("Embedding dimension")
-    plt.ylabel("Crossval R²")
+    plt.ylabel("Crossval R2")
     plt.xlim(0, max(dims) + 1)
     plt.ylim(0, 1)
     out_path = os.path.join(PATHS["out_dir"], "r2_sweep.png")
     plt.tight_layout()
     plt.savefig(out_path, dpi=160)
     plt.close()
-    print(f"Wrote R² sweep plot → {out_path}")
+    print(f"Wrote R2 sweep plot -> {out_path}")
+
+    # plot r
+    plt.figure(figsize=(6, 4))
+    for d in dims:
+        d = int(d)
+        ys = results[d]["trials_r"]
+        plt.scatter([d] * len(ys), ys, facecolors="none", edgecolors="k", alpha=0.6, s=30)
+        if results[d]["overall_r"]:
+            plt.scatter(d, np.mean(results[d]["overall_r"]), color="red", s=40, zorder=3)
+    plt.xlabel("Embedding dimension")
+    plt.ylabel("Crossval r")
+    plt.xlim(0, max(dims) + 1)
+    plt.ylim(-1, 1)
+    out_path = os.path.join(PATHS["out_dir"], "r_sweep.png")
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160)
+    plt.close()
+    print(f"Wrote r sweep plot -> {out_path}")
     return results
 
 def greedy_landmarks(X, k=200):

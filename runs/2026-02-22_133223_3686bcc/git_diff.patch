@@ -1,0 +1,111 @@
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index aa666ef..0d96196 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -24,7 +24,7 @@ cv_folds = 4
+ k_neighbors = 16 
+ decoder_type = moe
+ 
+-encoder_type = gru
++encoder_type = transformer
+ encoder_hidden = 256
+ encoder_layers = 1
+ encoder_heads = 2
+@@ -34,9 +34,10 @@ encoder_pool = first
+ 
+ 
+ encoder_bidirectional = false
+-mind_split_enabled = true
++mind_split_enabled = false
+ mind_test_frac = 0.1
+ mind_split_seed = 42
++no_leakage_preproc = false
+ baseline_correct = true
+ dec_num_experts = 8
+ gating_entropy_coef = 0.01
+diff --git a/runs/index.csv b/runs/index.csv
+index 9ca4581..896728e 100644
+--- a/runs/index.csv
++++ b/runs/index.csv
+@@ -23,3 +23,4 @@ run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+ 2026-02-22_123643_31ab69e,2026-02-22_123643,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_123643_31ab69e\config.txt,31ab69ee0654878aaed4aaa1a9c170b85e1ff944,True,120,0.22101297974586487,-0.14242708683013916,"trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND, but this time with GRU."
+ 2026-02-22_131950_31ab69e,2026-02-22_131950,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_131950_31ab69e\config.txt,31ab69ee0654878aaed4aaa1a9c170b85e1ff944,True,120,0.22101298,-0.14242709,"trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND, but this time with GRU, running it back with baseline_correct=false"
+ 2026-02-22_132009_31ab69e,2026-02-22_132009,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_132009_31ab69e\config.txt,31ab69ee0654878aaed4aaa1a9c170b85e1ff944,True,120,0.22101298,-0.14242709,"trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND, but this time with GRU, running it back with baseline_correct=false"
++2026-02-22_133143_3686bcc,2026-02-22_133143,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_133143_3686bcc\config.txt,3686bcc6fea1b90990b93a65c56a7a0e69080e86,True,1,0.22101298,-0.14242709,attempting to eradicate data leakage
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index 2749546..d4c9dc2 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -1150,6 +1150,7 @@ def train(args):
+     meta = {}
+ 
+     use_mind_split = getattr(args, "mind_split_enabled", False)
++    use_no_leakage = getattr(args, "no_leakage_preproc", False)
+     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+     mind_seed = getattr(args, "mind_split_seed", 42)
+ 
+@@ -1201,10 +1202,60 @@ def train(args):
+         B, L, N = X_train.shape
+         print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
+     else:
+-        # --- Step 1: PCA Preprocessing (MIND-style) ---
+-        roi = npz["roi"]
+-        if roi.shape[0] < roi.shape[1]:
+-            roi = roi.T  # [T, N]
++        if use_no_leakage:
++            # Old v5 behavior with train-only preprocessing to avoid leakage.
++            X_raw, tvec_np, trial_ids = make_sequences_raw(
++                npz,
++                trial_len_s=args.trial_len_s,
++                fps=args.fps,
++                drop_first_trials=args.drop_first_trials,
++                min_frames=10,
++            )
++
++            # Optional landmark subsampling (same placement as old path, but on raw sequences)
++            if getattr(args, "landmark_count", 0) > 0:
++                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
++                X_flat = X_raw.reshape(-1, X_raw.shape[-1])
++                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
++                X_raw = X_raw[lm_idx % X_raw.shape[0]]
++                print(f"Subsampled to {X_raw.shape[0]} sequences.")
++
++            B, L, N = X_raw.shape
++            print(f"Built sequences: B={B}, :={L}, N={N}")
++
++            # train/val split (hold out last K trials)
++            holdout = min(args.holdout_trials, max(1, B //5))
++            X_train_raw = X_raw[:-holdout]
++            X_val_raw = X_raw[-holdout:]
++
++            # PCA on training only (if enabled), then z-score on training only
++            if getattr(args, "use_pca", True):
++                n_components = getattr(args, "pca_dim", 0)
++                if not (isinstance(n_components, int) and n_components > 0):
++                    n_components = getattr(args, "pca_variance", 0.95)
++                pca = PCA(n_components=n_components, svd_solver="full")
++                flat_train_raw = X_train_raw.reshape(-1, X_train_raw.shape[-1])
++                pca.fit(flat_train_raw)
++                print(
++                    f"PCA (train-only) reduced {X_train_raw.shape[-1]} → {pca.n_components_} dims "
++                    f"({pca.explained_variance_ratio_.sum():.2%} variance)"
++                )
++                X_train_pca = pca.transform(flat_train_raw).reshape(X_train_raw.shape[0], X_train_raw.shape[1], -1)
++                X_val_pca = pca.transform(X_val_raw.reshape(-1, X_val_raw.shape[-1])).reshape(X_val_raw.shape[0], X_val_raw.shape[1], -1)
++                joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
++            else:
++                pca = None
++                X_train_pca = X_train_raw
++                X_val_pca = X_val_raw
++
++            X_train, mu, sd = normalize_sequences(X_train_pca)
++            X_val, _, _ = normalize_sequences(X_val_pca, mu, sd)
++            B, L, N = X_train.shape
++        else:
++            # --- Step 1: PCA Preprocessing (MIND-style) ---
++            roi = npz["roi"]
++            if roi.shape[0] < roi.shape[1]:
++                roi = roi.T  # [T, N]
+ 
+         #   Keep 95% variance
+         pca = PCA(n_components=0.95, svd_solver="full")

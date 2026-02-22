@@ -1,6 +1,13 @@
 """
 v5_neural_vae.py — MoE Latent Neural ODE VAE + transition regularization + soft LLE (CUDA-first)
 
+IF YOU WANT TO RUN THIS BAD BOY, check either the config.txt file or the v5_base.txt file. There are a lot of different ways you
+can run and configure this file. I designed all of this with an experimental architecture, which means it is highly customizable
+and research driven. 
+- Using the experiment system will rely on the configs in v5_base.txt. 
+- Using the non-experiemental system---e.g. not using the experiement wrapper, and just straight-up running it with python + no flags
+will rely on config.txt, which is the global config file. 
+
 What it does today:
 - Data: loads E65 .npz from PATHS["data"] (note: config.txt also exists but the script is still largely path-driven).
 - Preprocessing: PCA to retain ~95% variance (hard-coded), then trial grouping + resampling to fixed length.
@@ -804,7 +811,7 @@ class LocalAttentionDecoder(nn.Module):
         idx = idx[:, 1:]                           # remove self-neuron
         # idx: [N, k]
 
-        # --------------------------------------------------------
+        # ------------------------------------------------------
         # 3. Compute attention weights for neighbors
         # --------------------------------------------------------
         neigh_emb = emb[idx]                      # [N, k, D]
@@ -817,7 +824,7 @@ class LocalAttentionDecoder(nn.Module):
         )
 
         # --------------------------------------------------------
-        # 4. Compute local latent: weighted sum of neighbor latents
+        # 4. Compute local latent: weighted sum of neighbor latents :)
         # --------------------------------------------------------
         # z_traj: [B, L, D]
         # expand to: [B, L, 1, D] → [B, L, N, D]
@@ -1021,7 +1028,7 @@ class ODEVAE(nn.Module):
         # geometric details
         # self.latent_noise_std = 0.0
 
-        # select decoder
+        # select your decoder!
         if decoder_type.lower() == "mlp":
             self.dec = Decoder(latent_dim, n_neurons)
 
@@ -1150,6 +1157,10 @@ def train(args):
     meta = {}
 
     use_mind_split = getattr(args, "mind_split_enabled", False)
+    use_no_leakage = getattr(args, "no_leakage_preproc", False)
+    use_random_split = getattr(args, "random_split_enabled", False)
+    random_split_frac = getattr(args, "random_split_frac", 0.1)
+    random_split_seed = getattr(args, "random_split_seed", 42)
     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
     mind_seed = getattr(args, "mind_split_seed", 42)
 
@@ -1201,10 +1212,72 @@ def train(args):
         B, L, N = X_train.shape
         print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
     else:
-        # --- Step 1: PCA Preprocessing (MIND-style) ---
-        roi = npz["roi"]
-        if roi.shape[0] < roi.shape[1]:
-            roi = roi.T  # [T, N]
+        if use_no_leakage:
+            # Old v5 behavior with train-only preprocessing to avoid leakage.
+            X_raw, tvec_np, trial_ids = make_sequences_raw(
+                npz,
+                trial_len_s=args.trial_len_s,
+                fps=args.fps,
+                drop_first_trials=args.drop_first_trials,
+                min_frames=10,
+            )
+
+            # Optional landmark subsampling (same placement as old path, but on raw sequences)
+            if getattr(args, "landmark_count", 0) > 0:
+                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
+                X_flat = X_raw.reshape(-1, X_raw.shape[-1])
+                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+                X_raw = X_raw[lm_idx % X_raw.shape[0]]
+                trial_ids = trial_ids[lm_idx % trial_ids.shape[0]]
+                print(f"Subsampled to {X_raw.shape[0]} sequences.")
+
+            B, L, N = X_raw.shape
+            print(f"Built sequences: B={B}, :={L}, N={N}")
+
+            # train/val split (random 10% or hold out last K trials)
+            if use_random_split:
+                train_idx, test_idx = split_trials_like_matlab(
+                    trial_ids,
+                    seed=random_split_seed,
+                    test_frac=random_split_frac,
+                )
+                if len(test_idx) == 0 or len(train_idx) == 0:
+                    raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
+                X_train_raw = X_raw[train_idx]
+                X_val_raw = X_raw[test_idx]
+            else:
+                holdout = min(args.holdout_trials, max(1, B //5))
+                X_train_raw = X_raw[:-holdout]
+                X_val_raw = X_raw[-holdout:]
+
+            # PCA on training only (if enabled), then z-score on training only
+            if getattr(args, "use_pca", True):
+                n_components = getattr(args, "pca_dim", 0)
+                if not (isinstance(n_components, int) and n_components > 0):
+                    n_components = getattr(args, "pca_variance", 0.95)
+                pca = PCA(n_components=n_components, svd_solver="full")
+                flat_train_raw = X_train_raw.reshape(-1, X_train_raw.shape[-1])
+                pca.fit(flat_train_raw)
+                print(
+                    f"PCA (train-only) reduced {X_train_raw.shape[-1]} → {pca.n_components_} dims "
+                    f"({pca.explained_variance_ratio_.sum():.2%} variance)"
+                )
+                X_train_pca = pca.transform(flat_train_raw).reshape(X_train_raw.shape[0], X_train_raw.shape[1], -1)
+                X_val_pca = pca.transform(X_val_raw.reshape(-1, X_val_raw.shape[-1])).reshape(X_val_raw.shape[0], X_val_raw.shape[1], -1)
+                joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+            else:
+                pca = None
+                X_train_pca = X_train_raw
+                X_val_pca = X_val_raw
+
+            X_train, mu, sd = normalize_sequences(X_train_pca)
+            X_val, _, _ = normalize_sequences(X_val_pca, mu, sd)
+            B, L, N = X_train.shape
+        else:
+            # --- Step 1: PCA Preprocessing (MIND-style) ---
+            roi = npz["roi"]
+            if roi.shape[0] < roi.shape[1]:
+                roi = roi.T  # [T, N]
 
         #   Keep 95% variance
         pca = PCA(n_components=0.95, svd_solver="full")
@@ -1230,15 +1303,33 @@ def train(args):
             X_flat = X.reshape(-1, X.shape[-1])
             lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
             X = X[lm_idx % X.shape[0]]  # map back to batch level
+            if isinstance(meta, dict) and "trials_used" in meta:
+                meta["trials_used"] = meta["trials_used"][lm_idx % meta["trials_used"].shape[0]]
             print(f"Subsampled to {X.shape[0]} sequences.")
 
         B, L, N = X.shape
         print(f"Built sequences: B={B}, :={L}, N={N}")
 
-        # train/val split (hold out last K trials)
-        holdout = min(args.holdout_trials, max(1, B //5))
-        X_train = X[:-holdout]
-        X_val = X[-holdout:]
+        # train/val split (random 10% or hold out last K trials)
+        if use_random_split:
+            trial_ids = None
+            if isinstance(meta, dict) and "trials_used" in meta:
+                trial_ids = meta["trials_used"]
+            if trial_ids is None or len(trial_ids) != X.shape[0]:
+                trial_ids = np.arange(X.shape[0])
+            train_idx, test_idx = split_trials_like_matlab(
+                trial_ids,
+                seed=random_split_seed,
+                test_frac=random_split_frac,
+            )
+            if len(test_idx) == 0 or len(train_idx) == 0:
+                raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
+            X_train = X[train_idx]
+            X_val = X[test_idx]
+        else:
+            holdout = min(args.holdout_trials, max(1, B //5))
+            X_train = X[:-holdout]
+            X_val = X[-holdout:]
 
     if not use_mind_split:
         X_val_eval = None

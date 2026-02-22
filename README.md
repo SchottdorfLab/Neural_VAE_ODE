@@ -2,6 +2,59 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 1:35pm:
+- Panic resolved. 
+```
+Final r: 0.6920
+Final R²: 0.4731
+```
+Changes made to avoid data leakage: 
+
+
+Still potential issues: landmark selection is happening before the split, meaning (theoretically) val trials can influence which trials are kept, but I'm so tired and the other data leakage things I worried about (and what I changed) didn't impact scores pratically at all, after the crazy cocktail of changes I did where I ended up with a ~-0.2 R2. Btw, the changes I made that did all that were:
+1. Trial-split MIND Style:
+```
+MIND uses a random 90/10 split of trials:
+rand(length(trials_all),1) > 0.1
+I added the same in v5:
+mind_split_enabled = true
+mind_test_frac = 0.1
+mind_split_seed = 42
+So we’re no longer using holdout_trials or “last K trials.” It’s a random 10% test set like the MIND script.
+```
+2. Training-only normalization: honestly, I think this is what blew everything up. I need z-scoring, bro. In the OG v5 (before stuff blew up), I globally z-scored all trials together inside make_sequences. 
+```
+In MIND mode, I do it like the MATLAB script:
+
+Compute mu and sd only on the training trials.
+Normalize train and test using those training stats.
+Why this matters:
+
+It prevents test data from “leaking” into preprocessing.
+This matches proper cross‑validation: train preprocessing only.
+```
+So this is now reverted, but with a caveat---we fixed all of the leakage associated with training by moving when PCA and z-scoring happen so the model doesn't get sneak peeks (that's a poor way to say that, but you know what I mean).
+
+3. Training only PCA. 
+```
+In the original v5 flow, PCA is fit on all trials (because PCA happens before splitting).
+
+In MIND mode:
+
+Fit PCA only on training trials.
+Apply that PCA model to the test trials.
+That’s exactly what the MATLAB pipeline is doing (fit PCA on training, transform test, then invert to raw for reconstruction).
+```
+
+4. I also think this part screwed me over to, hence why the R2 was horrific----but I think this was much less impactful than the z-scoring thing. To evalute this hypothesis, Ima check this later and run R2 in the same way as mind styles, computing a global R2 on the full flattened test set like MIND. Rn, I have averaged per-batch R2. Which I feel like is fine. But we'll see what Dr. Schottdorf says after he reads my paper. Mayhap it would be nice to have a one-to-one comparison between ways to evaluate R2. 
+
+**NOTE TO SELF: GO BACK AND RUN WITH THE UPDATED R2 METRICS THAT MIND USES.**
+
+The MIND uses:
+```
+R² = 1 - var(raw_data(:) - reconstructed_data(:)) / var(raw_data(:))
+```
+
 ## February 22nd, 1:24pm:
 Thoughts on leaky behavior---preprocessing in the old pipeline.
 1. Loading all trials.

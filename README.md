@@ -2,6 +2,22 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 4:18pm:
+Quick note now that the original dimensional run of code from Matlab is done. If I'm not dreaming, I've finally beaten the MIND algorithm. Only took me four months, haha. But I'm sure as I submit this to Dr. Schottdorf, something will be off with my data eval and it'll all be blown up, but in the moment this is good. 
+From the run of the MIND algo:
+```
+d=1: 0.2461
+d=2: 0.4539
+d=3: 0.5608
+d=4: 0.6454
+d=5: 0.6885
+d=6: 0.7032
+d=7: 0.7237
+d=8: 0.7333
+d=9: 0.7437
+d=10: 0.7509
+```
+
 ## February 22nd, 4:16pm: 
 Revolutionary. I turned off PCA. That is literally all it took. Without that pre-processing, the model was able to see the full variance of the data. 
 ```

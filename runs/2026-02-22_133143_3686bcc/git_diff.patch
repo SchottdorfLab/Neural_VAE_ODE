@@ -1,0 +1,141 @@
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index aa666ef..0d96196 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -24,7 +24,7 @@ cv_folds = 4
+ k_neighbors = 16 
+ decoder_type = moe
+ 
+-encoder_type = gru
++encoder_type = transformer
+ encoder_hidden = 256
+ encoder_layers = 1
+ encoder_heads = 2
+@@ -34,9 +34,10 @@ encoder_pool = first
+ 
+ 
+ encoder_bidirectional = false
+-mind_split_enabled = true
++mind_split_enabled = false
+ mind_test_frac = 0.1
+ mind_split_seed = 42
++no_leakage_preproc = false
+ baseline_correct = true
+ dec_num_experts = 8
+ gating_entropy_coef = 0.01
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index 2749546..bfa7a89 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -1150,6 +1150,7 @@ def train(args):
+     meta = {}
+ 
+     use_mind_split = getattr(args, "mind_split_enabled", False)
++    use_no_leakage = getattr(args, "no_leakage_preproc", False)
+     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+     mind_seed = getattr(args, "mind_split_seed", 42)
+ 
+@@ -1201,10 +1202,60 @@ def train(args):
+         B, L, N = X_train.shape
+         print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
+     else:
+-        # --- Step 1: PCA Preprocessing (MIND-style) ---
+-        roi = npz["roi"]
+-        if roi.shape[0] < roi.shape[1]:
+-            roi = roi.T  # [T, N]
++        if use_no_leakage:
++            # Old v5 behavior with train-only preprocessing to avoid leakage.
++            X_raw, tvec_np, trial_ids = make_sequences_raw(
++                npz,
++                trial_len_s=args.trial_len_s,
++                fps=args.fps,
++                drop_first_trials=args.drop_first_trials,
++                min_frames=10,
++            )
++
++            # Optional landmark subsampling (same placement as old path, but on raw sequences)
++            if getattr(args, "landmark_count", 0) > 0:
++                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
++                X_flat = X_raw.reshape(-1, X_raw.shape[-1])
++                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
++                X_raw = X_raw[lm_idx % X_raw.shape[0]]
++                print(f"Subsampled to {X_raw.shape[0]} sequences.")
++
++            B, L, N = X_raw.shape
++            print(f"Built sequences: B={B}, :={L}, N={N}")
++
++            # train/val split (hold out last K trials)
++            holdout = min(args.holdout_trials, max(1, B //5))
++            X_train_raw = X_raw[:-holdout]
++            X_val_raw = X_raw[-holdout:]
++
++            # PCA on training only (if enabled), then z-score on training only
++            if getattr(args, "use_pca", True):
++                n_components = getattr(args, "pca_dim", 0)
++                if not (isinstance(n_components, int) and n_components > 0):
++                    n_components = getattr(args, "pca_variance", 0.95)
++                pca = PCA(n_components=n_components, svd_solver="full")
++                flat_train_raw = X_train_raw.reshape(-1, X_train_raw.shape[-1])
++                pca.fit(flat_train_raw)
++                print(
++                    f"PCA (train-only) reduced {X_train_raw.shape[-1]} → {pca.n_components_} dims "
++                    f"({pca.explained_variance_ratio_.sum():.2%} variance)"
++                )
++                X_train_pca = pca.transform(flat_train_raw).reshape(X_train_raw.shape[0], X_train_raw.shape[1], -1)
++                X_val_pca = pca.transform(X_val_raw.reshape(-1, X_val_raw.shape[-1])).reshape(X_val_raw.shape[0], X_val_raw.shape[1], -1)
++                joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
++            else:
++                pca = None
++                X_train_pca = X_train_raw
++                X_val_pca = X_val_raw
++
++            X_train, mu, sd = normalize_sequences(X_train_pca)
++            X_val, _, _ = normalize_sequences(X_val_pca, mu, sd)
++            B, L, N = X_train.shape
++        else:
++            # --- Step 1: PCA Preprocessing (MIND-style) ---
++            roi = npz["roi"]
++            if roi.shape[0] < roi.shape[1]:
++                roi = roi.T  # [T, N]
+ 
+         #   Keep 95% variance
+         pca = PCA(n_components=0.95, svd_solver="full")
+@@ -1223,22 +1274,22 @@ def train(args):
+             min_frames=10
+         ) # X: [B, L, N]
+ 
+-        # --- Step 2: Landmark Subsampling (optional) ---
+-        if getattr(args, "landmark_count", 0) > 0:
+-            print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
+-            # Flatten trials along time for selection
+-            X_flat = X.reshape(-1, X.shape[-1])
+-            lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+-            X = X[lm_idx % X.shape[0]]  # map back to batch level
+-            print(f"Subsampled to {X.shape[0]} sequences.")
+-
+-        B, L, N = X.shape
+-        print(f"Built sequences: B={B}, :={L}, N={N}")
+-
+-        # train/val split (hold out last K trials)
+-        holdout = min(args.holdout_trials, max(1, B //5))
+-        X_train = X[:-holdout]
+-        X_val = X[-holdout:]
++            # --- Step 2: Landmark Subsampling (optional) ---
++            if getattr(args, "landmark_count", 0) > 0:
++                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
++                # Flatten trials along time for selection
++                X_flat = X.reshape(-1, X.shape[-1])
++                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
++                X = X[lm_idx % X.shape[0]]  # map back to batch level
++                print(f"Subsampled to {X.shape[0]} sequences.")
++
++            B, L, N = X.shape
++            print(f"Built sequences: B={B}, :={L}, N={N}")
++
++            # train/val split (hold out last K trials)
++            holdout = min(args.holdout_trials, max(1, B //5))
++            X_train = X[:-holdout]
++            X_val = X[-holdout:]
+ 
+     if not use_mind_split:
+         X_val_eval = None

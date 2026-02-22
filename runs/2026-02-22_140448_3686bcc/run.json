@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-02-22_140448_3686bcc",
+  "timestamp": "2026-02-22_140448",
+  "script": "C:\\Users\\schot\\Neural_VAE_ODE\\src\\v5_neural_vae.py",
+  "config": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\config.txt",
+  "config_original": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\config_original.txt",
+  "note": "back to last k trials",
+  "git_commit": "3686bcc6fea1b90990b93a65c56a7a0e69080e86",
+  "git_short": "3686bcc",
+  "git_dirty": true,
+  "git_status": "M README.md\n M configs/v5_base.txt\n M runs/index.csv\n M src/preview.png\n M src/pt_files/final_metrics.pt\n M src/pt_files/latent_manifold_mds.png\n M src/pt_files/trained_pca.pkl\n M src/script_output.txt\n M src/v5_neural_vae.py\n?? runs/2026-02-22_133143_3686bcc/\n?? runs/2026-02-22_133223_3686bcc/\n?? runs/2026-02-22_135441_3686bcc/",
+  "git_diff_patch": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\git_diff.patch",
+  "code_change_summary": "Changed 9 files: README.md (53 lines), configs/v5_base.txt (8 lines), runs/index.csv (3 lines), src/preview.png (33998 lines), src/pt_files/final_metrics.pt (1144 lines)....",
+  "exit_code": 120,
+  "artifacts": [
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\preview.png",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\training_results.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\script_output.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\ode_vae_best.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\final_metrics.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\trained_pca.pkl",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_140448_3686bcc\\latent_manifold_mds.png"
+  ],
+  "metrics": {
+    "recon": 1.8149826526641846,
+    "kl": 2.469937324523926,
+    "smooth": 2.821342945098877,
+    "r": 0.6919761896133423,
+    "r2": 0.473111093044281,
+    "lle": 0.0001283730089198798
+  }
+}

@@ -1,5 +1,5 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_140448_3686bcc\config.txt
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_133223_3686bcc\config.txt
 Device: cuda
 PCA reduced 375 → 129 dims (95.02% variance)
 Selecting 100 landmark trials (greedy coverage)...
@@ -333,10 +333,11 @@ experts.6.4.bias 0.0013848096132278442
 experts.7.0.bias 0.04487670958042145
 experts.7.2.bias -0.017908813431859016
 experts.7.4.bias 0.0052669597789645195
-Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_140448_3686bcc\run_metadata.json
+Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_133223_3686bcc\run_metadata.json
 Final r: 0.6920
 Final R²: 0.4731
 Traceback (most recent call last):
-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1772, in <module>
+  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1732, in <module>
     f"Final r value: {mean_r:.4f}\n"
 NameError: name 'mean_r' is not defined. Did you mean: 'mean_r2'?
+Exception ignored in: Exception ignored in sys.unraisablehook

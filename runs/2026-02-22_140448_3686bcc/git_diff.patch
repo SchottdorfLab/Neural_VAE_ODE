@@ -1,0 +1,642 @@
+diff --git a/README.md b/README.md
+index 058bd00..1837d04 100644
+--- a/README.md
++++ b/README.md
+@@ -2,6 +2,59 @@
+ * Written by: Kathleen Higgins
+ * Built for: Schottdorf Lab
+ 
++## February 22nd, 1:35pm:
++- Panic resolved. 
++```
++Final r: 0.6920
++Final R²: 0.4731
++```
++Changes made to avoid data leakage: 
++
++
++Still potential issues: landmark selection is happening before the split, meaning (theoretically) val trials can influence which trials are kept, but I'm so tired and the other data leakage things I worried about (and what I changed) didn't impact scores pratically at all, after the crazy cocktail of changes I did where I ended up with a ~-0.2 R2. Btw, the changes I made that did all that were:
++1. Trial-split MIND Style:
++```
++MIND uses a random 90/10 split of trials:
++rand(length(trials_all),1) > 0.1
++I added the same in v5:
++mind_split_enabled = true
++mind_test_frac = 0.1
++mind_split_seed = 42
++So we’re no longer using holdout_trials or “last K trials.” It’s a random 10% test set like the MIND script.
++```
++2. Training-only normalization: honestly, I think this is what blew everything up. I need z-scoring, bro. In the OG v5 (before stuff blew up), I globally z-scored all trials together inside make_sequences. 
++```
++In MIND mode, I do it like the MATLAB script:
++
++Compute mu and sd only on the training trials.
++Normalize train and test using those training stats.
++Why this matters:
++
++It prevents test data from “leaking” into preprocessing.
++This matches proper cross‑validation: train preprocessing only.
++```
++So this is now reverted, but with a caveat---we fixed all of the leakage associated with training by moving when PCA and z-scoring happen so the model doesn't get sneak peeks (that's a poor way to say that, but you know what I mean).
++
++3. Training only PCA. 
++```
++In the original v5 flow, PCA is fit on all trials (because PCA happens before splitting).
++
++In MIND mode:
++
++Fit PCA only on training trials.
++Apply that PCA model to the test trials.
++That’s exactly what the MATLAB pipeline is doing (fit PCA on training, transform test, then invert to raw for reconstruction).
++```
++
++4. I also think this part screwed me over to, hence why the R2 was horrific----but I think this was much less impactful than the z-scoring thing. To evalute this hypothesis, Ima check this later and run R2 in the same way as mind styles, computing a global R2 on the full flattened test set like MIND. Rn, I have averaged per-batch R2. Which I feel like is fine. But we'll see what Dr. Schottdorf says after he reads my paper. Mayhap it would be nice to have a one-to-one comparison between ways to evaluate R2. 
++
++**NOTE TO SELF: GO BACK AND RUN WITH THE UPDATED R2 METRICS THAT MIND USES.**
++
++The MIND uses:
++```
++R² = 1 - var(raw_data(:) - reconstructed_data(:)) / var(raw_data(:))
++```
++
+ ## February 22nd, 1:24pm:
+ Thoughts on leaky behavior---preprocessing in the old pipeline.
+ 1. Loading all trials.
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index aa666ef..a8a939b 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -24,7 +24,7 @@ cv_folds = 4
+ k_neighbors = 16 
+ decoder_type = moe
+ 
+-encoder_type = gru
++encoder_type = transformer
+ encoder_hidden = 256
+ encoder_layers = 1
+ encoder_heads = 2
+@@ -34,9 +34,13 @@ encoder_pool = first
+ 
+ 
+ encoder_bidirectional = false
+-mind_split_enabled = true
++mind_split_enabled = false
+ mind_test_frac = 0.1
+ mind_split_seed = 42
++no_leakage_preproc = false
++random_split_enabled = false
++random_split_frac = 0.1
++random_split_seed = 42
+ baseline_correct = true
+ dec_num_experts = 8
+ gating_entropy_coef = 0.01
+diff --git a/runs/index.csv b/runs/index.csv
+index 9ca4581..0fe0574 100644
+--- a/runs/index.csv
++++ b/runs/index.csv
+@@ -23,3 +23,6 @@ run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+ 2026-02-22_123643_31ab69e,2026-02-22_123643,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_123643_31ab69e\config.txt,31ab69ee0654878aaed4aaa1a9c170b85e1ff944,True,120,0.22101297974586487,-0.14242708683013916,"trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND, but this time with GRU."
+ 2026-02-22_131950_31ab69e,2026-02-22_131950,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_131950_31ab69e\config.txt,31ab69ee0654878aaed4aaa1a9c170b85e1ff944,True,120,0.22101298,-0.14242709,"trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND, but this time with GRU, running it back with baseline_correct=false"
+ 2026-02-22_132009_31ab69e,2026-02-22_132009,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_132009_31ab69e\config.txt,31ab69ee0654878aaed4aaa1a9c170b85e1ff944,True,120,0.22101298,-0.14242709,"trying exact same eval process at MIND algo on random 10% of trials, plus computation of R2 in the exact same way as MIND, but this time with GRU, running it back with baseline_correct=false"
++2026-02-22_133143_3686bcc,2026-02-22_133143,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_133143_3686bcc\config.txt,3686bcc6fea1b90990b93a65c56a7a0e69080e86,True,1,0.22101298,-0.14242709,attempting to eradicate data leakage
++2026-02-22_133223_3686bcc,2026-02-22_133223,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_133223_3686bcc\config.txt,3686bcc6fea1b90990b93a65c56a7a0e69080e86,True,120,0.6919761896133423,0.473111093044281,attempting to eradicate data leakage
++2026-02-22_135441_3686bcc,2026-02-22_135441,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_135441_3686bcc\config.txt,3686bcc6fea1b90990b93a65c56a7a0e69080e86,True,120,0.3756598234176636,-0.12369471788406372,"same game, but this go round with mind-style random split."
+diff --git a/src/preview.png b/src/preview.png
+index d4ecba3..b13946a 100644
+Binary files a/src/preview.png and b/src/preview.png differ
+diff --git a/src/pt_files/final_metrics.pt b/src/pt_files/final_metrics.pt
+index baa7186..acee2f5 100644
+Binary files a/src/pt_files/final_metrics.pt and b/src/pt_files/final_metrics.pt differ
+diff --git a/src/pt_files/latent_manifold_mds.png b/src/pt_files/latent_manifold_mds.png
+index a6b50c0..af39c08 100644
+Binary files a/src/pt_files/latent_manifold_mds.png and b/src/pt_files/latent_manifold_mds.png differ
+diff --git a/src/pt_files/trained_pca.pkl b/src/pt_files/trained_pca.pkl
+index e7efbe7..827835d 100644
+Binary files a/src/pt_files/trained_pca.pkl and b/src/pt_files/trained_pca.pkl differ
+diff --git a/src/script_output.txt b/src/script_output.txt
+index 3ef4d47..ce268bc 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,12 +1,342 @@
+ Running script: v5_neural_vae.py
+-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_132009_31ab69e\config.txt
++Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_135441_3686bcc\config.txt
+ Device: cuda
+-PCA (train-only) reduced 375 → 243 dims (95.06% variance)
+-MIND split: train trials=163 | test trials=17
+-[001] train loss 1.36095 | recon 1.36069 | kl 0.05387 | smooth 0.94096 | trans 0.22059 | lle 0.00039 | beta 0.001
++PCA reduced 375 → 129 dims (95.02% variance)
++Selecting 100 landmark trials (greedy coverage)...
++Subsampled to 100 sequences.
++Built sequences: B=100, :=120, N=129
++C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\transformer.py:379: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
++  warnings.warn(
++[001] train loss 2.56265 | recon 2.56148 | kl 1.43733 | smooth 1.00166 | trans 0.02549 | lle 0.00041 | beta 0.001
++      valid loss 2.01613 | recon 1.99628 | kl 0.98182 | smooth 0.99617 | trans 0.04437 | lle 0.00021 | r 0.1597 | R² 0.0076
++[002] train loss 2.74331 | recon 2.73308 | kl 7.51278 | smooth 0.99695 | trans 0.02522 | lle 0.00042 | beta 0.001
++      valid loss 1.97364 | recon 1.94826 | kl 1.25831 | smooth 1.00077 | trans 0.04437 | lle 0.00021 | r 0.2008 | R² 0.0300
++[003] train loss 2.25593 | recon 2.24021 | kl 7.74961 | smooth 1.00182 | trans 0.02506 | lle 0.00043 | beta 0.002
++      valid loss 2.01305 | recon 1.96491 | kl 2.39575 | smooth 1.00016 | trans 0.04437 | lle 0.00025 | r 0.1617 | R² 0.0180
++[004] train loss 2.02462 | recon 2.00884 | kl 5.83665 | smooth 1.00617 | trans 0.02520 | lle 0.00046 | beta 0.003
++      valid loss 2.02477 | recon 1.97016 | kl 2.71856 | smooth 1.00756 | trans 0.04437 | lle 0.00028 | r 0.1716 | R² 0.0151
++[005] train loss 1.92968 | recon 1.91317 | kl 4.88405 | smooth 1.00957 | trans 0.02525 | lle 0.00043 | beta 0.003
++      valid loss 1.98024 | recon 1.92493 | kl 2.75363 | smooth 1.01171 | trans 0.04437 | lle 0.00021 | r 0.2061 | R² 0.0355
++[006] train loss 1.83670 | recon 1.81730 | kl 4.79287 | smooth 1.01603 | trans 0.02547 | lle 0.00044 | beta 0.004
++      valid loss 1.98151 | recon 1.91900 | kl 3.11331 | smooth 1.01522 | trans 0.04437 | lle 0.00031 | r 0.2180 | R² 0.0377
++[007] train loss 1.72918 | recon 1.70597 | kl 4.92093 | smooth 1.02361 | trans 0.02559 | lle 0.00045 | beta 0.005
++      valid loss 2.01531 | recon 1.94441 | kl 3.53208 | smooth 1.02169 | trans 0.04437 | lle 0.00025 | r 0.2305 | R² 0.0229
++[008] train loss 1.65219 | recon 1.62410 | kl 5.22178 | smooth 1.03190 | trans 0.02548 | lle 0.00041 | beta 0.005
++      valid loss 2.01700 | recon 1.95415 | kl 3.12923 | smooth 1.02914 | trans 0.04437 | lle 0.00019 | r 0.1742 | R² 0.0152
++[009] train loss 1.56999 | recon 1.53835 | kl 5.23274 | smooth 1.03808 | trans 0.02542 | lle 0.00043 | beta 0.006
++      valid loss 2.00620 | recon 1.93762 | kl 3.41549 | smooth 1.03748 | trans 0.04437 | lle 0.00030 | r 0.1858 | R² 0.0228
++[010] train loss 1.52665 | recon 1.48765 | kl 5.81197 | smooth 1.04865 | trans 0.02535 | lle 0.00044 | beta 0.007
++      valid loss 2.00692 | recon 1.93158 | kl 3.75240 | smooth 1.04342 | trans 0.04437 | lle 0.00023 | r 0.2009 | R² 0.0242
++[011] train loss 1.41569 | recon 1.37253 | kl 5.84943 | smooth 1.06071 | trans 0.02529 | lle 0.00048 | beta 0.007
++      valid loss 2.10845 | recon 2.02786 | kl 4.01448 | smooth 1.05758 | trans 0.04437 | lle 0.00030 | r 0.1622 | R² -0.0234
++[012] train loss 1.37655 | recon 1.32890 | kl 5.92301 | smooth 1.07365 | trans 0.02543 | lle 0.00039 | beta 0.008
++      valid loss 2.11563 | recon 2.03487 | kl 4.02303 | smooth 1.06694 | trans 0.04437 | lle 0.00026 | r 0.1533 | R² -0.0331
++[013] train loss 1.32495 | recon 1.27312 | kl 5.94853 | smooth 1.08675 | trans 0.02521 | lle 0.00048 | beta 0.009
++      valid loss 2.09611 | recon 2.01424 | kl 4.07786 | smooth 1.08209 | trans 0.04437 | lle 0.00028 | r 0.1930 | R² -0.0239
++[014] train loss 1.27270 | recon 1.21474 | kl 6.17965 | smooth 1.10039 | trans 0.02548 | lle 0.00047 | beta 0.009
++      valid loss 2.03136 | recon 1.95425 | kl 3.83916 | smooth 1.09352 | trans 0.04437 | lle 0.00027 | r 0.1973 | R² 0.0059
++[015] train loss 1.21577 | recon 1.15362 | kl 6.18640 | smooth 1.11410 | trans 0.02506 | lle 0.00045 | beta 0.010
++      valid loss 2.04561 | recon 1.97209 | kl 3.65940 | smooth 1.10711 | trans 0.04437 | lle 0.00026 | r 0.1931 | R² -0.0025
++[016] train loss 1.17857 | recon 1.11421 | kl 6.00644 | smooth 1.12755 | trans 0.02530 | lle 0.00045 | beta 0.011
++      valid loss 2.06297 | recon 1.98275 | kl 3.99381 | smooth 1.11591 | trans 0.04437 | lle 0.00026 | r 0.2071 | R² -0.0092
++[017] train loss 1.09878 | recon 1.03050 | kl 5.99829 | smooth 1.13984 | trans 0.02516 | lle 0.00046 | beta 0.011
++      valid loss 2.08642 | recon 2.00529 | kl 4.03851 | smooth 1.12738 | trans 0.04437 | lle 0.00023 | r 0.2183 | R² -0.0268
++[018] train loss 1.10223 | recon 1.02958 | kl 6.02843 | smooth 1.15544 | trans 0.02530 | lle 0.00049 | beta 0.012
++      valid loss 1.94953 | recon 1.87883 | kl 3.51708 | smooth 1.14505 | trans 0.04437 | lle 0.00024 | r 0.2399 | R² 0.0406
++[019] train loss 1.05221 | recon 0.97715 | kl 5.90068 | smooth 1.17033 | trans 0.02548 | lle 0.00046 | beta 0.013
++      valid loss 1.99742 | recon 1.91688 | kl 4.00834 | smooth 1.15548 | trans 0.04436 | lle 0.00021 | r 0.2605 | R² 0.0203
++[020] train loss 1.02202 | recon 0.94279 | kl 5.91791 | smooth 1.18683 | trans 0.02538 | lle 0.00048 | beta 0.013
++      valid loss 2.00527 | recon 1.92946 | kl 3.77096 | smooth 1.18111 | trans 0.04437 | lle 0.00033 | r 0.2328 | R² 0.0152
++[021] train loss 0.97936 | recon 0.89431 | kl 6.05161 | smooth 1.20289 | trans 0.02563 | lle 0.00049 | beta 0.014
++      valid loss 1.95319 | recon 1.87425 | kl 3.92681 | smooth 1.19829 | trans 0.04436 | lle 0.00028 | r 0.2949 | R² 0.0414
++[022] train loss 0.98641 | recon 0.89975 | kl 5.88528 | smooth 1.22006 | trans 0.02537 | lle 0.00051 | beta 0.015
++      valid loss 1.94775 | recon 1.86854 | kl 3.94038 | smooth 1.20900 | trans 0.04436 | lle 0.00024 | r 0.2977 | R² 0.0438
++[023] train loss 0.93267 | recon 0.84787 | kl 5.50790 | smooth 1.23846 | trans 0.02500 | lle 0.00048 | beta 0.015
++      valid loss 1.93974 | recon 1.85672 | kl 4.13048 | smooth 1.22014 | trans 0.04436 | lle 0.00025 | r 0.3096 | R² 0.0499
++[024] train loss 0.88235 | recon 0.79079 | kl 5.70057 | smooth 1.25766 | trans 0.02540 | lle 0.00048 | beta 0.016
++      valid loss 1.90018 | recon 1.82480 | kl 3.74775 | smooth 1.24056 | trans 0.04436 | lle 0.00026 | r 0.3203 | R² 0.0649
++[025] train loss 0.84583 | recon 0.75585 | kl 5.37698 | smooth 1.27760 | trans 0.02542 | lle 0.00048 | beta 0.017
++      valid loss 1.98518 | recon 1.90470 | kl 4.00213 | smooth 1.25298 | trans 0.04436 | lle 0.00033 | r 0.2922 | R² 0.0203
++[026] train loss 0.83802 | recon 0.74437 | kl 5.38138 | smooth 1.29473 | trans 0.02474 | lle 0.00055 | beta 0.017
++      valid loss 1.89608 | recon 1.82053 | kl 3.75487 | smooth 1.27722 | trans 0.04436 | lle 0.00021 | r 0.3270 | R² 0.0678
++[027] train loss 0.84066 | recon 0.74901 | kl 5.07035 | smooth 1.31326 | trans 0.02549 | lle 0.00051 | beta 0.018
++      valid loss 1.96148 | recon 1.87963 | kl 4.06973 | smooth 1.28688 | trans 0.04436 | lle 0.00025 | r 0.3069 | R² 0.0342
++[028] train loss 0.81837 | recon 0.71917 | kl 5.29363 | smooth 1.32903 | trans 0.02503 | lle 0.00058 | beta 0.019
++      valid loss 1.93215 | recon 1.86015 | kl 3.57673 | smooth 1.30342 | trans 0.04436 | lle 0.00028 | r 0.2930 | R² 0.0411
++[029] train loss 0.78507 | recon 0.68879 | kl 4.95979 | smooth 1.34928 | trans 0.02532 | lle 0.00053 | beta 0.019
++      valid loss 1.94026 | recon 1.86447 | kl 3.76547 | smooth 1.32170 | trans 0.04436 | lle 0.00028 | r 0.3042 | R² 0.0419
++[030] train loss 0.75589 | recon 0.66028 | kl 4.76062 | smooth 1.36704 | trans 0.02515 | lle 0.00057 | beta 0.020
++      valid loss 1.90923 | recon 1.83961 | kl 3.45643 | smooth 1.32982 | trans 0.04436 | lle 0.00031 | r 0.3289 | R² 0.0518
++[031] train loss 0.75373 | recon 0.65805 | kl 4.76372 | smooth 1.38791 | trans 0.02538 | lle 0.00060 | beta 0.020
++      valid loss 1.88495 | recon 1.81308 | kl 3.56866 | smooth 1.34715 | trans 0.04436 | lle 0.00023 | r 0.3318 | R² 0.0691
++[032] train loss 0.74958 | recon 0.65716 | kl 4.60044 | smooth 1.40446 | trans 0.02543 | lle 0.00052 | beta 0.020
++      valid loss 1.89766 | recon 1.83201 | kl 3.25765 | smooth 1.37563 | trans 0.04436 | lle 0.00035 | r 0.3201 | R² 0.0562
++[033] train loss 0.73004 | recon 0.63583 | kl 4.68968 | smooth 1.42043 | trans 0.02514 | lle 0.00050 | beta 0.020
++      valid loss 1.91838 | recon 1.84907 | kl 3.44046 | smooth 1.37647 | trans 0.04436 | lle 0.00028 | r 0.3083 | R² 0.0493
++[034] train loss 0.70710 | recon 0.61624 | kl 4.52230 | smooth 1.43755 | trans 0.02527 | lle 0.00058 | beta 0.020
++      valid loss 1.89004 | recon 1.81918 | kl 3.51777 | smooth 1.39170 | trans 0.04436 | lle 0.00038 | r 0.3235 | R² 0.0625
++[035] train loss 0.67667 | recon 0.58697 | kl 4.46417 | smooth 1.45325 | trans 0.02502 | lle 0.00052 | beta 0.020
++      valid loss 1.87362 | recon 1.80858 | kl 3.22659 | smooth 1.40574 | trans 0.04436 | lle 0.00029 | r 0.3249 | R² 0.0703
++[036] train loss 0.67166 | recon 0.58332 | kl 4.39593 | smooth 1.46782 | trans 0.02491 | lle 0.00054 | beta 0.020
++      valid loss 1.91007 | recon 1.84337 | kl 3.30956 | smooth 1.43374 | trans 0.04436 | lle 0.00025 | r 0.3390 | R² 0.0441
++[037] train loss 0.65384 | recon 0.56664 | kl 4.33876 | smooth 1.48040 | trans 0.02514 | lle 0.00052 | beta 0.020
++      valid loss 1.89794 | recon 1.82829 | kl 3.45727 | smooth 1.43604 | trans 0.04436 | lle 0.00025 | r 0.3495 | R² 0.0499
++[038] train loss 0.63234 | recon 0.54680 | kl 4.25596 | smooth 1.50371 | trans 0.02502 | lle 0.00066 | beta 0.020
++      valid loss 1.82570 | recon 1.76315 | kl 3.10183 | smooth 1.46080 | trans 0.04436 | lle 0.00032 | r 0.3653 | R² 0.0889
++[039] train loss 0.62781 | recon 0.54538 | kl 4.09968 | smooth 1.52079 | trans 0.02532 | lle 0.00059 | beta 0.020
++      valid loss 1.95687 | recon 1.88750 | kl 3.44300 | smooth 1.47792 | trans 0.04435 | lle 0.00036 | r 0.3395 | R² 0.0202
++[040] train loss 0.62404 | recon 0.53740 | kl 4.30996 | smooth 1.54097 | trans 0.02541 | lle 0.00056 | beta 0.020
++      valid loss 1.89757 | recon 1.82838 | kl 3.43333 | smooth 1.47378 | trans 0.04436 | lle 0.00032 | r 0.3504 | R² 0.0569
++[041] train loss 0.59928 | recon 0.51977 | kl 3.95341 | smooth 1.55292 | trans 0.02514 | lle 0.00062 | beta 0.020
++      valid loss 1.91550 | recon 1.84835 | kl 3.33167 | smooth 1.50383 | trans 0.04435 | lle 0.00029 | r 0.3524 | R² 0.0441
++[042] train loss 0.59952 | recon 0.51577 | kl 4.16510 | smooth 1.57232 | trans 0.02547 | lle 0.00054 | beta 0.020
++      valid loss 1.91410 | recon 1.85121 | kl 3.11839 | smooth 1.53707 | trans 0.04436 | lle 0.00038 | r 0.3648 | R² 0.0356
++[043] train loss 0.59319 | recon 0.51244 | kl 4.01512 | smooth 1.58357 | trans 0.02520 | lle 0.00057 | beta 0.020
++      valid loss 1.85478 | recon 1.79118 | kl 3.15295 | smooth 1.56392 | trans 0.04436 | lle 0.00029 | r 0.3780 | R² 0.0733
++[044] train loss 0.58571 | recon 0.50476 | kl 4.02488 | smooth 1.59695 | trans 0.02516 | lle 0.00064 | beta 0.020
++      valid loss 1.91946 | recon 1.85613 | kl 3.13994 | smooth 1.55854 | trans 0.04436 | lle 0.00027 | r 0.3634 | R² 0.0363
++[045] train loss 0.56800 | recon 0.48900 | kl 3.92722 | smooth 1.61431 | trans 0.02516 | lle 0.00060 | beta 0.020
++      valid loss 1.90666 | recon 1.84189 | kl 3.21160 | smooth 1.55990 | trans 0.04436 | lle 0.00034 | r 0.3649 | R² 0.0490
++[046] train loss 0.55291 | recon 0.47518 | kl 3.86383 | smooth 1.62964 | trans 0.02518 | lle 0.00058 | beta 0.020
++      valid loss 1.87640 | recon 1.81668 | kl 2.95873 | smooth 1.59147 | trans 0.04436 | lle 0.00032 | r 0.3661 | R² 0.0583
++[047] train loss 0.56010 | recon 0.48128 | kl 3.91800 | smooth 1.64603 | trans 0.02525 | lle 0.00059 | beta 0.020
++      valid loss 1.83398 | recon 1.77451 | kl 2.94628 | smooth 1.59289 | trans 0.04436 | lle 0.00034 | r 0.3676 | R² 0.0812
++[048] train loss 0.53355 | recon 0.45897 | kl 3.70574 | smooth 1.66455 | trans 0.02522 | lle 0.00060 | beta 0.020
++      valid loss 1.83254 | recon 1.77306 | kl 2.94633 | smooth 1.62270 | trans 0.04435 | lle 0.00039 | r 0.3746 | R² 0.0837
++[049] train loss 0.53335 | recon 0.45810 | kl 3.73916 | smooth 1.67844 | trans 0.02519 | lle 0.00059 | beta 0.020
++      valid loss 1.90353 | recon 1.84200 | kl 3.04876 | smooth 1.65210 | trans 0.04436 | lle 0.00028 | r 0.3751 | R² 0.0458
++[050] train loss 0.52502 | recon 0.45037 | kl 3.70895 | smooth 1.69934 | trans 0.02543 | lle 0.00059 | beta 0.020
++      valid loss 1.99207 | recon 1.93113 | kl 3.01925 | smooth 1.67621 | trans 0.04435 | lle 0.00032 | r 0.3710 | R² -0.0056
++[051] train loss 0.54666 | recon 0.47095 | kl 3.76181 | smooth 1.71597 | trans 0.02521 | lle 0.00060 | beta 0.020
++      valid loss 1.84863 | recon 1.78927 | kl 2.94040 | smooth 1.64980 | trans 0.04436 | lle 0.00031 | r 0.3603 | R² 0.0762
++[052] train loss 0.53898 | recon 0.46539 | kl 3.65565 | smooth 1.72603 | trans 0.02513 | lle 0.00059 | beta 0.020
++      valid loss 1.92730 | recon 1.86721 | kl 2.97674 | smooth 1.67037 | trans 0.04436 | lle 0.00029 | r 0.3596 | R² 0.0295
++[053] train loss 0.53578 | recon 0.46004 | kl 3.76337 | smooth 1.74030 | trans 0.02510 | lle 0.00060 | beta 0.020
++      valid loss 1.97981 | recon 1.91587 | kl 3.16924 | smooth 1.69500 | trans 0.04435 | lle 0.00034 | r 0.3637 | R² 0.0073
++[054] train loss 0.51994 | recon 0.44463 | kl 3.74140 | smooth 1.75185 | trans 0.02483 | lle 0.00072 | beta 0.020
++      valid loss 1.85746 | recon 1.79784 | kl 2.95250 | smooth 1.73000 | trans 0.04436 | lle 0.00027 | r 0.3786 | R² 0.0723
++[055] train loss 0.51494 | recon 0.44148 | kl 3.64905 | smooth 1.76582 | trans 0.02494 | lle 0.00066 | beta 0.020
++      valid loss 1.95143 | recon 1.89051 | kl 3.01713 | smooth 1.73272 | trans 0.04435 | lle 0.00028 | r 0.3774 | R² 0.0200
++[056] train loss 0.50599 | recon 0.43257 | kl 3.64636 | smooth 1.77759 | trans 0.02539 | lle 0.00061 | beta 0.020
++      valid loss 1.93779 | recon 1.88163 | kl 2.77893 | smooth 1.76410 | trans 0.04436 | lle 0.00037 | r 0.3776 | R² 0.0249
++[057] train loss 0.50426 | recon 0.43278 | kl 3.54997 | smooth 1.78971 | trans 0.02521 | lle 0.00063 | beta 0.020
++      valid loss 1.83992 | recon 1.78187 | kl 2.87409 | smooth 1.75105 | trans 0.04435 | lle 0.00030 | r 0.3897 | R² 0.0818
++[058] train loss 0.49370 | recon 0.42148 | kl 3.58636 | smooth 1.80726 | trans 0.02531 | lle 0.00060 | beta 0.020
++      valid loss 1.88856 | recon 1.83115 | kl 2.84171 | smooth 1.77378 | trans 0.04435 | lle 0.00035 | r 0.3730 | R² 0.0569
++[059] train loss 0.50024 | recon 0.43123 | kl 3.42578 | smooth 1.81925 | trans 0.02534 | lle 0.00070 | beta 0.020
++      valid loss 2.00526 | recon 1.94412 | kl 3.02804 | smooth 1.78322 | trans 0.04435 | lle 0.00037 | r 0.3745 | R² -0.0093
++[060] train loss 0.49253 | recon 0.42071 | kl 3.56616 | smooth 1.83071 | trans 0.02480 | lle 0.00065 | beta 0.020
++      valid loss 2.00606 | recon 1.94283 | kl 3.13201 | smooth 1.81158 | trans 0.04435 | lle 0.00041 | r 0.3841 | R² -0.0115
++[061] train loss 0.47504 | recon 0.40291 | kl 3.58157 | smooth 1.83936 | trans 0.02500 | lle 0.00063 | beta 0.020
++      valid loss 1.99391 | recon 1.93569 | kl 2.88147 | smooth 1.82757 | trans 0.04436 | lle 0.00030 | r 0.3749 | R² -0.0070
++[062] train loss 0.45556 | recon 0.38721 | kl 3.39277 | smooth 1.85898 | trans 0.02512 | lle 0.00070 | beta 0.020
++      valid loss 1.94256 | recon 1.88757 | kl 2.71974 | smooth 1.84190 | trans 0.04435 | lle 0.00053 | r 0.3849 | R² 0.0227
++[063] train loss 0.46208 | recon 0.39625 | kl 3.26644 | smooth 1.87461 | trans 0.02490 | lle 0.00070 | beta 0.020
++      valid loss 1.90903 | recon 1.85368 | kl 2.73791 | smooth 1.81667 | trans 0.04435 | lle 0.00034 | r 0.3669 | R² 0.0454
++[064] train loss 0.46659 | recon 0.39748 | kl 3.42979 | smooth 1.89088 | trans 0.02532 | lle 0.00078 | beta 0.020
++      valid loss 1.82499 | recon 1.77060 | kl 2.68936 | smooth 1.89217 | trans 0.04436 | lle 0.00034 | r 0.3958 | R² 0.0864
++[065] train loss 0.46988 | recon 0.40295 | kl 3.32097 | smooth 1.90259 | trans 0.02499 | lle 0.00066 | beta 0.020
++      valid loss 1.91118 | recon 1.85171 | kl 2.94387 | smooth 1.86254 | trans 0.04435 | lle 0.00031 | r 0.3865 | R² 0.0435
++[066] train loss 0.45780 | recon 0.38792 | kl 3.46872 | smooth 1.91233 | trans 0.02507 | lle 0.00067 | beta 0.020
++      valid loss 1.87577 | recon 1.82065 | kl 2.72630 | smooth 1.89296 | trans 0.04435 | lle 0.00031 | r 0.3847 | R² 0.0589
++[067] train loss 0.44239 | recon 0.37780 | kl 3.20373 | smooth 1.93053 | trans 0.02494 | lle 0.00065 | beta 0.020
++      valid loss 1.95442 | recon 1.89591 | kl 2.89506 | smooth 1.90922 | trans 0.04435 | lle 0.00040 | r 0.3849 | R² 0.0188
++[068] train loss 0.45514 | recon 0.38798 | kl 3.33222 | smooth 1.94096 | trans 0.02523 | lle 0.00064 | beta 0.020
++      valid loss 1.80939 | recon 1.75638 | kl 2.62001 | smooth 1.93453 | trans 0.04435 | lle 0.00027 | r 0.3961 | R² 0.0974
++[069] train loss 0.45750 | recon 0.39212 | kl 3.24287 | smooth 1.95721 | trans 0.02500 | lle 0.00066 | beta 0.020
++      valid loss 1.85411 | recon 1.79901 | kl 2.72396 | smooth 1.95841 | trans 0.04435 | lle 0.00048 | r 0.3947 | R² 0.0740
++[070] train loss 0.44552 | recon 0.37945 | kl 3.27758 | smooth 1.96748 | trans 0.02518 | lle 0.00085 | beta 0.020
++      valid loss 1.95726 | recon 1.90179 | kl 2.74241 | smooth 1.96867 | trans 0.04435 | lle 0.00040 | r 0.3794 | R² 0.0193
++[071] train loss 0.43632 | recon 0.37003 | kl 3.28828 | smooth 1.98599 | trans 0.02473 | lle 0.00069 | beta 0.020
++      valid loss 1.79485 | recon 1.73997 | kl 2.71337 | smooth 1.96627 | trans 0.04435 | lle 0.00039 | r 0.4049 | R² 0.1051
++[072] train loss 0.43035 | recon 0.36517 | kl 3.23254 | smooth 1.99624 | trans 0.02514 | lle 0.00071 | beta 0.020
++      valid loss 1.85934 | recon 1.80564 | kl 2.65346 | smooth 1.99964 | trans 0.04436 | lle 0.00040 | r 0.3945 | R² 0.0680
++[073] train loss 0.42408 | recon 0.36095 | kl 3.13028 | smooth 2.00372 | trans 0.02512 | lle 0.00066 | beta 0.020
++      valid loss 2.01315 | recon 1.96025 | kl 2.61402 | smooth 2.02022 | trans 0.04436 | lle 0.00035 | r 0.3841 | R² -0.0193
++[074] train loss 0.41949 | recon 0.35628 | kl 3.13426 | smooth 2.01399 | trans 0.02505 | lle 0.00064 | beta 0.020
++      valid loss 1.94256 | recon 1.88936 | kl 2.62926 | smooth 1.99899 | trans 0.04435 | lle 0.00033 | r 0.3900 | R² 0.0201
++[075] train loss 0.42655 | recon 0.36412 | kl 3.09476 | smooth 2.02467 | trans 0.02516 | lle 0.00073 | beta 0.020
++      valid loss 1.93737 | recon 1.88487 | kl 2.59342 | smooth 2.02501 | trans 0.04435 | lle 0.00037 | r 0.3956 | R² 0.0277
++[076] train loss 0.41461 | recon 0.35273 | kl 3.06683 | smooth 2.03903 | trans 0.02488 | lle 0.00075 | beta 0.020
++      valid loss 2.07755 | recon 2.02621 | kl 2.53565 | smooth 2.01770 | trans 0.04436 | lle 0.00043 | r 0.3632 | R² -0.0568
++[077] train loss 0.42451 | recon 0.36211 | kl 3.09301 | smooth 2.05562 | trans 0.02529 | lle 0.00076 | beta 0.020
++      valid loss 1.93384 | recon 1.88001 | kl 2.65984 | smooth 2.05886 | trans 0.04435 | lle 0.00045 | r 0.3915 | R² 0.0254
++[078] train loss 0.41536 | recon 0.35149 | kl 3.16673 | smooth 2.06891 | trans 0.02534 | lle 0.00069 | beta 0.020
++      valid loss 2.03740 | recon 1.98273 | kl 2.70137 | smooth 2.06918 | trans 0.04436 | lle 0.00033 | r 0.3802 | R² -0.0325
++[079] train loss 0.41739 | recon 0.35434 | kl 3.12497 | smooth 2.08386 | trans 0.02552 | lle 0.00082 | beta 0.020
++      valid loss 1.92734 | recon 1.87312 | kl 2.67904 | smooth 2.07950 | trans 0.04435 | lle 0.00032 | r 0.3947 | R² 0.0348
++[080] train loss 0.41544 | recon 0.35274 | kl 3.10752 | smooth 2.09572 | trans 0.02513 | lle 0.00077 | beta 0.020
++      valid loss 2.20854 | recon 2.15390 | kl 2.69974 | smooth 2.09728 | trans 0.04436 | lle 0.00032 | r 0.3751 | R² -0.1279
++[081] train loss 0.41293 | recon 0.35014 | kl 3.11186 | smooth 2.10307 | trans 0.02490 | lle 0.00071 | beta 0.020
++      valid loss 1.88689 | recon 1.83376 | kl 2.62438 | smooth 2.08768 | trans 0.04434 | lle 0.00029 | r 0.3961 | R² 0.0566
++[082] train loss 0.40857 | recon 0.34617 | kl 3.09277 | smooth 2.11231 | trans 0.02513 | lle 0.00070 | beta 0.020
++      valid loss 1.95901 | recon 1.90557 | kl 2.63950 | smooth 2.10188 | trans 0.04435 | lle 0.00043 | r 0.3814 | R² 0.0139
++[083] train loss 0.41278 | recon 0.35146 | kl 3.03819 | smooth 2.12181 | trans 0.02508 | lle 0.00071 | beta 0.020
++      valid loss 2.14129 | recon 2.08976 | kl 2.54408 | smooth 2.13328 | trans 0.04436 | lle 0.00038 | r 0.3731 | R² -0.0945
++[084] train loss 0.40872 | recon 0.34726 | kl 3.04511 | smooth 2.13578 | trans 0.02493 | lle 0.00069 | beta 0.020
++      valid loss 2.01219 | recon 1.96007 | kl 2.57335 | smooth 2.15029 | trans 0.04436 | lle 0.00032 | r 0.3838 | R² -0.0186
++[085] train loss 0.40856 | recon 0.34740 | kl 3.03037 | smooth 2.14777 | trans 0.02498 | lle 0.00070 | beta 0.020
++      valid loss 2.02366 | recon 1.97297 | kl 2.50196 | smooth 2.14144 | trans 0.04436 | lle 0.00029 | r 0.3680 | R² -0.0273
++[086] train loss 0.40746 | recon 0.34625 | kl 3.03249 | smooth 2.16058 | trans 0.02467 | lle 0.00073 | beta 0.020
++      valid loss 1.79927 | recon 1.74632 | kl 2.61511 | smooth 2.14600 | trans 0.04434 | lle 0.00042 | r 0.4028 | R² 0.1032
++[087] train loss 0.41298 | recon 0.35164 | kl 3.03848 | smooth 2.16481 | trans 0.02532 | lle 0.00080 | beta 0.020
++      valid loss 2.02038 | recon 1.96703 | kl 2.63476 | smooth 2.17250 | trans 0.04435 | lle 0.00040 | r 0.3909 | R² -0.0243
++[088] train loss 0.39606 | recon 0.33546 | kl 3.00175 | smooth 2.18339 | trans 0.02484 | lle 0.00078 | beta 0.020
++      valid loss 2.09136 | recon 2.04090 | kl 2.49024 | smooth 2.18147 | trans 0.04436 | lle 0.00036 | r 0.3707 | R² -0.0723
++[089] train loss 0.39869 | recon 0.34033 | kl 2.88972 | smooth 2.19217 | trans 0.02521 | lle 0.00070 | beta 0.020
++      valid loss 2.05763 | recon 2.00691 | kl 2.50249 | smooth 2.21376 | trans 0.04436 | lle 0.00035 | r 0.3800 | R² -0.0435
++[090] train loss 0.39998 | recon 0.34112 | kl 2.91448 | smooth 2.19730 | trans 0.02510 | lle 0.00083 | beta 0.020
++      valid loss 2.02272 | recon 1.97328 | kl 2.43872 | smooth 2.21457 | trans 0.04436 | lle 0.00042 | r 0.3769 | R² -0.0247
++[091] train loss 0.39443 | recon 0.33548 | kl 2.91893 | smooth 2.21610 | trans 0.02490 | lle 0.00071 | beta 0.020
++      valid loss 1.95426 | recon 1.90240 | kl 2.55939 | smooth 2.20575 | trans 0.04435 | lle 0.00049 | r 0.3876 | R² 0.0100
++[092] train loss 0.38892 | recon 0.32883 | kl 2.97561 | smooth 2.22090 | trans 0.02519 | lle 0.00073 | beta 0.020
++      valid loss 2.03483 | recon 1.98376 | kl 2.51967 | smooth 2.26918 | trans 0.04436 | lle 0.00041 | r 0.3821 | R² -0.0268
++[093] train loss 0.39193 | recon 0.33435 | kl 2.85010 | smooth 2.23001 | trans 0.02466 | lle 0.00078 | beta 0.020
++      valid loss 2.00550 | recon 1.95683 | kl 2.39928 | smooth 2.27085 | trans 0.04436 | lle 0.00036 | r 0.3804 | R² -0.0152
++[094] train loss 0.39541 | recon 0.33698 | kl 2.89262 | smooth 2.24512 | trans 0.02484 | lle 0.00083 | beta 0.020
++      valid loss 1.98868 | recon 1.93865 | kl 2.46755 | smooth 2.26330 | trans 0.04436 | lle 0.00037 | r 0.3891 | R² -0.0080
++[095] train loss 0.38885 | recon 0.33046 | kl 2.89060 | smooth 2.24955 | trans 0.02504 | lle 0.00075 | beta 0.020
++      valid loss 2.04869 | recon 1.99871 | kl 2.46525 | smooth 2.27671 | trans 0.04436 | lle 0.00044 | r 0.3805 | R² -0.0416
++[096] train loss 0.38267 | recon 0.32532 | kl 2.83818 | smooth 2.26262 | trans 0.02497 | lle 0.00074 | beta 0.020
++      valid loss 1.99428 | recon 1.94527 | kl 2.41698 | smooth 2.27196 | trans 0.04436 | lle 0.00038 | r 0.3736 | R² -0.0042
++[097] train loss 0.39237 | recon 0.33485 | kl 2.84705 | smooth 2.26716 | trans 0.02507 | lle 0.00082 | beta 0.020
++      valid loss 2.14318 | recon 2.09358 | kl 2.44533 | smooth 2.31773 | trans 0.04438 | lle 0.00034 | r 0.3725 | R² -0.1024
++[098] train loss 0.38388 | recon 0.32557 | kl 2.88650 | smooth 2.27995 | trans 0.02502 | lle 0.00076 | beta 0.020
++      valid loss 2.03138 | recon 1.97945 | kl 2.56201 | smooth 2.31719 | trans 0.04436 | lle 0.00037 | r 0.3806 | R² -0.0272
++[099] train loss 0.37946 | recon 0.32022 | kl 2.93281 | smooth 2.29201 | trans 0.02490 | lle 0.00078 | beta 0.020
++      valid loss 2.19163 | recon 2.14157 | kl 2.46833 | smooth 2.32995 | trans 0.04437 | lle 0.00028 | r 0.3791 | R² -0.1248
++[100] train loss 0.36365 | recon 0.30570 | kl 2.86848 | smooth 2.29289 | trans 0.02446 | lle 0.00069 | beta 0.020
++      valid loss 2.21530 | recon 2.16537 | kl 2.46179 | smooth 2.33409 | trans 0.04437 | lle 0.00040 | r 0.3659 | R² -0.1329
++[101] train loss 0.38332 | recon 0.32638 | kl 2.81738 | smooth 2.31051 | trans 0.02478 | lle 0.00080 | beta 0.020
++      valid loss 2.09656 | recon 2.04935 | kl 2.32634 | smooth 2.32343 | trans 0.04437 | lle 0.00031 | r 0.3653 | R² -0.0775
++[102] train loss 0.38366 | recon 0.32754 | kl 2.77620 | smooth 2.31629 | trans 0.02486 | lle 0.00082 | beta 0.020
++      valid loss 1.96656 | recon 1.91754 | kl 2.41656 | smooth 2.33612 | trans 0.04436 | lle 0.00041 | r 0.3829 | R² 0.0025
++[103] train loss 0.37340 | recon 0.31703 | kl 2.78878 | smooth 2.32805 | trans 0.02498 | lle 0.00076 | beta 0.020
++      valid loss 1.90626 | recon 1.85855 | kl 2.35073 | smooth 2.37435 | trans 0.04437 | lle 0.00039 | r 0.3955 | R² 0.0397
++[104] train loss 0.36915 | recon 0.31314 | kl 2.77083 | smooth 2.34744 | trans 0.02477 | lle 0.00080 | beta 0.020
++      valid loss 2.07845 | recon 2.02792 | kl 2.49229 | smooth 2.32917 | trans 0.04436 | lle 0.00050 | r 0.3757 | R² -0.0530
++[105] train loss 0.37195 | recon 0.31627 | kl 2.75427 | smooth 2.35170 | trans 0.02514 | lle 0.00084 | beta 0.020
++      valid loss 1.97258 | recon 1.92359 | kl 2.41441 | smooth 2.38013 | trans 0.04437 | lle 0.00038 | r 0.3837 | R² -0.0009
++[106] train loss 0.36363 | recon 0.30757 | kl 2.77317 | smooth 2.35005 | trans 0.02466 | lle 0.00084 | beta 0.020
++      valid loss 2.32022 | recon 2.27229 | kl 2.36135 | smooth 2.40668 | trans 0.04439 | lle 0.00054 | r 0.3619 | R² -0.2028
++[107] train loss 0.37627 | recon 0.32052 | kl 2.75749 | smooth 2.37759 | trans 0.02492 | lle 0.00090 | beta 0.020
++      valid loss 2.10689 | recon 2.05700 | kl 2.45957 | smooth 2.38728 | trans 0.04437 | lle 0.00044 | r 0.3814 | R² -0.0714
++[108] train loss 0.37486 | recon 0.31828 | kl 2.79829 | smooth 2.37810 | trans 0.02513 | lle 0.00080 | beta 0.020
++      valid loss 2.07761 | recon 2.02989 | kl 2.34999 | smooth 2.44146 | trans 0.04439 | lle 0.00046 | r 0.3756 | R² -0.0644
++[109] train loss 0.38614 | recon 0.33080 | kl 2.73641 | smooth 2.39555 | trans 0.02525 | lle 0.00077 | beta 0.020
++      valid loss 2.02663 | recon 1.97481 | kl 2.55589 | smooth 2.40779 | trans 0.04436 | lle 0.00028 | r 0.3836 | R² -0.0180
++[110] train loss 0.37039 | recon 0.31314 | kl 2.83197 | smooth 2.40421 | trans 0.02502 | lle 0.00089 | beta 0.020
++      valid loss 2.06845 | recon 2.01910 | kl 2.43179 | smooth 2.43169 | trans 0.04438 | lle 0.00035 | r 0.3702 | R² -0.0562
++[111] train loss 0.37018 | recon 0.31388 | kl 2.78458 | smooth 2.41357 | trans 0.02491 | lle 0.00089 | beta 0.020
++      valid loss 2.14758 | recon 2.09790 | kl 2.44812 | smooth 2.44813 | trans 0.04438 | lle 0.00033 | r 0.3687 | R² -0.0974
++[112] train loss 0.35943 | recon 0.30426 | kl 2.72827 | smooth 2.41567 | trans 0.02470 | lle 0.00082 | beta 0.020
++      valid loss 2.13913 | recon 2.09290 | kl 2.27562 | smooth 2.45887 | trans 0.04438 | lle 0.00041 | r 0.3748 | R² -0.1014
++[113] train loss 0.35715 | recon 0.30348 | kl 2.65253 | smooth 2.42103 | trans 0.02475 | lle 0.00081 | beta 0.020
++      valid loss 2.05121 | recon 2.00437 | kl 2.30562 | smooth 2.47826 | trans 0.04438 | lle 0.00047 | r 0.3813 | R² -0.0455
++[114] train loss 0.36470 | recon 0.31061 | kl 2.67362 | smooth 2.44489 | trans 0.02494 | lle 0.00081 | beta 0.020
++      valid loss 2.17404 | recon 2.12625 | kl 2.35388 | smooth 2.46061 | trans 0.04438 | lle 0.00051 | r 0.3635 | R² -0.1122
++[115] train loss 0.37173 | recon 0.31685 | kl 2.71341 | smooth 2.44600 | trans 0.02497 | lle 0.00080 | beta 0.020
++      valid loss 2.03724 | recon 1.98836 | kl 2.40851 | smooth 2.45308 | trans 0.04437 | lle 0.00033 | r 0.3796 | R² -0.0273
++[116] train loss 0.35843 | recon 0.30285 | kl 2.74792 | smooth 2.44890 | trans 0.02508 | lle 0.00085 | beta 0.020
++      valid loss 1.98425 | recon 1.93572 | kl 2.39082 | smooth 2.43955 | trans 0.04436 | lle 0.00038 | r 0.3813 | R² -0.0097
++[117] train loss 0.35842 | recon 0.30375 | kl 2.70206 | smooth 2.46735 | trans 0.02481 | lle 0.00078 | beta 0.020
++      valid loss 1.99056 | recon 1.94270 | kl 2.35682 | smooth 2.50584 | trans 0.04439 | lle 0.00054 | r 0.3896 | R² -0.0087
++[118] train loss 0.35767 | recon 0.30282 | kl 2.71110 | smooth 2.48156 | trans 0.02492 | lle 0.00089 | beta 0.020
++      valid loss 2.09716 | recon 2.04761 | kl 2.44158 | smooth 2.46668 | trans 0.04437 | lle 0.00040 | r 0.3781 | R² -0.0710
++[119] train loss 0.35454 | recon 0.29938 | kl 2.72682 | smooth 2.48548 | trans 0.02532 | lle 0.00080 | beta 0.020
++      valid loss 2.09273 | recon 2.04421 | kl 2.38981 | smooth 2.49838 | trans 0.04437 | lle 0.00043 | r 0.3778 | R² -0.0640
++[120] train loss 0.35259 | recon 0.29837 | kl 2.67937 | smooth 2.49731 | trans 0.02506 | lle 0.00085 | beta 0.020
++      valid loss 2.05314 | recon 2.00501 | kl 2.36994 | smooth 2.52099 | trans 0.04438 | lle 0.00033 | r 0.3815 | R² -0.0417
++[121] train loss 0.35021 | recon 0.29567 | kl 2.69578 | smooth 2.49365 | trans 0.02482 | lle 0.00097 | beta 0.020
++      valid loss 1.99911 | recon 1.95241 | kl 2.29818 | smooth 2.54463 | trans 0.04439 | lle 0.00050 | r 0.3809 | R² -0.0171
++[122] train loss 0.35355 | recon 0.30057 | kl 2.61746 | smooth 2.51830 | trans 0.02477 | lle 0.00085 | beta 0.020
++      valid loss 2.46015 | recon 2.41271 | kl 2.33526 | smooth 2.51854 | trans 0.04439 | lle 0.00062 | r 0.3546 | R² -0.2783
++[123] train loss 0.35023 | recon 0.29639 | kl 2.66044 | smooth 2.52196 | trans 0.02477 | lle 0.00080 | beta 0.020
++      valid loss 2.06571 | recon 2.01904 | kl 2.29636 | smooth 2.56432 | trans 0.04438 | lle 0.00051 | r 0.3673 | R² -0.0455
++[124] train loss 0.35013 | recon 0.29756 | kl 2.59685 | smooth 2.53639 | trans 0.02453 | lle 0.00082 | beta 0.020
++      valid loss 2.04832 | recon 2.00037 | kl 2.36104 | smooth 2.52836 | trans 0.04437 | lle 0.00046 | r 0.3785 | R² -0.0409
++[125] train loss 0.35063 | recon 0.29637 | kl 2.68144 | smooth 2.54617 | trans 0.02454 | lle 0.00082 | beta 0.020
++      valid loss 2.00646 | recon 1.95978 | kl 2.29675 | smooth 2.58398 | trans 0.04439 | lle 0.00043 | r 0.3888 | R² -0.0155
++[126] train loss 0.35444 | recon 0.30143 | kl 2.61881 | smooth 2.55567 | trans 0.02512 | lle 0.00088 | beta 0.020
++      valid loss 2.25138 | recon 2.20444 | kl 2.31026 | smooth 2.54002 | trans 0.04439 | lle 0.00036 | r 0.3690 | R² -0.1594
++[127] train loss 0.34726 | recon 0.29299 | kl 2.68172 | smooth 2.54982 | trans 0.02498 | lle 0.00084 | beta 0.020
++      valid loss 1.90516 | recon 1.85728 | kl 2.35728 | smooth 2.56413 | trans 0.04437 | lle 0.00035 | r 0.3949 | R² 0.0474
++[128] train loss 0.34861 | recon 0.29526 | kl 2.63517 | smooth 2.56950 | trans 0.02471 | lle 0.00091 | beta 0.020
++      valid loss 1.93022 | recon 1.88265 | kl 2.34153 | smooth 2.59238 | trans 0.04437 | lle 0.00055 | r 0.3907 | R² 0.0263
++[129] train loss 0.34220 | recon 0.28881 | kl 2.63695 | smooth 2.57507 | trans 0.02477 | lle 0.00092 | beta 0.020
++      valid loss 2.00691 | recon 1.96004 | kl 2.30665 | smooth 2.55723 | trans 0.04438 | lle 0.00040 | r 0.3850 | R² -0.0149
++[130] train loss 0.33668 | recon 0.28450 | kl 2.57718 | smooth 2.58148 | trans 0.02474 | lle 0.00084 | beta 0.020
++      valid loss 2.15969 | recon 2.11271 | kl 2.31157 | smooth 2.60844 | trans 0.04439 | lle 0.00051 | r 0.3794 | R² -0.1071
++[131] train loss 0.34881 | recon 0.29514 | kl 2.65075 | smooth 2.59301 | trans 0.02494 | lle 0.00081 | beta 0.020
++      valid loss 2.03166 | recon 1.98300 | kl 2.39556 | smooth 2.59449 | trans 0.04436 | lle 0.00041 | r 0.3755 | R² -0.0325
++[132] train loss 0.34062 | recon 0.28659 | kl 2.66936 | smooth 2.60386 | trans 0.02507 | lle 0.00090 | beta 0.020
++      valid loss 2.11663 | recon 2.06821 | kl 2.38378 | smooth 2.60445 | trans 0.04438 | lle 0.00042 | r 0.3766 | R² -0.0835
++[133] train loss 0.35522 | recon 0.30165 | kl 2.64575 | smooth 2.62149 | trans 0.02468 | lle 0.00093 | beta 0.020
++      valid loss 2.01671 | recon 1.96939 | kl 2.32796 | smooth 2.64615 | trans 0.04437 | lle 0.00078 | r 0.3816 | R² -0.0203
++[134] train loss 0.34448 | recon 0.29173 | kl 2.60442 | smooth 2.61727 | trans 0.02520 | lle 0.00087 | beta 0.020
++      valid loss 2.01682 | recon 1.96784 | kl 2.41145 | smooth 2.58737 | trans 0.04435 | lle 0.00047 | r 0.3784 | R² -0.0207
++[135] train loss 0.33899 | recon 0.28517 | kl 2.65781 | smooth 2.62638 | trans 0.02514 | lle 0.00087 | beta 0.020
++      valid loss 2.29895 | recon 2.25058 | kl 2.38079 | smooth 2.65234 | trans 0.04439 | lle 0.00032 | r 0.3702 | R² -0.1871
++[136] train loss 0.33538 | recon 0.28171 | kl 2.65076 | smooth 2.64501 | trans 0.02474 | lle 0.00088 | beta 0.020
++      valid loss 2.00183 | recon 1.95324 | kl 2.39145 | smooth 2.67853 | trans 0.04438 | lle 0.00045 | r 0.3864 | R² -0.0065
++[137] train loss 0.33483 | recon 0.28202 | kl 2.60761 | smooth 2.64382 | trans 0.02482 | lle 0.00095 | beta 0.020
++      valid loss 2.29677 | recon 2.25011 | kl 2.29494 | smooth 2.67880 | trans 0.04439 | lle 0.00047 | r 0.3624 | R² -0.1844
++[138] train loss 0.33240 | recon 0.28059 | kl 2.55778 | smooth 2.64655 | trans 0.02484 | lle 0.00083 | beta 0.020
++      valid loss 2.27563 | recon 2.22919 | kl 2.28452 | smooth 2.66829 | trans 0.04440 | lle 0.00038 | r 0.3671 | R² -0.1748
++[139] train loss 0.33989 | recon 0.28803 | kl 2.55960 | smooth 2.66776 | trans 0.02503 | lle 0.00090 | beta 0.020
++      valid loss 1.98626 | recon 1.93784 | kl 2.38298 | smooth 2.68896 | trans 0.04437 | lle 0.00044 | r 0.3892 | R² -0.0012
++[140] train loss 0.34791 | recon 0.29360 | kl 2.68261 | smooth 2.65631 | trans 0.02496 | lle 0.00093 | beta 0.020
++      valid loss 2.06885 | recon 2.01923 | kl 2.44292 | smooth 2.68802 | trans 0.04438 | lle 0.00046 | r 0.3830 | R² -0.0526
++[141] train loss 0.33851 | recon 0.28385 | kl 2.69990 | smooth 2.65515 | trans 0.02486 | lle 0.00105 | beta 0.020
++      valid loss 2.15319 | recon 2.10412 | kl 2.41535 | smooth 2.70850 | trans 0.04440 | lle 0.00063 | r 0.3785 | R² -0.0993
++[142] train loss 0.32523 | recon 0.27248 | kl 2.60403 | smooth 2.69785 | trans 0.02467 | lle 0.00090 | beta 0.020
++      valid loss 2.10654 | recon 2.05844 | kl 2.36667 | smooth 2.74427 | trans 0.04439 | lle 0.00035 | r 0.3735 | R² -0.0687
++[143] train loss 0.32739 | recon 0.27551 | kl 2.56098 | smooth 2.68945 | trans 0.02428 | lle 0.00093 | beta 0.020
++      valid loss 2.24891 | recon 2.20167 | kl 2.32293 | smooth 2.78703 | trans 0.04441 | lle 0.00039 | r 0.3725 | R² -0.1577
++[144] train loss 0.32557 | recon 0.27434 | kl 2.52803 | smooth 2.70447 | trans 0.02464 | lle 0.00108 | beta 0.020
++      valid loss 2.18552 | recon 2.13878 | kl 2.29805 | smooth 2.74485 | trans 0.04440 | lle 0.00036 | r 0.3738 | R² -0.1237
++[145] train loss 0.31992 | recon 0.26862 | kl 2.53166 | smooth 2.71291 | trans 0.02484 | lle 0.00080 | beta 0.020
++      valid loss 2.24677 | recon 2.19989 | kl 2.30517 | smooth 2.78855 | trans 0.04443 | lle 0.00047 | r 0.3553 | R² -0.1555
++[146] train loss 0.32671 | recon 0.27408 | kl 2.59788 | smooth 2.72541 | trans 0.02472 | lle 0.00098 | beta 0.020
++      valid loss 1.90154 | recon 1.85217 | kl 2.42968 | smooth 2.75128 | trans 0.04436 | lle 0.00043 | r 0.3964 | R² 0.0449
++[147] train loss 0.31726 | recon 0.26476 | kl 2.59155 | smooth 2.72139 | trans 0.02453 | lle 0.00095 | beta 0.020
++      valid loss 1.96120 | recon 1.91449 | kl 2.29639 | smooth 2.76481 | trans 0.04439 | lle 0.00038 | r 0.3889 | R² 0.0091
++[148] train loss 0.32200 | recon 0.27108 | kl 2.51218 | smooth 2.73169 | trans 0.02443 | lle 0.00081 | beta 0.020
++      valid loss 2.16393 | recon 2.11718 | kl 2.29857 | smooth 2.76444 | trans 0.04441 | lle 0.00040 | r 0.3757 | R² -0.1120
++[149] train loss 0.32988 | recon 0.27815 | kl 2.55287 | smooth 2.74131 | trans 0.02448 | lle 0.00089 | beta 0.020
++      valid loss 2.36596 | recon 2.31892 | kl 2.31308 | smooth 2.79158 | trans 0.04443 | lle 0.00039 | r 0.3611 | R² -0.2295
++[150] train loss 0.33772 | recon 0.28478 | kl 2.61290 | smooth 2.75719 | trans 0.02521 | lle 0.00095 | beta 0.020
++      valid loss 2.20216 | recon 2.15231 | kl 2.45374 | smooth 2.79394 | trans 0.04440 | lle 0.00044 | r 0.3757 | R² -0.1237
++      wrote C:\Users\schot\Neural_VAE_ODE\src\pt_files\latent_manifold_mds.png
++done.
++experts.0.0.bias 0.02257499098777771
++experts.0.2.bias -0.01928652822971344
++experts.0.4.bias 0.0023540507536381483
++experts.1.0.bias 0.04312733933329582
++experts.1.2.bias -0.014826623722910881
++experts.1.4.bias 0.011024867184460163
++experts.2.0.bias -0.0068344855681061745
++experts.2.2.bias -0.017670605331659317
++experts.2.4.bias -0.0053141009993851185
++experts.3.0.bias 0.02056562528014183
++experts.3.2.bias -0.01625608094036579
++experts.3.4.bias 0.0024401729460805655
++experts.4.0.bias 0.051757995039224625
++experts.4.2.bias -0.021324142813682556
++experts.4.4.bias 0.002949328860267997
++experts.5.0.bias 0.031266238540410995
++experts.5.2.bias -0.013051440939307213
++experts.5.4.bias 0.005878497380763292
++experts.6.0.bias 0.01660035364329815
++experts.6.2.bias -0.0225425586104393
++experts.6.4.bias 0.00028314575320109725
++experts.7.0.bias 0.047371529042720795
++experts.7.2.bias -0.011193601414561272
++experts.7.4.bias 0.004379513673484325
++Saved run metadata → C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_135441_3686bcc\run_metadata.json
++Final r: 0.3757
++Final R²: -0.1237
+ Traceback (most recent call last):
+-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1659, in <module>
+-    best_val, mean_r2 = train(args)
+-  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1439, in train
+-    xhat_raw = xhat_norm * sd + mu
+-TypeError: Concatenation operation is not implemented for NumPy arrays, use np.concatenate() instead. Please do not rely on this error; it may not be given on all Python implementations.
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1772, in <module>
++    f"Final r value: {mean_r:.4f}\n"
++NameError: name 'mean_r' is not defined. Did you mean: 'mean_r2'?
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index 2749546..2b10545 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -1,6 +1,13 @@
+ """
+ v5_neural_vae.py — MoE Latent Neural ODE VAE + transition regularization + soft LLE (CUDA-first)
+ 
++IF YOU WANT TO RUN THIS BAD BOY, check either the config.txt file or the v5_base.txt file. There are a lot of different ways you
++can run and configure this file. I designed all of this with an experimental architecture, which means it is highly customizable
++and research driven. 
++- Using the experiment system will rely on the configs in v5_base.txt. 
++- Using the non-experiemental system---e.g. not using the experiement wrapper, and just straight-up running it with python + no flags
++will rely on config.txt, which is the global config file. 
++
+ What it does today:
+ - Data: loads E65 .npz from PATHS["data"] (note: config.txt also exists but the script is still largely path-driven).
+ - Preprocessing: PCA to retain ~95% variance (hard-coded), then trial grouping + resampling to fixed length.
+@@ -804,7 +811,7 @@ class LocalAttentionDecoder(nn.Module):
+         idx = idx[:, 1:]                           # remove self-neuron
+         # idx: [N, k]
+ 
+-        # --------------------------------------------------------
++        # ------------------------------------------------------
+         # 3. Compute attention weights for neighbors
+         # --------------------------------------------------------
+         neigh_emb = emb[idx]                      # [N, k, D]
+@@ -817,7 +824,7 @@ class LocalAttentionDecoder(nn.Module):
+         )
+ 
+         # --------------------------------------------------------
+-        # 4. Compute local latent: weighted sum of neighbor latents
++        # 4. Compute local latent: weighted sum of neighbor latents :)
+         # --------------------------------------------------------
+         # z_traj: [B, L, D]
+         # expand to: [B, L, 1, D] → [B, L, N, D]
+@@ -1021,7 +1028,7 @@ class ODEVAE(nn.Module):
+         # geometric details
+         # self.latent_noise_std = 0.0
+ 
+-        # select decoder
++        # select your decoder!
+         if decoder_type.lower() == "mlp":
+             self.dec = Decoder(latent_dim, n_neurons)
+ 
+@@ -1150,6 +1157,10 @@ def train(args):
+     meta = {}
+ 
+     use_mind_split = getattr(args, "mind_split_enabled", False)
++    use_no_leakage = getattr(args, "no_leakage_preproc", False)
++    use_random_split = getattr(args, "random_split_enabled", False)
++    random_split_frac = getattr(args, "random_split_frac", 0.1)
++    random_split_seed = getattr(args, "random_split_seed", 42)
+     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+     mind_seed = getattr(args, "mind_split_seed", 42)
+ 
+@@ -1201,10 +1212,72 @@ def train(args):
+         B, L, N = X_train.shape
+         print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
+     else:
+-        # --- Step 1: PCA Preprocessing (MIND-style) ---
+-        roi = npz["roi"]
+-        if roi.shape[0] < roi.shape[1]:
+-            roi = roi.T  # [T, N]
++        if use_no_leakage:
++            # Old v5 behavior with train-only preprocessing to avoid leakage.
++            X_raw, tvec_np, trial_ids = make_sequences_raw(
++                npz,
++                trial_len_s=args.trial_len_s,
++                fps=args.fps,
++                drop_first_trials=args.drop_first_trials,
++                min_frames=10,
++            )
++
++            # Optional landmark subsampling (same placement as old path, but on raw sequences)
++            if getattr(args, "landmark_count", 0) > 0:
++                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
++                X_flat = X_raw.reshape(-1, X_raw.shape[-1])
++                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
++                X_raw = X_raw[lm_idx % X_raw.shape[0]]
++                trial_ids = trial_ids[lm_idx % trial_ids.shape[0]]
++                print(f"Subsampled to {X_raw.shape[0]} sequences.")
++
++            B, L, N = X_raw.shape
++            print(f"Built sequences: B={B}, :={L}, N={N}")
++
++            # train/val split (random 10% or hold out last K trials)
++            if use_random_split:
++                train_idx, test_idx = split_trials_like_matlab(
++                    trial_ids,
++                    seed=random_split_seed,
++                    test_frac=random_split_frac,
++                )
++                if len(test_idx) == 0 or len(train_idx) == 0:
++                    raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
++                X_train_raw = X_raw[train_idx]
++                X_val_raw = X_raw[test_idx]
++            else:
++                holdout = min(args.holdout_trials, max(1, B //5))
++                X_train_raw = X_raw[:-holdout]
++                X_val_raw = X_raw[-holdout:]
++
++            # PCA on training only (if enabled), then z-score on training only
++            if getattr(args, "use_pca", True):
++                n_components = getattr(args, "pca_dim", 0)
++                if not (isinstance(n_components, int) and n_components > 0):
++                    n_components = getattr(args, "pca_variance", 0.95)
++                pca = PCA(n_components=n_components, svd_solver="full")
++                flat_train_raw = X_train_raw.reshape(-1, X_train_raw.shape[-1])
++                pca.fit(flat_train_raw)
++                print(
++                    f"PCA (train-only) reduced {X_train_raw.shape[-1]} → {pca.n_components_} dims "
++                    f"({pca.explained_variance_ratio_.sum():.2%} variance)"
++                )
++                X_train_pca = pca.transform(flat_train_raw).reshape(X_train_raw.shape[0], X_train_raw.shape[1], -1)
++                X_val_pca = pca.transform(X_val_raw.reshape(-1, X_val_raw.shape[-1])).reshape(X_val_raw.shape[0], X_val_raw.shape[1], -1)
++                joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
++            else:
++                pca = None
++                X_train_pca = X_train_raw
++                X_val_pca = X_val_raw
++
++            X_train, mu, sd = normalize_sequences(X_train_pca)
++            X_val, _, _ = normalize_sequences(X_val_pca, mu, sd)
++            B, L, N = X_train.shape
++        else:
++            # --- Step 1: PCA Preprocessing (MIND-style) ---
++            roi = npz["roi"]
++            if roi.shape[0] < roi.shape[1]:
++                roi = roi.T  # [T, N]
+ 
+         #   Keep 95% variance
+         pca = PCA(n_components=0.95, svd_solver="full")
+@@ -1230,15 +1303,33 @@ def train(args):
+             X_flat = X.reshape(-1, X.shape[-1])
+             lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+             X = X[lm_idx % X.shape[0]]  # map back to batch level
++            if isinstance(meta, dict) and "trials_used" in meta:
++                meta["trials_used"] = meta["trials_used"][lm_idx % meta["trials_used"].shape[0]]
+             print(f"Subsampled to {X.shape[0]} sequences.")
+ 
+         B, L, N = X.shape
+         print(f"Built sequences: B={B}, :={L}, N={N}")
+ 
+-        # train/val split (hold out last K trials)
+-        holdout = min(args.holdout_trials, max(1, B //5))
+-        X_train = X[:-holdout]
+-        X_val = X[-holdout:]
++        # train/val split (random 10% or hold out last K trials)
++        if use_random_split:
++            trial_ids = None
++            if isinstance(meta, dict) and "trials_used" in meta:
++                trial_ids = meta["trials_used"]
++            if trial_ids is None or len(trial_ids) != X.shape[0]:
++                trial_ids = np.arange(X.shape[0])
++            train_idx, test_idx = split_trials_like_matlab(
++                trial_ids,
++                seed=random_split_seed,
++                test_frac=random_split_frac,
++            )
++            if len(test_idx) == 0 or len(train_idx) == 0:
++                raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
++            X_train = X[train_idx]
++            X_val = X[test_idx]
++        else:
++            holdout = min(args.holdout_trials, max(1, B //5))
++            X_train = X[:-holdout]
++            X_val = X[-holdout:]
+ 
+     if not use_mind_split:
+         X_val_eval = None

@@ -1,0 +1,45 @@
+diff --git a/README.md b/README.md
+index 6df80f3..1a08823 100644
+--- a/README.md
++++ b/README.md
+@@ -10,6 +10,18 @@ Final R²: 0.7241
+ ```
+ Looking at the most recent massive jump in R and R2 in terms of scores if we run scores in PCA space, what does this mean about the model? What does this mean about its performance that it does really well in PCA space but poorly in reverse decoded PCA space?
+ 
++***Thoughts:***
++Short version: it means the model is good at reconstructing the low‑dimensional PCA representation, but that does not necessarily translate to accuracy in the original neuron space. That gap is expected when most variance is low‑rank but neuron‑wise structure (high‑dim detail) is not being captured.
++
++1. Model is learning dominant shared dynamics. 
++2. It's not reconstructing neuron-specific details well. 
++    - I believe that inverse PCA spreads errors across many neurons---small errors in PCA space can blow up in raw space. 
++3. Objective/metric mismatch.
++    - Training in PCA-space MSE, then grding on raw-space variance explained. 
++4. If R2 drops after inverse PCA, this suggests:
++    - Too few PCA components?
++    Model underfits higher-variance PCs?
++    - Learning manifold that doesn't algin with raw neuron variance structure 
+ ## February 22nd, 3:59pm:
+ - After changing no_leakage_preproc to true, updated scores:
+ ```
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index 02c2c1c..f9241b8 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -10,7 +10,7 @@ weight_decay = 0.00001
+ beta = 0.02
+ kl_warmup_epochs = 30
+ holdout_trials = 3
+-use_pca = true
++use_pca = false
+ pca_variance = 0.95
+ landmark_count = 100
+ out_dir = ../runs/ode_vae_E65
+@@ -42,7 +42,7 @@ random_split_enabled = false
+ random_split_frac = 0.1
+ random_split_seed = 42
+ 
+-eval_metrics_pca = true
++eval_metrics_pca = false
+ 
+ baseline_correct = true
+ dec_num_experts = 8

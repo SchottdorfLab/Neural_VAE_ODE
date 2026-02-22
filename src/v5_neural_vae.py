@@ -377,6 +377,10 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
         decoder_type=args.decoder_type,
         k_neighbors=getattr(args, "k_neighbors", 16),
         dec_num_experts=getattr(args, "dec_num_experts", 4),
+        ode_solver=getattr(args, "ode_solver", "dopri5"),
+        ode_rtol=getattr(args, "ode_rtol", 1e-3),
+        ode_atol=getattr(args, "ode_atol", 1e-4),
+        ode_step_size=getattr(args, "ode_step_size", None),
     ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec_t = torch.from_numpy(tvec).to(device)
@@ -1010,6 +1014,10 @@ class ODEVAE(nn.Module):
         encoder_pool="mean",
         ode_time_dependent=False,
         ode_time_embed_dim=16,
+        ode_solver="dopri5",
+        ode_rtol=1e-3,
+        ode_atol=1e-4,
+        ode_step_size=None,
     ):
         super().__init__()
         enc_type = str(encoder_type).lower()
@@ -1080,19 +1088,30 @@ class ODEVAE(nn.Module):
             )
         else:
             raise ValueError(f"Unknown decoder_type: {decoder_type}")
+        self.ode_solver = str(ode_solver).lower()
+        self.ode_rtol = float(ode_rtol)
+        self.ode_atol = float(ode_atol)
+        if isinstance(ode_step_size, str) and ode_step_size.strip().lower() in ("none", "null", ""):
+            ode_step_size = None
+        self.ode_step_size = None if ode_step_size is None else float(ode_step_size)
 
     def reparam(self, mu, logvar):
         eps = torch.randn_like(mu)
         return mu + torch.exp(0.5 * logvar) * eps
 
-    def _integrate_latent(self, z0, tvec, method="dopri5"):
+    def _integrate_latent(self, z0, tvec, method=None):
         """
         Integrate latent dynamics.
         method: "rk4" (fixed step) or "dopri5" (adaptive).
         """
+        if method is None:
+            method = self.ode_solver
         if method == "rk4":
-            step = (tvec[1] - tvec[0]).abs().item()
-            safe_step = step / 2.0
+            if self.ode_step_size is not None:
+                safe_step = float(self.ode_step_size)
+            else:
+                step = (tvec[1] - tvec[0]).abs().item()
+                safe_step = step / 2.0
 
             z_traj = odeint(
                 self.odefunc,
@@ -1106,9 +1125,9 @@ class ODEVAE(nn.Module):
             self.odefunc,
             z0,
             tvec,
-            method="dopri5",
-            rtol=1e-3,
-            atol=1e-4
+            method=method,
+            rtol=self.ode_rtol,
+            atol=self.ode_atol
         )
         return z_traj
 
@@ -1126,7 +1145,7 @@ class ODEVAE(nn.Module):
         z0 = self.reparam(mu, logvar).float()
         tvec = tvec.float()
 
-        z_traj = self._integrate_latent(z0, tvec, method="dopri5")
+        z_traj = self._integrate_latent(z0, tvec, method=self.ode_solver)
 
         z_traj = z_traj.permute(1, 0, 2).contiguous()                 # [B, L, D]
 
@@ -1427,6 +1446,10 @@ def train(args):
     encoder_pool=getattr(args, "encoder_pool", "mean"),
     ode_time_dependent=getattr(args, "ode_time_dependent", False),
     ode_time_embed_dim=getattr(args, "ode_time_embed_dim", 16),
+    ode_solver=getattr(args, "ode_solver", "dopri5"),
+    ode_rtol=getattr(args, "ode_rtol", 1e-3),
+    ode_atol=getattr(args, "ode_atol", 1e-4),
+    ode_step_size=getattr(args, "ode_step_size", None),
         ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)

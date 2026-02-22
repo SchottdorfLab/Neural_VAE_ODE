@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 3:12pm: 
+- Added a boolean flag `eval_metrics_raw` to control whether final metrics are computed in PCA space (false) or raw space via inverse PCA (true).
+
 ## February 22nd, 2:34pm:
 I was really thinking about lambda smooth and whether adding that constraint is supressing legitimate neural variability, and whether it's fighting against the transition loss (matching dx/dt), but like it's already heavily reduced in terms of smoothness. 
 Ran it with 0, and stuff is a good bit more jittery, but it's kind of providng that the argument that it's redundant with the ODE isn't strictly correct. 

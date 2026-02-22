@@ -41,9 +41,7 @@ no_leakage_preproc = false
 random_split_enabled = false
 random_split_frac = 0.1
 random_split_seed = 42
-
-eval_metrics_raw = true
-
+eval_metrics_raw = false
 baseline_correct = true
 dec_num_experts = 8
 gating_entropy_coef = 0.01

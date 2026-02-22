@@ -42,7 +42,7 @@ random_split_enabled = false
 random_split_frac = 0.1
 random_split_seed = 42
 
-eval_metrics_pca = true
+eval_metrics_pca = false
 
 baseline_correct = true
 dec_num_experts = 8

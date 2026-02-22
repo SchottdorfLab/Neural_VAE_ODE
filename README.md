@@ -2,6 +2,22 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 4:02pm:
+- If we do all of our computation in PCA space, the R2 scores are fantastic. 
+```
+Final r: 0.8627
+Final R²: 0.7241
+```
+Looking at the most recent massive jump in R and R2 in terms of scores if we run scores in PCA space, what does this mean about the model? What does this mean about its performance that it does really well in PCA space but poorly in reverse decoded PCA space?
+
+## February 22nd, 3:59pm:
+- After changing no_leakage_preproc to true, updated scores:
+```
+Final r: 0.6658
+Final R²: 0.4010
+```
+- So mostly impacted R2. By 0.1 points, ish. So not a huge drop, but certainly one. Treat this as a modification on the earlier statements on the impact of avoiding the leakage of PCA and z-scoring; those were run without toggling the boolean (oops). But now we have the updated and correct data for this. 
+
 ## February 22nd, 3:12pm: 
 - Added a boolean flag `eval_metrics_raw` to control whether final metrics are computed in PCA space (false) or raw space via inverse PCA (true).
 

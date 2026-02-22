@@ -1163,9 +1163,14 @@ def train(args):
     random_split_seed = getattr(args, "random_split_seed", 42)
     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
     mind_seed = getattr(args, "mind_split_seed", 42)
+    eval_metrics_pca = getattr(args, "eval_metrics_pca", None)
     eval_metrics_raw = getattr(args, "eval_metrics_raw", None)
     eval_metrics_space = getattr(args, "eval_metrics_space", None)
-    if eval_metrics_raw is not None:
+    if eval_metrics_pca is not None and eval_metrics_raw is not None:
+        print("Both eval_metrics_pca and eval_metrics_raw are set; eval_metrics_pca will take precedence.")
+    if eval_metrics_pca is not None:
+        eval_metrics_space = "pca" if bool(eval_metrics_pca) else "raw"
+    elif eval_metrics_raw is not None:
         eval_metrics_space = "raw" if bool(eval_metrics_raw) else "pca"
     else:
         if eval_metrics_space is None:

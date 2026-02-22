@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-02-22_155909_e7f3cc6",
+  "timestamp": "2026-02-22_155909",
+  "script": "C:\\Users\\schot\\Neural_VAE_ODE\\src\\v5_neural_vae.py",
+  "config": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\config.txt",
+  "config_original": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\config_original.txt",
+  "note": "running computations in pca space",
+  "git_commit": "e7f3cc6437e4fadea851498d71678c51e334db7c",
+  "git_short": "e7f3cc6",
+  "git_dirty": true,
+  "git_status": "M configs/v5_base.txt\n D runs/2026-02-22_151349_21f3fd4/config.txt\n D runs/2026-02-22_151349_21f3fd4/config_original.txt\n D runs/2026-02-22_151349_21f3fd4/git_diff.patch\n M runs/index.csv\n M src/preview.png\n M src/pt_files/final_metrics.pt\n M src/pt_files/latent_manifold_mds.png\n M src/pt_files/trained_pca.pkl\n M src/script_output.txt\n M src/v5_neural_vae.py\n?? runs/2026-02-22_155529_e7f3cc6/\n?? runs/2026-02-22_155856_e7f3cc6/",
+  "git_diff_patch": "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\git_diff.patch",
+  "code_change_summary": "Changed 11 files: configs/v5_base.txt (4 lines), runs/2026-02-22_151349_21f3fd4/config.txt (72 lines), runs/2026-02-22_151349_21f3fd4/config_original.txt (72 lines), runs/2026-02-22_151349_21f3fd4/git_diff.patch (296 lines), runs/index.csv (2 lines)....",
+  "exit_code": 120,
+  "artifacts": [
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\preview.png",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\training_results.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\script_output.txt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\ode_vae_best.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\final_metrics.pt",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\trained_pca.pkl",
+    "C:\\Users\\schot\\Neural_VAE_ODE\\runs\\2026-02-22_155909_e7f3cc6\\latent_manifold_mds.png"
+  ],
+  "metrics": {
+    "recon": 0.4600091576576233,
+    "kl": 2.366046667098999,
+    "smooth": 2.274106979370117,
+    "r": 0.8627123236656189,
+    "r2": 0.7241154909133911,
+    "lle": 0.00011712113337125629
+  }
+}

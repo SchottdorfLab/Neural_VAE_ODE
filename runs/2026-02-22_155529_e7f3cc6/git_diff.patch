@@ -1,0 +1,553 @@
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index 8edc2f5..4e078d0 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -37,12 +37,12 @@ encoder_bidirectional = false
+ mind_split_enabled = false
+ mind_test_frac = 0.1
+ mind_split_seed = 42
+-no_leakage_preproc = false
++no_leakage_preproc = true
+ random_split_enabled = false
+ random_split_frac = 0.1
+ random_split_seed = 42
+ 
+-eval_metrics_raw = true
++eval_metrics_pca = false
+ 
+ baseline_correct = true
+ dec_num_experts = 8
+diff --git a/runs/2026-02-22_151349_21f3fd4/config.txt b/runs/2026-02-22_151349_21f3fd4/config.txt
+deleted file mode 100644
+index 8a4b5fe..0000000
+--- a/runs/2026-02-22_151349_21f3fd4/config.txt
++++ /dev/null
+@@ -1,72 +0,0 @@
+-data_path = ../npz_e65_data/E65_data.npz
+-trial_len_s = 12
+-fps = 10
+-drop_first_trials = 10
+-latent_dim = 7
+-batch_size = 8
+-epochs = 150
+-lr = 0.001
+-weight_decay = 0.00001
+-beta = 0.02
+-kl_warmup_epochs = 30
+-holdout_trials = 3
+-use_pca = true
+-pca_variance = 0.95
+-landmark_count = 100
+-out_dir = C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_151349_21f3fd4
+-pca_dim = 0
+-num_experts = 4
+-hidden = 128
+-gating_temperature = 1.0
+-decoder_emb_dim = 16
+-decoder_hidden = 256
+-cv_folds = 4
+-k_neighbors = 16 
+-decoder_type = moe
+-
+-encoder_type = transformer
+-encoder_hidden = 256
+-encoder_layers = 1
+-encoder_heads = 2
+-encoder_ffn_dim = 512
+-encoder_dropout = 0.0
+-encoder_pool = first
+-
+-
+-encoder_bidirectional = false
+-mind_split_enabled = false
+-mind_test_frac = 0.1
+-mind_split_seed = 42
+-no_leakage_preproc = false
+-random_split_enabled = false
+-random_split_frac = 0.1
+-random_split_seed = 42
+-eval_metrics_raw = false
+-baseline_correct = true
+-dec_num_experts = 8
+-gating_entropy_coef = 0.01
+-gating_entropy_warmup = 20
+-seed = 1
+-early_stopping_patience = 15
+-early_stopping_min_delta = 0.0
+-sweep_enabled = false
+-sweep_latent_dim = 5, 8
+-sweep_beta = 0.02
+-sweep_lambda_smooth = 0.0005, 0.0002
+-lambda_transition_warmup_epochs = 30
+-lle_k = 8
+-lle_max_points = 256
+-lle_temperature = 0.1
+-lambda_graph = 0.01
+-graph_k = 8
+-graph_max_points = 256
+-graph_temperature = 0.1
+-r2_sweep_enabled = false
+-r2_sweep_dims = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+-r2_sweep_repeats = 3
+-r2_sweep_seed = 42
+-r2_sweep_epochs = 100
+-
+-lambda_transition = 0.005
+-lambda_lle = 0.005
+-lambda_smooth = 0.001
+diff --git a/runs/2026-02-22_151349_21f3fd4/config_original.txt b/runs/2026-02-22_151349_21f3fd4/config_original.txt
+deleted file mode 100644
+index 6d2cb6a..0000000
+--- a/runs/2026-02-22_151349_21f3fd4/config_original.txt
++++ /dev/null
+@@ -1,72 +0,0 @@
+-data_path = ../npz_e65_data/E65_data.npz
+-trial_len_s = 12
+-fps = 10
+-drop_first_trials = 10
+-latent_dim = 7
+-batch_size = 8
+-epochs = 150
+-lr = 0.001
+-weight_decay = 0.00001
+-beta = 0.02
+-kl_warmup_epochs = 30
+-holdout_trials = 3
+-use_pca = true
+-pca_variance = 0.95
+-landmark_count = 100
+-out_dir = ../runs/ode_vae_E65
+-pca_dim = 0
+-num_experts = 4
+-hidden = 128
+-gating_temperature = 1.0
+-decoder_emb_dim = 16
+-decoder_hidden = 256
+-cv_folds = 4
+-k_neighbors = 16 
+-decoder_type = moe
+-
+-encoder_type = transformer
+-encoder_hidden = 256
+-encoder_layers = 1
+-encoder_heads = 2
+-encoder_ffn_dim = 512
+-encoder_dropout = 0.0
+-encoder_pool = first
+-
+-
+-encoder_bidirectional = false
+-mind_split_enabled = false
+-mind_test_frac = 0.1
+-mind_split_seed = 42
+-no_leakage_preproc = false
+-random_split_enabled = false
+-random_split_frac = 0.1
+-random_split_seed = 42
+-eval_metrics_raw = false
+-baseline_correct = true
+-dec_num_experts = 8
+-gating_entropy_coef = 0.01
+-gating_entropy_warmup = 20
+-seed = 1
+-early_stopping_patience = 15
+-early_stopping_min_delta = 0.0
+-sweep_enabled = false
+-sweep_latent_dim = 5, 8
+-sweep_beta = 0.02
+-sweep_lambda_smooth = 0.0005, 0.0002
+-lambda_transition_warmup_epochs = 30
+-lle_k = 8
+-lle_max_points = 256
+-lle_temperature = 0.1
+-lambda_graph = 0.01
+-graph_k = 8
+-graph_max_points = 256
+-graph_temperature = 0.1
+-r2_sweep_enabled = false
+-r2_sweep_dims = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+-r2_sweep_repeats = 3
+-r2_sweep_seed = 42
+-r2_sweep_epochs = 100
+-
+-lambda_transition = 0.005
+-lambda_lle = 0.005
+-lambda_smooth = 0.001
+diff --git a/runs/2026-02-22_151349_21f3fd4/git_diff.patch b/runs/2026-02-22_151349_21f3fd4/git_diff.patch
+deleted file mode 100644
+index 8c8d8cd..0000000
+--- a/runs/2026-02-22_151349_21f3fd4/git_diff.patch
++++ /dev/null
+@@ -1,296 +0,0 @@
+-diff --git a/README.md b/README.md
+-index e401e03..ea01556 100644
+---- a/README.md
+-+++ b/README.md
+-@@ -2,6 +2,9 @@
+- * Written by: Kathleen Higgins
+- * Built for: Schottdorf Lab
+- 
+-+## February 22nd, 3:12pm: 
+-+- Added a boolean flag `eval_metrics_raw` to control whether final metrics are computed in PCA space (false) or raw space via inverse PCA (true).
+-+
+- ## February 22nd, 2:34pm:
+- I was really thinking about lambda smooth and whether adding that constraint is supressing legitimate neural variability, and whether it's fighting against the transition loss (matching dx/dt), but like it's already heavily reduced in terms of smoothness. 
+- Ran it with 0, and stuff is a good bit more jittery, but it's kind of providng that the argument that it's redundant with the ODE isn't strictly correct. 
+-diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+-index ef5c2b0..6d2cb6a 100644
+---- a/configs/v5_base.txt
+-+++ b/configs/v5_base.txt
+-@@ -41,6 +41,7 @@ no_leakage_preproc = false
+- random_split_enabled = false
+- random_split_frac = 0.1
+- random_split_seed = 42
+-+eval_metrics_raw = false
+- baseline_correct = true
+- dec_num_experts = 8
+- gating_entropy_coef = 0.01
+-diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+-index 50a28aa..62a92ed 100644
+---- a/src/v5_neural_vae.py
+-+++ b/src/v5_neural_vae.py
+-@@ -1163,6 +1163,26 @@ def train(args):
+-     random_split_seed = getattr(args, "random_split_seed", 42)
+-     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+-     mind_seed = getattr(args, "mind_split_seed", 42)
+-+    eval_metrics_raw = getattr(args, "eval_metrics_raw", None)
+-+    eval_metrics_space = getattr(args, "eval_metrics_space", None)
+-+    if eval_metrics_raw is not None:
+-+        eval_metrics_space = "raw" if bool(eval_metrics_raw) else "pca"
+-+    else:
+-+        if eval_metrics_space is None:
+-+            eval_metrics_space = "pca"
+-+        elif isinstance(eval_metrics_space, bool):
+-+            eval_metrics_space = "raw" if eval_metrics_space else "pca"
+-+        else:
+-+            eval_metrics_space = str(eval_metrics_space).strip().lower()
+-+    if eval_metrics_space not in ("pca", "raw"):
+-+        print(f"Unknown eval_metrics_space='{eval_metrics_space}', defaulting to 'pca'.")
+-+        eval_metrics_space = "pca"
+-+
+-+    X_val_eval = None
+-+    xhat_bias = True
+-+    pca_before_norm = False
+-+    norm_mu = None
+-+    norm_sd = None
+- 
+-     if use_mind_split:
+-         # MIND-style split: random 10% trials for test, train-only normalization/PCA
+-@@ -1179,8 +1199,8 @@ def train(args):
+-         X_train_raw = X_raw[train_idx]
+-         X_val_raw = X_raw[test_idx]
+- 
+--        X_train_norm, mu, sd = normalize_sequences(X_train_raw)
+--        X_val_norm, _, _ = normalize_sequences(X_val_raw, mu, sd)
+-+        X_train_norm, norm_mu, norm_sd = normalize_sequences(X_train_raw)
+-+        X_val_norm, _, _ = normalize_sequences(X_val_raw, norm_mu, norm_sd)
+- 
+-         if getattr(args, "baseline_correct", False):
+-             X_train_norm = baseline_correct_np(X_train_norm)
+-@@ -1270,73 +1290,84 @@ def train(args):
+-                 X_train_pca = X_train_raw
+-                 X_val_pca = X_val_raw
+- 
+--            X_train, mu, sd = normalize_sequences(X_train_pca)
+--            X_val, _, _ = normalize_sequences(X_val_pca, mu, sd)
+-+            X_train, norm_mu, norm_sd = normalize_sequences(X_train_pca)
+-+            X_val, _, _ = normalize_sequences(X_val_pca, norm_mu, norm_sd)
+-             B, L, N = X_train.shape
+-+            pca_before_norm = pca is not None
+-+
+-+            if eval_metrics_space == "raw":
+-+                if getattr(args, "baseline_correct", False):
+-+                    X_val_eval = baseline_correct_np(X_val_raw)
+-+                    xhat_bias = False
+-+                else:
+-+                    X_val_eval = X_val_raw
+-+                    xhat_bias = True
+-         else:
+-             # --- Step 1: PCA Preprocessing (MIND-style) ---
+-             roi = npz["roi"]
+-             if roi.shape[0] < roi.shape[1]:
+-                 roi = roi.T  # [T, N]
+- 
+--        #   Keep 95% variance
+--        pca = PCA(n_components=0.95, svd_solver="full")
+--        roi_pca = pca.fit_transform(roi)
+--        print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
+--        joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+--        # Replace ROI in npz-like structure
+--        npz_mod = dict(npz)
+--        npz_mod["roi"] = roi_pca
+--        npz = npz_mod
+--        X, tvec_np, meta = make_sequences(
+--            npz, 
+--            trial_len_s=args.trial_len_s,
+--            fps=args.fps, 
+--            drop_first_trials=args.drop_first_trials,
+--            min_frames=10
+--        ) # X: [B, L, N]
+--
+--        # --- Step 2: Landmark Subsampling (optional) ---
+--        if getattr(args, "landmark_count", 0) > 0:
+--            print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
+--            # Flatten trials along time for selection
+--            X_flat = X.reshape(-1, X.shape[-1])
+--            lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+--            X = X[lm_idx % X.shape[0]]  # map back to batch level
+--            if isinstance(meta, dict) and "trials_used" in meta:
+--                meta["trials_used"] = meta["trials_used"][lm_idx % meta["trials_used"].shape[0]]
+--            print(f"Subsampled to {X.shape[0]} sequences.")
+--
+--        B, L, N = X.shape
+--        print(f"Built sequences: B={B}, :={L}, N={N}")
+--
+--        # train/val split (random 10% or hold out last K trials)
+--        if use_random_split:
+--            trial_ids = None
+--            if isinstance(meta, dict) and "trials_used" in meta:
+--                trial_ids = meta["trials_used"]
+--            if trial_ids is None or len(trial_ids) != X.shape[0]:
+--                trial_ids = np.arange(X.shape[0])
+--            train_idx, test_idx = split_trials_like_matlab(
+--                trial_ids,
+--                seed=random_split_seed,
+--                test_frac=random_split_frac,
+--            )
+--            if len(test_idx) == 0 or len(train_idx) == 0:
+--                raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
+--            X_train = X[train_idx]
+--            X_val = X[test_idx]
+--        else:
+--            holdout = min(args.holdout_trials, max(1, B //5))
+--            X_train = X[:-holdout]
+--            X_val = X[-holdout:]
+-+            #   Keep 95% variance
+-+            pca = PCA(n_components=0.95, svd_solver="full")
+-+            roi_pca = pca.fit_transform(roi)
+-+            print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
+-+            joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+-+            # Replace ROI in npz-like structure
+-+            npz_mod = dict(npz)
+-+            npz_mod["roi"] = roi_pca
+-+            npz = npz_mod
+-+            X, tvec_np, meta = make_sequences(
+-+                npz, 
+-+                trial_len_s=args.trial_len_s,
+-+                fps=args.fps, 
+-+                drop_first_trials=args.drop_first_trials,
+-+                min_frames=10
+-+            ) # X: [B, L, N]
+-+
+-+            # --- Step 2: Landmark Subsampling (optional) ---
+-+            if getattr(args, "landmark_count", 0) > 0:
+-+                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
+-+                # Flatten trials along time for selection
+-+                X_flat = X.reshape(-1, X.shape[-1])
+-+                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
+-+                X = X[lm_idx % X.shape[0]]  # map back to batch level
+-+                if isinstance(meta, dict) and "trials_used" in meta:
+-+                    meta["trials_used"] = meta["trials_used"][lm_idx % meta["trials_used"].shape[0]]
+-+                print(f"Subsampled to {X.shape[0]} sequences.")
+- 
+--    if not use_mind_split:
+-+            B, L, N = X.shape
+-+            print(f"Built sequences: B={B}, :={L}, N={N}")
+-+
+-+            # train/val split (random 10% or hold out last K trials)
+-+            if use_random_split:
+-+                trial_ids = None
+-+                if isinstance(meta, dict) and "trials_used" in meta:
+-+                    trial_ids = meta["trials_used"]
+-+                if trial_ids is None or len(trial_ids) != X.shape[0]:
+-+                    trial_ids = np.arange(X.shape[0])
+-+                train_idx, test_idx = split_trials_like_matlab(
+-+                    trial_ids,
+-+                    seed=random_split_seed,
+-+                    test_frac=random_split_frac,
+-+                )
+-+                if len(test_idx) == 0 or len(train_idx) == 0:
+-+                    raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
+-+                X_train = X[train_idx]
+-+                X_val = X[test_idx]
+-+            else:
+-+                holdout = min(args.holdout_trials, max(1, B //5))
+-+                X_train = X[:-holdout]
+-+                X_val = X[-holdout:]
+-+
+-+    if eval_metrics_space == "raw" and not (use_mind_split or use_no_leakage):
+-+        print(
+-+            "eval_metrics_raw requested but raw-space metrics are only supported with "
+-+            "mind_split_enabled or no_leakage_preproc. Falling back to PCA-space metrics."
+-+        )
+-+        eval_metrics_space = "pca"
+-         X_val_eval = None
+--        mu = None
+--        sd = None
+-         xhat_bias = True
+--        eval_metrics_space = getattr(args, "eval_metrics_space", "pca")
+- 
+-     # --- Normalize time vector to [0,1] for numerical stability ---
+-     tvec_np = tvec_np / tvec_np[-1]
+-@@ -1455,7 +1486,7 @@ def train(args):
+-             vl, vr, vk, vs, vt, vlle, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+-             n_batches = 0
+-             r_count = 0
+--            val_preds = [] if (use_mind_split or eval_metrics_space == "raw") else None
+-+            val_preds = [] if eval_metrics_space == "raw" else None
+-             for xb in val_loader:
+-                 # this is trial-wise baseline correction, getting rid of the first 5 frames
+-                 # so the latent doesn't waste space capacity on slow drifs/offsets
+-@@ -1505,7 +1536,7 @@ def train(args):
+-                 )
+-                 vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item()
+- 
+--                if use_mind_split or eval_metrics_space == "raw":
+-+                if eval_metrics_space == "raw":
+-                     val_preds.append(xhat.cpu().numpy())
+-                 else:
+-                     # --- R² computation per batch ---
+-@@ -1519,35 +1550,43 @@ def train(args):
+-                 n_batches += 1
+- 
+-             nbv = len(val_loader)
+--            if use_mind_split:
+--                xhat_pca = np.concatenate(val_preds, axis=0)
+--                if pca is not None:
+--                    xhat_norm = pca.inverse_transform(
+--                        xhat_pca.reshape(-1, xhat_pca.shape[-1])
+--                    ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+--                else:
+--                    xhat_norm = xhat_pca
+--                if xhat_bias:
+--                    xhat_raw = xhat_norm * sd + mu
+-+            if eval_metrics_space == "raw":
+-+                if X_val_eval is None:
+-+                    print("Raw metrics requested but X_val_eval is missing; falling back to PCA-space metrics.")
+-+                    mean_r2 = r2_total / max(1, n_batches)
+-+                    mean_r = r_total / max(1, r_count)
+-                 else:
+--                    xhat_raw = xhat_norm * sd
+--                mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
+--                mean_r = compute_r(X_val_eval, xhat_raw)
+--            else:
+--                if eval_metrics_space == "raw" and pca is not None and mu is not None and sd is not None:
+-                     xhat_pca = np.concatenate(val_preds, axis=0)
+--                    xhat_norm = pca.inverse_transform(
+--                        xhat_pca.reshape(-1, xhat_pca.shape[-1])
+--                    ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+--                    if xhat_bias:
+--                        xhat_raw = xhat_norm * sd + mu
+-+                    if pca is not None:
+-+                        if pca_before_norm:
+-+                            if xhat_bias:
+-+                                xhat_pca_denorm = xhat_pca * norm_sd + norm_mu
+-+                            else:
+-+                                xhat_pca_denorm = xhat_pca * norm_sd
+-+                            xhat_raw = pca.inverse_transform(
+-+                                xhat_pca_denorm.reshape(-1, xhat_pca_denorm.shape[-1])
+-+                            ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+-+                        else:
+-+                            xhat_norm = pca.inverse_transform(
+-+                                xhat_pca.reshape(-1, xhat_pca.shape[-1])
+-+                            ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+-+                            if xhat_bias:
+-+                                xhat_raw = xhat_norm * norm_sd + norm_mu
+-+                            else:
+-+                                xhat_raw = xhat_norm * norm_sd
+-                     else:
+--                        xhat_raw = xhat_norm * sd
+-+                        if norm_mu is not None and norm_sd is not None:
+-+                            if xhat_bias:
+-+                                xhat_raw = xhat_pca * norm_sd + norm_mu
+-+                            else:
+-+                                xhat_raw = xhat_pca * norm_sd
+-+                        else:
+-+                            xhat_raw = xhat_pca
+-                     mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
+-                     mean_r = compute_r(X_val_eval, xhat_raw)
+--                else:
+--                    mean_r2 = r2_total / max(1, n_batches)
+--                    mean_r = r_total / max(1, r_count)
+-+            else:
+-+                mean_r2 = r2_total / max(1, n_batches)
+-+                mean_r = r_total / max(1, r_count)
+-             print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f}")
+- 
+-             if vl/nbv < best_val:
+\ No newline at end of file
+diff --git a/runs/index.csv b/runs/index.csv
+index 1c9e43c..b03df44 100644
+--- a/runs/index.csv
++++ b/runs/index.csv
+@@ -30,3 +30,4 @@ run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+ 2026-02-22_142537_bbc402e,2026-02-22_142537,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_142537_bbc402e\config.txt,bbc402ef04e6f19ad7e96effdd269c455b40ecc5,True,120,0.6852681040763855,0.4645347595214844,turned off lambda smooth for a test.
+ 2026-02-22_143828_bbc402e,2026-02-22_143828,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_143828_bbc402e\config.txt,bbc402ef04e6f19ad7e96effdd269c455b40ecc5,True,120,0.6913037300109863,0.4742664098739624,increased lambda smooth by a bit
+ 2026-02-22_144320_bbc402e,2026-02-22_144320,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_144320_bbc402e\config.txt,bbc402ef04e6f19ad7e96effdd269c455b40ecc5,True,120,0.6913037300109863,0.4742664098739624,increased lambda smooth by a bit
++2026-02-22_151349_21f3fd4,2026-02-22_151349,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_151349_21f3fd4\config.txt,21f3fd4a229271ad44cb7d0220c2b2b42df303af,True,120,0.6913037300109863,0.4742664098739624,just for giggles seeing what it looks like if scores for r2 and r are computed in pca space
+diff --git a/src/preview.png b/src/preview.png
+index e4bcc86..ab2ac98 100644
+Binary files a/src/preview.png and b/src/preview.png differ
+diff --git a/src/script_output.txt b/src/script_output.txt
+index bb8d363..0d5d99a 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1 +1,38 @@
+ Running script: v5_neural_vae.py
++Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_155514_e7f3cc6\config.txt
++Device: cuda
++PCA reduced 375 → 129 dims (95.02% variance)
++Selecting 100 landmark trials (greedy coverage)...
++Subsampled to 100 sequences.
++Built sequences: B=100, :=120, N=129
++eval_metrics_raw requested but raw-space metrics are only supported with mind_split_enabled or no_leakage_preproc. Falling back to PCA-space metrics.
++C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\transformer.py:379: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
++  warnings.warn(
++[001] train loss 2.53868 | recon 2.53678 | kl 1.33877 | smooth 0.99945 | trans 0.02559 | lle 0.00041 | beta 0.001
++      valid loss 3.39325 | recon 3.36357 | kl 1.43418 | smooth 0.99401 | trans 0.03234 | lle 0.00007 | r 0.1546 | R² 0.0236
++[002] train loss 2.31210 | recon 2.30818 | kl 2.19138 | smooth 0.99015 | trans 0.02566 | lle 0.00042 | beta 0.001
++      valid loss 3.33704 | recon 3.27576 | kl 3.01419 | smooth 0.98883 | trans 0.03234 | lle 0.00007 | r 0.2354 | R² 0.0490
++[003] train loss 2.09061 | recon 2.08229 | kl 3.66004 | smooth 0.98499 | trans 0.02578 | lle 0.00041 | beta 0.002
++      valid loss 3.17594 | recon 3.10378 | kl 3.55788 | smooth 0.98765 | trans 0.03234 | lle 0.00007 | r 0.3418 | R² 0.0990
++[004] train loss 1.93224 | recon 1.91823 | kl 4.87585 | smooth 0.99096 | trans 0.02584 | lle 0.00042 | beta 0.003
++      valid loss 2.91268 | recon 2.81050 | kl 5.05836 | smooth 0.98963 | trans 0.03232 | lle 0.00007 | r 0.4424 | R² 0.1841
++Traceback (most recent call last):
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1807, in <module>
++    best_val, mean_r2 = train(args)
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1426, in train
++    xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
++    return self._call_impl(*args, **kwargs)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
++    return forward_call(*args, **kwargs)
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1099, in forward
++    z_traj = self._integrate_latent(z0, tvec, method="dopri5")
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1075, in _integrate_latent
++    z_traj = odeint(
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\odeint.py", line 80, in odeint
++    solution = solver.integrate(t)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\solvers.py", line 34, in integrate
++    solution[i] = self._advance(t[i])
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\rk_common.py", line 248, in _advance
++    return _interp_evaluate(self.rk_state.interp_coeff, self.rk_state.t0, self.rk_state.t1, next_t)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\interp.py", line 46, in _interp_evaluate
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index 62a92ed..cf09fa8 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -1163,9 +1163,14 @@ def train(args):
+     random_split_seed = getattr(args, "random_split_seed", 42)
+     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+     mind_seed = getattr(args, "mind_split_seed", 42)
++    eval_metrics_pca = getattr(args, "eval_metrics_pca", None)
+     eval_metrics_raw = getattr(args, "eval_metrics_raw", None)
+     eval_metrics_space = getattr(args, "eval_metrics_space", None)
+-    if eval_metrics_raw is not None:
++    if eval_metrics_pca is not None and eval_metrics_raw is not None:
++        print("Both eval_metrics_pca and eval_metrics_raw are set; eval_metrics_pca will take precedence.")
++    if eval_metrics_pca is not None:
++        eval_metrics_space = "pca" if bool(eval_metrics_pca) else "raw"
++    elif eval_metrics_raw is not None:
+         eval_metrics_space = "raw" if bool(eval_metrics_raw) else "pca"
+     else:
+         if eval_metrics_space is None:

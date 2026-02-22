@@ -340,3 +340,4 @@ Traceback (most recent call last):
   File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1829, in <module>
     f"Final r value: {mean_r:.4f}\n"
 NameError: name 'mean_r' is not defined. Did you mean: 'mean_r2'?
+Exception ignored in: Exception ignored in sys.unraisablehook

@@ -13,7 +13,7 @@ holdout_trials = 3
 use_pca = true
 pca_variance = 0.95
 landmark_count = 100
-out_dir = C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_151349_21f3fd4
+out_dir = ../runs/ode_vae_E65
 pca_dim = 0
 num_experts = 4
 hidden = 128
@@ -37,11 +37,13 @@ encoder_bidirectional = false
 mind_split_enabled = false
 mind_test_frac = 0.1
 mind_split_seed = 42
-no_leakage_preproc = false
+no_leakage_preproc = true
 random_split_enabled = false
 random_split_frac = 0.1
 random_split_seed = 42
-eval_metrics_raw = false
+
+eval_metrics_pca = true
+
 baseline_correct = true
 dec_num_experts = 8
 gating_entropy_coef = 0.01

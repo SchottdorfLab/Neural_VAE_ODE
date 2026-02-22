@@ -14,7 +14,7 @@ use_pca = true
 pca_variance = 0.95
 landmark_count = 100
 out_dir = ../runs/ode_vae_E65
-pca_dim = 0
+pca_dim = 20
 num_experts = 4
 hidden = 128
 gating_temperature = 1.0
@@ -24,7 +24,7 @@ cv_folds = 4
 k_neighbors = 16 
 decoder_type = moe
 
-encoder_type = gru
+encoder_type = transformer
 encoder_hidden = 256
 encoder_layers = 1
 encoder_heads = 2

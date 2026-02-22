@@ -2,6 +2,30 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 1:24pm:
+Thoughts on leaky behavior---preprocessing in the old pipeline.
+1. Loading all trials.
+2. I z-scored and PCA-reduced the full dataset. 
+3. Then I split into train/val. 
+This means (theoretically) that test trials influenced the mean/std and PCA basis used for training. Thought: Even if the model didn't train on the test trials, the preprocessing saw them. 
+Where'd it happen? in make_sequences() where we z-score on the full roi. 
+Plus, PCA was fit on full roi before splitting into train/val. 
+Possibly the leakage was global normalization + global PCa before the split. 
+Action: Goig to try to change the preprocessing order to fit z-score plus PCA on train only, then apply to val. 
+
+## February 22nd, 12:23pm:
+- Changed to be more like MIND in how we're computing R2 (hopefully this doesn't blow stuff up). We also changed to do 90/10 split like MIND. No idea what the results are going to be, so wish me luck. 
+- Hey so it's a random 10% of trials that are tested, same as Matlab. You can enable it by going into config.txt and changing mind_test_frac = 0.1. 
+- Terrible. Negative R2. Not sure why, but it's not just a question of how we're running stuff. 
+
+## February 22nd, 12:08pm:
+- So I made the GRU encoder but didn't have a chance to test it. It is super volatile. 
+```
+Final r: 0.5579
+Final R²: 0.2505
+```
+Generally, thinking about how the MIND algorithm did data eval, and how to make it more similar so we can cover data in the same way and do a clean one-to-one comparison. 
+
 ## February 21st, 4:45pm:
 - IMPORTANT COMMAND ALERT. I got tired of constantly having to go back and copy-paste my latest config file, so I added this:
 ```

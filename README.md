@@ -46,6 +46,7 @@ Peak utiliage when I was watching was ~47%, average was about 40% utilization.
 ## February 22nd, 4:18pm:
 Quick note now that the original dimensional run of code from Matlab is done. If I'm not dreaming, I've finally beaten the MIND algorithm. Only took me four months, haha. But I'm sure as I submit this to Dr. Schottdorf, something will be off with my data eval and it'll all be blown up, but in the moment this is good. 
 From the run of the MIND algo:
+
 ***For pearson r:***
 ```
 d=1: 0.2461
@@ -657,4 +658,3 @@ Contains the best model and final metrics.
 1. Configure the config.txt file. This file is used as the input configurations for the model.
 2. Run the model. Ensure you are in the src directory, then type ```python3 neural_ode_vae.py```.
 3. Results, in addition to being output into the terminal, will also be saved to training_results.txt. Additionally, an image of the training process will be saved to preview.png. 
-

@@ -2,6 +2,39 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 22nd, 5:05pm:
+
+## February 22nd, 4:47pm:
+Differences in how my ODE-VAE versus the MIND algorithm are computing things (written with the help of AI):
+```
+How your current v5 evaluation works (default path)
+
+Data split: holdout last K trials (unless you enabled random split or MIND split).
+Preprocessing:
+Default path does PCA + z‑score on all trials before splitting (leakage) unless no_leakage_preproc = true.
+If no_leakage_preproc = true, PCA/normalization are fit on train only (no leakage).
+Metric space:
+If eval_metrics_pca = true: R and R² computed in PCA/normalized space.
+If eval_metrics_pca = false: tries raw‑space via inverse PCA + de‑norm (only clean when no_leakage_preproc or MIND split is on).
+R² formula: your r2_var_explained is global variance explained:
+1 - Var(x - xhat) / Var(x) over all neurons and timesteps.
+r: global Pearson correlation over flattened data.
+How MIND evaluates
+
+Data split: random 10% trials held out (not “last K”).
+Preprocessing: PCA and normalization are fit only on training trials (no leakage).
+Metric space: raw neuron space (after inverse PCA + de‑norm).
+R²: variance explained in raw space (same type of global var‑explained metric, but on raw data and clean split).
+Key differences
+
+Split: MIND uses random 10% trials; v5 default is “last K”.
+Leakage: MIND always train‑only PCA/normalization; v5 only if you set no_leakage_preproc = true or MIND split.
+Metric space: MIND uses raw space; v5 often uses PCA space unless you explicitly invert.
+Metric definition: both are global variance‑explained, but MIND’s is in raw space.
+```
+
+***Added ETA output for how long the run'll take.***
+
 ## February 22nd, 4:35pm:
 Fun command to see what percent of compute is being used on the GPU:
 ```
@@ -13,6 +46,7 @@ Peak utiliage when I was watching was ~47%, average was about 40% utilization.
 ## February 22nd, 4:18pm:
 Quick note now that the original dimensional run of code from Matlab is done. If I'm not dreaming, I've finally beaten the MIND algorithm. Only took me four months, haha. But I'm sure as I submit this to Dr. Schottdorf, something will be off with my data eval and it'll all be blown up, but in the moment this is good. 
 From the run of the MIND algo:
+***For pearson r:***
 ```
 d=1: 0.2461
 d=2: 0.4539
@@ -25,6 +59,22 @@ d=8: 0.7333
 d=9: 0.7437
 d=10: 0.7509
 ```
+
+***For R2:***
+From exp1_embeddingCrossval_results.csv (column R2), the MIND crossval R2 values are:
+```
+d=1: 0.0595
+d=2: 0.2043
+d=3: 0.3142
+d=4: 0.4163
+d=5: 0.4738
+d=6: 0.4932
+d=7: 0.5236
+d=8: 0.5376
+d=9: 0.5529
+d=10: 0.5637
+```
+
 
 ## February 22nd, 4:16pm: 
 Revolutionary. I turned off PCA. That is literally all it took. Without that pre-processing, the model was able to see the full variance of the data. 

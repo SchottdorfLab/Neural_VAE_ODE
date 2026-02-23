@@ -41,7 +41,7 @@ Outputs:
 # src/v5_neural_vae.py
 # most recent version of the neural ODE VAE for neural data
 
-import os, math, argparse, datetime
+import os, math, argparse, datetime, time
 import sys
 import atexit
 import numpy as np
@@ -128,6 +128,15 @@ def compute_r(y_true, y_pred):
     if denom == 0:
         return np.nan
     return np.sum(x * y) / denom
+
+def format_duration(seconds):
+    seconds = max(0, int(seconds))
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    s = seconds % 60
+    if h > 0:
+        return f"{h:02d}:{m:02d}:{s:02d}"
+    return f"{m:02d}:{s:02d}"
 
 # --- Root directory auto-detection --- #
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -473,6 +482,9 @@ def run_r2_sweep(args):
         dims = [int(dims)]
     repeats = getattr(args, "r2_sweep_repeats", 3)
     seed = getattr(args, "r2_sweep_seed", 42)
+    total_runs = len(dims) * repeats
+    sweep_start_time = time.time()
+    completed_runs = 0
 
     results = {}
     for d in dims:
@@ -534,6 +546,13 @@ def run_r2_sweep(args):
                     results[int(d)]["trials_r2"].append(r2_i)
                 if not np.isnan(r_i):
                     results[int(d)]["trials_r"].append(r_i)
+
+            completed_runs += 1
+            elapsed = time.time() - sweep_start_time
+            avg_run = elapsed / max(1, completed_runs)
+            remaining = avg_run * max(0, total_runs - completed_runs)
+            eta_str = format_duration(remaining)
+            print(f"Sweep progress {completed_runs}/{total_runs} | ETA {eta_str}")
 
     # plot (MATLAB-style) for R2
     plt.figure(figsize=(6, 4))
@@ -1461,6 +1480,7 @@ def train(args):
     # a global break safeguard, stops training if NaNs are detected
     nan_flag = False
 
+    train_start_time = time.time()
     for epoch in range(1, args.epochs+1):
         #_____ train 
         model.train()
@@ -1645,7 +1665,11 @@ def train(args):
             else:
                 mean_r2 = r2_total / max(1, n_batches)
                 mean_r = r_total / max(1, r_count)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f}")
+            elapsed = time.time() - train_start_time
+            avg_epoch = elapsed / max(1, epoch)
+            eta = avg_epoch * max(0, args.epochs - epoch)
+            eta_str = format_duration(eta)
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
 
             if vl/nbv < best_val: 
                     best_val = vl/nbv

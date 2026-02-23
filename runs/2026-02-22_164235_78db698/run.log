@@ -1,0 +1,27 @@
+Running script: v5_neural_vae.py
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_164235_78db698\config.txt
+Traceback (most recent call last):
+  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1853, in <module>
+    #----------------OPTIONAL: Seed Sweep ----------------#
+  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 515, in run_r2_sweep
+    n_components = getattr(args, "pca_dim", 0)
+  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 397, in train_model_on_sequences
+    epochs = getattr(args, "r2_sweep_epochs", args.epochs)
+  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1148, in forward
+    rtol=self.ode_rtol,
+  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1124, in _integrate_latent
+    method: "rk4" (fixed step) or "dopri5" (adaptive).
+  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\odeint.py", line 80, in odeint
+    solution = solver.integrate(t)
+  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\solvers.py", line 34, in integrate
+    solution[i] = self._advance(t[i])
+  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\rk_common.py", line 246, in _advance
+    self.rk_state = self._adaptive_step(self.rk_state)
+  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\rk_common.py", line 284, in _adaptive_step
+    assert t0 + dt > t0, 'underflow in dt {}'.format(dt.item())
+AssertionError: underflow in dt 0.0
+Exception ignored in: Exception ignored in sys.unraisablehook

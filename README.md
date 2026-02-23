@@ -3,6 +3,7 @@
 * Built for: Schottdorf Lab
 
 ## February 22nd, 5:05pm:
+- Quick pull, because I'm removing v6. V1 of the paper is done. 
 
 ## February 22nd, 4:47pm:
 Differences in how my ODE-VAE versus the MIND algorithm are computing things (written with the help of AI):

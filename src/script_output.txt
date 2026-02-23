@@ -1,2 +1,4 @@
 Running script: v5_neural_vae.py
-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_164235_78db698\config.txt
+Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_170649_e669ce1\config.txt
+Sweep progress 1/30 | ETA 16:26:37
+Sweep progress 2/30 | ETA 15:46:09

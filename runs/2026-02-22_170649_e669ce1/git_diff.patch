@@ -1,0 +1,200 @@
+diff --git a/README.md b/README.md
+index 9839d39..21e52f0 100644
+--- a/README.md
++++ b/README.md
+@@ -2,6 +2,37 @@
+ * Written by: Kathleen Higgins
+ * Built for: Schottdorf Lab
+ 
++## February 22nd, 4:47pm:
++Differences in how my ODE-VAE versus the MIND algorithm are computing things (written with the help of AI):
++```
++How your current v5 evaluation works (default path)
++
++Data split: holdout last K trials (unless you enabled random split or MIND split).
++Preprocessing:
++Default path does PCA + z‑score on all trials before splitting (leakage) unless no_leakage_preproc = true.
++If no_leakage_preproc = true, PCA/normalization are fit on train only (no leakage).
++Metric space:
++If eval_metrics_pca = true: R and R² computed in PCA/normalized space.
++If eval_metrics_pca = false: tries raw‑space via inverse PCA + de‑norm (only clean when no_leakage_preproc or MIND split is on).
++R² formula: your r2_var_explained is global variance explained:
++1 - Var(x - xhat) / Var(x) over all neurons and timesteps.
++r: global Pearson correlation over flattened data.
++How MIND evaluates
++
++Data split: random 10% trials held out (not “last K”).
++Preprocessing: PCA and normalization are fit only on training trials (no leakage).
++Metric space: raw neuron space (after inverse PCA + de‑norm).
++R²: variance explained in raw space (same type of global var‑explained metric, but on raw data and clean split).
++Key differences
++
++Split: MIND uses random 10% trials; v5 default is “last K”.
++Leakage: MIND always train‑only PCA/normalization; v5 only if you set no_leakage_preproc = true or MIND split.
++Metric space: MIND uses raw space; v5 often uses PCA space unless you explicitly invert.
++Metric definition: both are global variance‑explained, but MIND’s is in raw space.
++```
++
++***Added ETA output for how long the run'll take.***
++
+ ## February 22nd, 4:35pm:
+ Fun command to see what percent of compute is being used on the GPU:
+ ```
+@@ -13,6 +44,7 @@ Peak utiliage when I was watching was ~47%, average was about 40% utilization.
+ ## February 22nd, 4:18pm:
+ Quick note now that the original dimensional run of code from Matlab is done. If I'm not dreaming, I've finally beaten the MIND algorithm. Only took me four months, haha. But I'm sure as I submit this to Dr. Schottdorf, something will be off with my data eval and it'll all be blown up, but in the moment this is good. 
+ From the run of the MIND algo:
++***For pearson r:***
+ ```
+ d=1: 0.2461
+ d=2: 0.4539
+@@ -26,6 +58,22 @@ d=9: 0.7437
+ d=10: 0.7509
+ ```
+ 
++***For R2:***
++From exp1_embeddingCrossval_results.csv (column R2), the MIND crossval R2 values are:
++```
++d=1: 0.0595
++d=2: 0.2043
++d=3: 0.3142
++d=4: 0.4163
++d=5: 0.4738
++d=6: 0.4932
++d=7: 0.5236
++d=8: 0.5376
++d=9: 0.5529
++d=10: 0.5637
++```
++
++
+ ## February 22nd, 4:16pm: 
+ Revolutionary. I turned off PCA. That is literally all it took. Without that pre-processing, the model was able to see the full variance of the data. 
+ ```
+diff --git a/configs/v5_base.txt b/configs/v5_base.txt
+index f6d32e8..c0cc9c3 100644
+--- a/configs/v5_base.txt
++++ b/configs/v5_base.txt
+@@ -75,6 +75,7 @@ lambda_transition = 0.005
+ lambda_lle = 0.005
+ lambda_smooth = 0.001
+ 
+-ode_solver = dopri5
++ode_solver = rk4
+ ode_rtol = 1e-2
+ ode_atol = 1e-3
++ode_step_size = 0.05
+diff --git a/runs/index.csv b/runs/index.csv
+index 1d26d00..1bcec15 100644
+--- a/runs/index.csv
++++ b/runs/index.csv
+@@ -36,3 +36,4 @@ run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+ 2026-02-22_160802_b03d3ed,2026-02-22_160802,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_160802_b03d3ed\config.txt,b03d3edb35c7b8941fcb5727f455ae678c290974,True,120,0.7794255614280701,0.6049110293388367,running no PCA
+ 2026-02-22_162616_6cecbcc,2026-02-22_162616,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_162616_6cecbcc\config.txt,6cecbcce751fcfcbc8a289120651869eaac1bc60,True,1,,,r & r2 sweep 1-10
+ 2026-02-22_162858_78db698,2026-02-22_162858,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_162858_78db698\config.txt,78db69887d8511bc8f7d16f3bf8c8bea3b358466,True,120,0.77942556,0.604911,r & r2 sweep 1-10
++2026-02-22_164235_78db698,2026-02-22_164235,C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py,C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_164235_78db698\config.txt,78db69887d8511bc8f7d16f3bf8c8bea3b358466,True,120,0.77942556,0.604911,r & r2 sweep 1-10 with updated rtol and atol
+diff --git a/src/script_output.txt b/src/script_output.txt
+index c44af6a..0f66ba0 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,2 +1,26 @@
+ Running script: v5_neural_vae.py
+ Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_164235_78db698\config.txt
++Traceback (most recent call last):
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1853, in <module>
++    #----------------OPTIONAL: Seed Sweep ----------------#
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 515, in run_r2_sweep
++    n_components = getattr(args, "pca_dim", 0)
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 397, in train_model_on_sequences
++    epochs = getattr(args, "r2_sweep_epochs", args.epochs)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
++    return self._call_impl(*args, **kwargs)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
++    return forward_call(*args, **kwargs)
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1148, in forward
++    rtol=self.ode_rtol,
++  File "C:\Users\schot\Neural_VAE_ODE\src\v5_neural_vae.py", line 1124, in _integrate_latent
++    method: "rk4" (fixed step) or "dopri5" (adaptive).
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\odeint.py", line 80, in odeint
++    solution = solver.integrate(t)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\solvers.py", line 34, in integrate
++    solution[i] = self._advance(t[i])
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\rk_common.py", line 246, in _advance
++    self.rk_state = self._adaptive_step(self.rk_state)
++  File "C:\Users\schot\Anaconda3\envs\neural_ode\lib\site-packages\torchdiffeq\_impl\rk_common.py", line 284, in _adaptive_step
++    assert t0 + dt > t0, 'underflow in dt {}'.format(dt.item())
++AssertionError: underflow in dt 0.0
+diff --git a/src/v5_neural_vae.py b/src/v5_neural_vae.py
+index d2e1163..b761b57 100644
+--- a/src/v5_neural_vae.py
++++ b/src/v5_neural_vae.py
+@@ -41,7 +41,7 @@ Outputs:
+ # src/v5_neural_vae.py
+ # most recent version of the neural ODE VAE for neural data
+ 
+-import os, math, argparse, datetime
++import os, math, argparse, datetime, time
+ import sys
+ import atexit
+ import numpy as np
+@@ -129,6 +129,15 @@ def compute_r(y_true, y_pred):
+         return np.nan
+     return np.sum(x * y) / denom
+ 
++def format_duration(seconds):
++    seconds = max(0, int(seconds))
++    h = seconds // 3600
++    m = (seconds % 3600) // 60
++    s = seconds % 60
++    if h > 0:
++        return f"{h:02d}:{m:02d}:{s:02d}"
++    return f"{m:02d}:{s:02d}"
++
+ # --- Root directory auto-detection --- #
+ SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+ ROOT_DIR = os.path.dirname(SRC_DIR)
+@@ -473,6 +482,9 @@ def run_r2_sweep(args):
+         dims = [int(dims)]
+     repeats = getattr(args, "r2_sweep_repeats", 3)
+     seed = getattr(args, "r2_sweep_seed", 42)
++    total_runs = len(dims) * repeats
++    sweep_start_time = time.time()
++    completed_runs = 0
+ 
+     results = {}
+     for d in dims:
+@@ -535,6 +547,13 @@ def run_r2_sweep(args):
+                 if not np.isnan(r_i):
+                     results[int(d)]["trials_r"].append(r_i)
+ 
++            completed_runs += 1
++            elapsed = time.time() - sweep_start_time
++            avg_run = elapsed / max(1, completed_runs)
++            remaining = avg_run * max(0, total_runs - completed_runs)
++            eta_str = format_duration(remaining)
++            print(f"Sweep progress {completed_runs}/{total_runs} | ETA {eta_str}")
++
+     # plot (MATLAB-style) for R2
+     plt.figure(figsize=(6, 4))
+     for d in dims:
+@@ -1461,6 +1480,7 @@ def train(args):
+     # a global break safeguard, stops training if NaNs are detected
+     nan_flag = False
+ 
++    train_start_time = time.time()
+     for epoch in range(1, args.epochs+1):
+         #_____ train 
+         model.train()
+@@ -1645,7 +1665,11 @@ def train(args):
+             else:
+                 mean_r2 = r2_total / max(1, n_batches)
+                 mean_r = r_total / max(1, r_count)
+-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f}")
++            elapsed = time.time() - train_start_time
++            avg_epoch = elapsed / max(1, epoch)
++            eta = avg_epoch * max(0, args.epochs - epoch)
++            eta_str = format_duration(eta)
++            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
+ 
+             if vl/nbv < best_val: 
+                     best_val = vl/nbv

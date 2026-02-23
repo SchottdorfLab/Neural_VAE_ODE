@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## February 23rd:
+- Moving forward, the two big focuses are: (1) sweeping across latent dimensions using the script and (2) equalizing evaluation/testing metrics (one-to-one comparisons on the same holdout trials, same metric definitions, etc.).
+
 ## February 22nd, 5:05pm:
 - Quick pull, because I'm removing v6. V1 of the paper is done. 
 

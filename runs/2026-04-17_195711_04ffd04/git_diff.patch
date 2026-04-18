@@ -1,0 +1,13 @@
+diff --git a/src/script_output.txt b/src/script_output.txt
+index 0f5dd04..7e821e6 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,4 +1,5 @@
+ Running script: v5_neural_vae.py
+-Loading configuration from C:\Users\schot\Neural_VAE_ODE\runs\2026-02-22_170649_e669ce1\config.txt
+-Sweep progress 1/30 | ETA 16:26:37
+-Sweep progress 2/30 | ETA 15:46:09
++Traceback (most recent call last):
++  File "/home/4429/projects/Neural_VAE_ODE/src/v5_neural_vae.py", line 1845, in <module>
++    raise FileNotFoundError(f"Config file not found: {args_cli.config}")
++FileNotFoundError: Config file not found: /home/4429/projects/Neural_VAE_ODE/src/config.txt

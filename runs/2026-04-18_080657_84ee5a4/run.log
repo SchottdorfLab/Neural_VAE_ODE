@@ -344,3 +344,4 @@ Traceback (most recent call last):
     f"Final r value: {mean_r:.4f}\n"
                       ^^^^^^
 NameError: name 'mean_r' is not defined. Did you mean: 'mean_r2'?
+Exception ignored in: Exception ignored in sys.unraisablehook

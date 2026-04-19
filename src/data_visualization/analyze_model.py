@@ -28,11 +28,12 @@ if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
 
 # Import from your training script
-from v2_neural_vae import get_device, ODEVAE, make_sequences, SeqDataset
+from v5_neural_vae import get_device, ODEVAE, make_sequences, SeqDataset
 
 # ---------- Define path constants ----------
+# src/v5_neural_vae.py 
 PATHS = {
-    "data": os.path.join(SRC_DIR, "random_walk_data", "synthetic_rat_data.npz"),
+    "data": os.path.join(SRC_DIR, "src/v5_neural_vae.py"),
     "checkpoint": os.path.join(SRC_DIR, "pt_files", "ode_vae_best.pt"),
     "out_dir": VIS_DIR,  # save all visualizations here
 }

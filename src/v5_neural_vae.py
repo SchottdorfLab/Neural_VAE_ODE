@@ -77,6 +77,17 @@ def compute_file_sha(path):
         data = f.read()
     return hashlib.sha256(data).hexdigest()
 
+
+def save_analysis_cache(path, x_true, x_pred, tvec, metric_space, trial_ids=None):
+    np.savez(
+        path,
+        x_true=np.asarray(x_true, dtype=np.float32),
+        x_pred=np.asarray(x_pred, dtype=np.float32),
+        tvec=np.asarray(tvec, dtype=np.float32),
+        metric_space=np.asarray(metric_space),
+        trial_ids=np.asarray([] if trial_ids is None else trial_ids),
+    )
+
 # used to set the seed, later used to sweep across seeds 
 def set_seed(seed):
     random.seed(seed)
@@ -1218,11 +1229,16 @@ def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition
 def train(args):
     device = get_device()
     print("Device:", device)
+    os.makedirs(args.out_dir, exist_ok=True)
 
     #load data 
     npz = np.load(PATHS["data"])
 
     meta = {}
+    pca = None
+    data_hash = compute_file_sha(PATHS["data"])
+    train_trial_ids = None
+    val_trial_ids = None
 
     use_mind_split = getattr(args, "mind_split_enabled", False)
     use_no_leakage = getattr(args, "no_leakage_preproc", False)
@@ -1298,10 +1314,12 @@ def train(args):
             )
             X_train = pca.transform(flat_train).reshape(X_train_norm.shape[0], X_train_norm.shape[1], -1)
             X_val = pca.transform(X_val_norm.reshape(-1, X_val_norm.shape[-1])).reshape(X_val_norm.shape[0], X_val_norm.shape[1], -1)
-            joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+            joblib.dump(pca, os.path.join(args.out_dir, "trained_pca.pkl"))
         else:
             X_train = X_train_norm
             X_val = X_val_norm
+        train_trial_ids = trial_ids[train_idx]
+        val_trial_ids = trial_ids[test_idx]
         B, L, N = X_train.shape
         print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
     else:
@@ -1338,10 +1356,14 @@ def train(args):
                     raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
                 X_train_raw = X_raw[train_idx]
                 X_val_raw = X_raw[test_idx]
+                train_trial_ids = trial_ids[train_idx]
+                val_trial_ids = trial_ids[test_idx]
             else:
                 holdout = min(args.holdout_trials, max(1, B //5))
                 X_train_raw = X_raw[:-holdout]
                 X_val_raw = X_raw[-holdout:]
+                train_trial_ids = trial_ids[:-holdout]
+                val_trial_ids = trial_ids[-holdout:]
 
             # PCA on training only (if enabled), then z-score on training only
             if getattr(args, "use_pca", True):
@@ -1357,7 +1379,7 @@ def train(args):
                 )
                 X_train_pca = pca.transform(flat_train_raw).reshape(X_train_raw.shape[0], X_train_raw.shape[1], -1)
                 X_val_pca = pca.transform(X_val_raw.reshape(-1, X_val_raw.shape[-1])).reshape(X_val_raw.shape[0], X_val_raw.shape[1], -1)
-                joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+                joblib.dump(pca, os.path.join(args.out_dir, "trained_pca.pkl"))
             else:
                 pca = None
                 X_train_pca = X_train_raw
@@ -1385,7 +1407,7 @@ def train(args):
             pca = PCA(n_components=0.95, svd_solver="full")
             roi_pca = pca.fit_transform(roi)
             print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
-            joblib.dump(pca, os.path.join(PATHS["out_dir"], "trained_pca.pkl"))
+            joblib.dump(pca, os.path.join(args.out_dir, "trained_pca.pkl"))
             # Replace ROI in npz-like structure
             npz_mod = dict(npz)
             npz_mod["roi"] = roi_pca
@@ -1428,10 +1450,15 @@ def train(args):
                     raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
                 X_train = X[train_idx]
                 X_val = X[test_idx]
+                train_trial_ids = trial_ids[train_idx]
+                val_trial_ids = trial_ids[test_idx]
             else:
                 holdout = min(args.holdout_trials, max(1, B //5))
                 X_train = X[:-holdout]
                 X_val = X[-holdout:]
+                if isinstance(meta, dict) and "trials_used" in meta:
+                    train_trial_ids = meta["trials_used"][:-holdout]
+                    val_trial_ids = meta["trials_used"][-holdout:]
 
     if eval_metrics_space == "raw" and not (use_mind_split or use_no_leakage):
         print(
@@ -1447,6 +1474,22 @@ def train(args):
 
     train_loader = td.DataLoader(SeqDataset(X_train), batch_size = args.batch_size, shuffle=True, drop_last = True)
     val_loader = td.DataLoader(SeqDataset(X_val), batch_size = args.batch_size, shuffle=False)
+
+    if not isinstance(meta, dict):
+        meta = {}
+    meta.update({
+        "N": N,
+        "data_path": PATHS["data"],
+        "eval_metrics_space": eval_metrics_space,
+        "use_pca": bool(getattr(args, "use_pca", True)),
+        "baseline_correct": bool(getattr(args, "baseline_correct", False)),
+        "xhat_bias": bool(xhat_bias),
+        "pca_before_norm": bool(pca_before_norm),
+        "norm_mu": None if norm_mu is None else np.asarray(norm_mu, dtype=np.float32),
+        "norm_sd": None if norm_sd is None else np.asarray(norm_sd, dtype=np.float32),
+        "train_trial_ids": None if train_trial_ids is None else np.asarray(train_trial_ids),
+        "val_trial_ids": None if val_trial_ids is None else np.asarray(val_trial_ids),
+    })
 
     model = ODEVAE(
     n_neurons=N,
@@ -1475,7 +1518,8 @@ def train(args):
 
     best_val = math.inf
     mean_r = np.nan
-    os.makedirs(args.out_dir, exist_ok = True)
+    ckpt = os.path.join(args.out_dir, "ode_vae_best.pt")
+    analysis_cache_path = os.path.join(args.out_dir, "analysis_cache_best.npz")
 
     # a global break safeguard, stops training if NaNs are detected
     nan_flag = False
@@ -1565,6 +1609,7 @@ def train(args):
             n_batches = 0
             r_count = 0
             val_preds = [] if eval_metrics_space == "raw" else None
+            val_trial_cache = {"x_true": None, "x_pred": None, "trial_ids": None, "metric_space": eval_metrics_space}
             for xb in val_loader:
                 # this is trial-wise baseline correction, getting rid of the first 5 frames
                 # so the latent doesn't waste space capacity on slow drifs/offsets
@@ -1617,6 +1662,9 @@ def train(args):
                 if eval_metrics_space == "raw":
                     val_preds.append(xhat.cpu().numpy())
                 else:
+                    if val_trial_cache["x_true"] is None:
+                        val_trial_cache["x_true"] = xb[0].detach().cpu().numpy()
+                        val_trial_cache["x_pred"] = xhat[0].detach().cpu().numpy()
                     # --- R² computation per batch ---
                     r2_batch = compute_r2(xb.cpu(), xhat.cpu())
                     if not np.isnan(r2_batch):
@@ -1662,6 +1710,9 @@ def train(args):
                             xhat_raw = xhat_pca
                     mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
                     mean_r = compute_r(X_val_eval, xhat_raw)
+                    val_trial_cache["x_true"] = X_val_eval[0]
+                    val_trial_cache["x_pred"] = xhat_raw[0]
+                    val_trial_cache["trial_ids"] = val_trial_ids
             else:
                 mean_r2 = r2_total / max(1, n_batches)
                 mean_r = r_total / max(1, r_count)
@@ -1671,24 +1722,29 @@ def train(args):
             eta_str = format_duration(eta)
             print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
 
-            if vl/nbv < best_val: 
-                    best_val = vl/nbv
-                    ckpt = os.path.join(PATHS["out_dir"], "ode_vae_best.pt")
-
-                    # obtains the hash of the input file for logging
-                    data_hash = compute_file_sha(PATHS["data"])
-
-                    # verifies no nans, then saaves the model 
-                    if not nan_flag and vl/nbv < best_val:
-                        torch.save({
-                            "state_dict": model.state_dict(),
-                            "tvec": tvec_np,
-                            "meta": meta,
-                            "args": vars(args),
-                            "timestamp": datetime.datetime.now().isoformat(),
-                            "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
-                            "data_hash": data_hash,
-                        }, ckpt)
+            current_val = vl / nbv
+            if current_val < best_val and not nan_flag:
+                best_val = current_val
+                meta["analysis_cache_path"] = analysis_cache_path
+                torch.save({
+                    "state_dict": model.state_dict(),
+                    "tvec": tvec_np,
+                    "meta": meta,
+                    "args": vars(args),
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+                    "data_hash": data_hash,
+                }, ckpt)
+                if val_trial_cache["x_true"] is not None and val_trial_cache["x_pred"] is not None:
+                    save_analysis_cache(
+                        analysis_cache_path,
+                        val_trial_cache["x_true"],
+                        val_trial_cache["x_pred"],
+                        tvec_np,
+                        val_trial_cache["metric_space"],
+                        trial_ids=val_trial_cache["trial_ids"],
+                    )
+                print(f"      saved best checkpoint -> {ckpt}")
 
         # print("  saved best model to", ckpt)
 
@@ -1703,7 +1759,7 @@ def train(args):
             plt.plot(xb_np.mean(axis=1), label="GT mean")
             plt.plot(xhat_np.mean(axis=1), label="Recon mean", alpha=0.8)
             plt.legend(); plt.title("Validation mean activity (GT vs Recon)")
-            out_png = PATHS["preview"]
+            out_png = os.path.join(args.out_dir, "preview.png")
             plt.tight_layout(); plt.savefig(out_png, dpi=160); plt.close()
             # print(f"      wrote {out_png}")
         except Exception as e:
@@ -1777,7 +1833,7 @@ def train(args):
         fig.colorbar(p, ax=ax, label="Time")
         ax.set_title("Latent Manifold Embedding (MIND-style)")
         plt.tight_layout()
-        out_path = os.path.join(PATHS["out_dir"], "latent_manifold_mds.png")
+        out_path = os.path.join(args.out_dir, "latent_manifold_mds.png")
         plt.savefig(out_path, dpi=160)
         plt.close()
         print(f"      wrote {out_path}")
@@ -1814,18 +1870,25 @@ def train(args):
         "transition": vt / nbv,
         "lle": vlle / nbv,
         "data_hash": data_hash,
-    }
+    },
+    "artifacts": {
+        "best_checkpoint": ckpt,
+        "analysis_cache": analysis_cache_path if os.path.exists(analysis_cache_path) else None,
+        "trained_pca": os.path.join(args.out_dir, "trained_pca.pkl") if pca is not None else None,
+        "preview": os.path.join(args.out_dir, "preview.png"),
+        "latent_manifold_mds": os.path.join(args.out_dir, "latent_manifold_mds.png"),
+    },
     }
 
     json_path = os.path.join(args.out_dir, "run_metadata.json")
     with open(json_path, "w") as f:
-        json.dump(to_jsonable(final_metrics), f, indent=2)
+        json.dump(to_jsonable(run_metadata), f, indent=2)
         print(f"Saved run metadata → {json_path}")
 
-    torch.save(final_metrics, PATHS["final_metrics"])
+    torch.save(final_metrics, os.path.join(args.out_dir, "final_metrics.pt"))
     print(f"Final r: {mean_r:.4f}")
     print(f"Final R²: {mean_r2:.4f}")
-    return best_val, mean_r2
+    return best_val, mean_r2, mean_r
 
 
 
@@ -1881,9 +1944,9 @@ if __name__ == "__main__":
     results = []
     set_seed(seed)
     start_time = datetime.datetime.now()
-    best_val, mean_r2 = train(args)
+    best_val, mean_r2, mean_r = train(args)
     end_time = datetime.datetime.now()
-    results.append((seed, best_val, mean_r2))
+    results.append((seed, best_val, mean_r2, mean_r))
 
     # ========== LOG RESULTS ========== #
     log_file = PATHS["training_log"]
@@ -1904,8 +1967,9 @@ if __name__ == "__main__":
             f"Holdout: {args.holdout_trials} | KL warmup: {args.kl_warmup_epochs}\n"
             f"Final validation loss: {best_val:.5f}\n"
             f"Final r value: {mean_r:.4f}\n"
+            f"Final R value: {mean_r:.4f}\n"
             f"Final R² value: {mean_r2:.4f}\n"
-            f"Saved model: {os.path.join(PATHS['out_dir'], 'ode_vae_best.pt')}\n"
+            f"Saved model: {os.path.join(args.out_dir, 'ode_vae_best.pt')}\n"
             f"---------------------------------------------\n"
             )
             result_lines.insert(0, new_entry)

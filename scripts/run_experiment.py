@@ -143,6 +143,26 @@ def _to_jsonable(obj):
     return obj
 
 
+def _collect_artifacts(run_dir):
+    names = [
+        "preview.png",
+        "training_results.txt",
+        "script_output.txt",
+        "ode_vae_best.pt",
+        "final_metrics.pt",
+        "trained_pca.pkl",
+        "latent_manifold_mds.png",
+        "analysis_cache_best.npz",
+        "run_metadata.json",
+    ]
+    artifacts = []
+    for name in names:
+        path = run_dir / name
+        if path.exists() and path.is_file():
+            artifacts.append(str(path))
+    return artifacts
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--script", required=True, help="Path to training script (e.g. src/v5_neural_vae.py)")
@@ -264,27 +284,8 @@ def main():
     # Write log after run completes
     run_log_path.write_text("".join(log_lines), encoding="utf-8")
 
-    # Collect artifacts
-    artifact_candidates = [
-        SRC_DIR / "preview.png",
-        SRC_DIR / "training_results.txt",
-        SRC_DIR / "script_output.txt",
-        SRC_DIR / "pt_files" / "ode_vae_best.pt",
-        SRC_DIR / "pt_files" / "final_metrics.pt",
-        SRC_DIR / "pt_files" / "trained_pca.pkl",
-        SRC_DIR / "pt_files" / "latent_manifold_mds.png",
-    ]
-    artifacts = []
-    for path in artifact_candidates:
-        if path.exists() and path.is_file():
-            dst = run_dir / path.name
-            if dst.resolve() != path.resolve():
-                try:
-                    shutil.copy2(path, dst)
-                    artifacts.append(str(dst))
-                except Exception:
-                    pass
-    run_meta["artifacts"] = artifacts
+    # Collect artifacts from the actual run directory.
+    run_meta["artifacts"] = _collect_artifacts(run_dir)
 
     # Load metrics if available
     metrics = {}
@@ -337,9 +338,14 @@ def main():
             args.note,
         ])
 
-    print(f"Run complete: {run_id}")
+    if proc.returncode == 0:
+        print(f"Run complete: {run_id}")
+    else:
+        print(f"Run failed with exit code {proc.returncode}: {run_id}")
     print(f"run.json: {run_json_path}")
     print(f"index.csv: {index_path}")
+    if proc.returncode != 0:
+        raise SystemExit(proc.returncode)
 
 
 if __name__ == "__main__":

@@ -1608,7 +1608,8 @@ def train(args):
             vl, vr, vk, vs, vt, vlle, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
             r_count = 0
-            val_preds = [] if eval_metrics_space == "raw" else None
+            val_preds = []
+            val_true_batches = []
             val_trial_cache = {"x_true": None, "x_pred": None, "trial_ids": None, "metric_space": eval_metrics_space}
             for xb in val_loader:
                 # this is trial-wise baseline correction, getting rid of the first 5 frames
@@ -1658,13 +1659,10 @@ def train(args):
                     lambda_lle=lambda_lle,
                 )
                 vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item()
+                val_preds.append(xhat.cpu().numpy())
+                val_true_batches.append(xb.cpu().numpy())
 
-                if eval_metrics_space == "raw":
-                    val_preds.append(xhat.cpu().numpy())
-                else:
-                    if val_trial_cache["x_true"] is None:
-                        val_trial_cache["x_true"] = xb[0].detach().cpu().numpy()
-                        val_trial_cache["x_pred"] = xhat[0].detach().cpu().numpy()
+                if eval_metrics_space != "raw":
                     # --- R² computation per batch ---
                     r2_batch = compute_r2(xb.cpu(), xhat.cpu())
                     if not np.isnan(r2_batch):
@@ -1681,6 +1679,8 @@ def train(args):
                     print("Raw metrics requested but X_val_eval is missing; falling back to PCA-space metrics.")
                     mean_r2 = r2_total / max(1, n_batches)
                     mean_r = r_total / max(1, r_count)
+                    val_trial_cache["x_true"] = np.concatenate(val_true_batches, axis=0)
+                    val_trial_cache["x_pred"] = np.concatenate(val_preds, axis=0)
                 else:
                     xhat_pca = np.concatenate(val_preds, axis=0)
                     if pca is not None:
@@ -1710,12 +1710,15 @@ def train(args):
                             xhat_raw = xhat_pca
                     mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
                     mean_r = compute_r(X_val_eval, xhat_raw)
-                    val_trial_cache["x_true"] = X_val_eval[0]
-                    val_trial_cache["x_pred"] = xhat_raw[0]
+                    val_trial_cache["x_true"] = X_val_eval
+                    val_trial_cache["x_pred"] = xhat_raw
                     val_trial_cache["trial_ids"] = val_trial_ids
             else:
                 mean_r2 = r2_total / max(1, n_batches)
                 mean_r = r_total / max(1, r_count)
+                val_trial_cache["x_true"] = np.concatenate(val_true_batches, axis=0)
+                val_trial_cache["x_pred"] = np.concatenate(val_preds, axis=0)
+                val_trial_cache["trial_ids"] = val_trial_ids
             elapsed = time.time() - train_start_time
             avg_epoch = elapsed / max(1, epoch)
             eta = avg_epoch * max(0, args.epochs - epoch)

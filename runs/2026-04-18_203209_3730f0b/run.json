@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-04-18_203209_3730f0b",
+  "timestamp": "2026-04-18_203209",
+  "script": "/home/4429/projects/Neural_VAE_ODE/src/v5_neural_vae.py",
+  "config": "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/config.txt",
+  "config_original": "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/config_original.txt",
+  "note": "updating to hopefully save the model better pt",
+  "git_commit": "3730f0bacc4ca92f52bf03eab0701e30bc3278ae",
+  "git_short": "3730f0b",
+  "git_dirty": true,
+  "git_status": "?? \"\\033[A\\033[A\\033[A\\033[B\"\n?? \"\\033[A\\033[A\\033[A\\033[B.pub\"",
+  "git_diff_patch": "",
+  "code_change_summary": "Changed 34 files: runs/2026-02-20_v5_pca/config.txt (81 lines), runs/2026-02-20_v5_pca/config_original.txt (81 lines), runs/2026-04-18_180111_880075a/config.txt (81 lines), runs/2026-04-18_180111_880075a/config_original.txt (81 lines), runs/2026-04-18_180111_880075a/final_metrics.pt (0 lines)....",
+  "exit_code": -9,
+  "artifacts": [
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/preview.png",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/training_results.txt",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/script_output.txt",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/ode_vae_best.pt",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/final_metrics.pt",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/trained_pca.pkl",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/latent_manifold_mds.png"
+  ],
+  "metrics": {
+    "recon": 0.6187657713890076,
+    "kl": 2.8663952350616455,
+    "smooth": 1.4598383903503418,
+    "r": 0.7690040469169617,
+    "r2": 0.5840855836868286,
+    "lle": 9.472906094742939e-05
+  }
+}

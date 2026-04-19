@@ -1,0 +1,19 @@
+Running script: v5_neural_vae.py
+Loading configuration from /home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/config.txt
+Device: cpu
+Selecting 100 landmark trials (greedy coverage)...
+Subsampled to 100 sequences.
+Built sequences: B=100, :=120, N=375
+/home/4429/envs/odevae/lib/python3.11/site-packages/torch/nn/modules/transformer.py:379: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
+  warnings.warn(
+[001] train loss 3.14619 | recon 3.14358 | kl 2.36646 | smooth 0.99675 | trans 0.16873 | lle 0.00042 | beta 0.001
+      valid loss 2.22795 | recon 2.19603 | kl 1.54415 | smooth 0.99566 | trans 0.25967 | lle 0.00007 | r 0.2991 | R² 0.0894 | eta 12:36
+      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/ode_vae_best.pt
+[002] train loss 3.06604 | recon 3.06048 | kl 3.37607 | smooth 0.99081 | trans 0.17039 | lle 0.00040 | beta 0.001
+      valid loss 2.15040 | recon 2.10331 | kl 2.30017 | smooth 0.99290 | trans 0.25967 | lle 0.00007 | r 0.3011 | R² 0.0894 | eta 12:30
+      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/ode_vae_best.pt
+[003] train loss 2.91445 | recon 2.90567 | kl 3.85444 | smooth 0.99038 | trans 0.16798 | lle 0.00043 | beta 0.002
+      valid loss 2.15874 | recon 2.07637 | kl 4.06265 | smooth 0.98603 | trans 0.25967 | lle 0.00007 | r 0.3236 | R² 0.0981 | eta 12:00
+[004] train loss 2.86548 | recon 2.85330 | kl 4.15529 | smooth 0.98755 | trans 0.16378 | lle 0.00042 | beta 0.003
+      valid loss 2.07607 | recon 1.98707 | kl 4.39203 | smooth 0.98932 | trans 0.25967 | lle 0.00007 | r 0.3490 | R² 0.1003 | eta 11:44
+      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-04-18_203209_3730f0b/ode_vae_best.pt

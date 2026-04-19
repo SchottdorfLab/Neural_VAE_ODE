@@ -1,0 +1,21 @@
+{
+  "run_id": "2026-04-19_085107_e729233",
+  "timestamp": "2026-04-19_085107",
+  "script": "/home/4429/projects/Neural_VAE_ODE/src/v5_neural_vae.py",
+  "config": "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-19_085107_e729233/config.txt",
+  "config_original": "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-19_085107_e729233/config_original.txt",
+  "note": "updating to hopefully save the model better pt---still buggin",
+  "git_commit": "e729233cbd9e85d1b0649edda6d1f382a0e918ab",
+  "git_short": "e729233",
+  "git_dirty": true,
+  "git_status": "M runs/index.csv\n M src/script_output.txt\n?? \"\\033[A\\033[A\\033[A\\033[B\"\n?? \"\\033[A\\033[A\\033[A\\033[B.pub\"\n?? runs/2026-04-18_203209_3730f0b/\n?? runs/2026-04-18_203515_e729233/",
+  "git_diff_patch": "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-19_085107_e729233/git_diff.patch",
+  "code_change_summary": "Changed 2 files: runs/index.csv (2 lines), src/script_output.txt (13 lines).",
+  "exit_code": -9,
+  "artifacts": [
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-19_085107_e729233/preview.png",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-19_085107_e729233/ode_vae_best.pt",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-04-19_085107_e729233/analysis_cache_best.npz"
+  ],
+  "metrics": {}
+}

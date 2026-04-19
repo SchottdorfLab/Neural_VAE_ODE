@@ -2,6 +2,12 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## April 19th, 12:11pm:
+For next time:
+- Verify that the 10% of trials for testing is being computed how you expect, and that the model isn't also training on that 10% holdout. 
+- Decide on how you want to handle raw frame timing "*resampling*"
+- When you've decided on resampling, decide on how much fidelity you want to the original time sample---do you want time normalized? Or not? 
+
 ## April 19th, 11:43am: 
 BIG THOUGHTS FOR YOU COMING BACK:
 ***Idea: Keep raw frame timing within each trial and use variable-length trials.***

@@ -2,6 +2,35 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## April 19th, 11:43am: 
+BIG THOUGHTS FOR YOU COMING BACK:
+***Idea: Keep raw frame timing within each trial and use variable-length trials.***
+
+Two issues I'm thinking about: 
+1. "Your model still resamples each trial to 120 bins. MIND uses the native frame sequence, so this is not identical."
+    - Resampling is different than time normalization: 
+        - Happens in make_sequences_raw and make_sequences, where each trial is interpolated to a fixed length. 
+        - Model is training on sequences of length 120 per trial. 
+        - Pros: the ODE-VAE expects batches of sequeneces with the same number of time steps. Without fixed length, batching becomes "awkward" and you have to do padding/masking stuff
+        - Makes latent dynamics easier to learn because the model isn't simultaneously trying to handle both neural variation and arbitrary trial-duration variation. 
+2. "v5 currently uses all frames from the kept trials, while the MIND script also filtered to frames with nonzero population activity and neurons with any activity." 
+    - MIND throws away completely silent timepoints and completely silent neurons. 
+    - Currently, in the ODE VAE, it doesn't remove frames with zero population activity. It doesn't remove neurons that are silent across the session. 
+    - DONE: removed neurons that are globally silent. Kept frames with zero population activity (I believe the fact that they're doing something is still relevant.) 
+**Moving forward:**
+- Even though MIND removes time points that are silent, I'm scared of doing that---I think there's meaning in the silence. 
+- However, silent neurons---e.g. they are silent for the entire time series---aren't relevant to the manifold geometry. By being silent, there's nothing they're contributing, and since the whole model is leaning them too, I think this could dangerously skew the model towards leaning to silence. So far, at least in the heatmap with the time buckets, I haven't seen that validated, but I don't know. There's a lot a visualization can't capture. 
+- Updated the script and the config file to remove the silent neurons. That, by the way, you can change in the v5 config file: `filter_inactive_neurons = true/false`. 
+
+**Something important about success calculation:**
+- Previously, I'd been using last 3 trials. That was dumb, to be honest. I don't remember how I got to that point. 
+- The alternative, in my thinking, is to do the 10% holdout that the MIND algorithm has. Let's see how close we can get to that. 
+
+## April 19th, 11:38am:
+- Thinking about how I'm evaluating model success. Last three trials seems reductive and dull. 
+- How did Dr. Schottdorf in MIND evaluate R?
+    - Random split: about 90% of trias for training, and about 10% of the trials for testing. 
+
 ## April 19th, 11:21am: 
 - Thinking more about two elements:
     1. Trial normalization to [0,1] (what started all of this)

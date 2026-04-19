@@ -274,7 +274,35 @@ def resample_sequence(x, t_src, L, t0 = None, t1 = None):
         x_rs[:, j] = np.interp(t_dst, t_src_np, x[:, j])
     return x_rs, t_dst
 
-def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_frames=10):
+
+def filter_inactive_neurons_mind(roi):
+    """
+    Match the MIND Matlab criterion:
+        Neurons = sum(ROIactivities,1) > 0;
+
+    Input/Output are both [T, N].
+    Returns filtered roi plus masks/count metadata.
+    """
+    roi = np.asarray(roi)
+    if roi.ndim != 2:
+        raise ValueError(f"Expected 2D ROI array, got shape {roi.shape}")
+    active_mask = roi.sum(axis=0) > 0
+    silent_mask = ~active_mask
+    return (
+        roi[:, active_mask],
+        active_mask,
+        int(active_mask.sum()),
+        int(silent_mask.sum()),
+    )
+
+def make_sequences(
+    npz,
+    trial_len_s=12.0,
+    fps=10.0,
+    drop_first_trials=10,
+    min_frames=10,
+    filter_inactive_neurons=False,
+):
     """
     Build fixed-length oer-trial sequences by:
     - grouping frames by trial
@@ -289,6 +317,11 @@ def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_fr
     if roi.shape[0] < roi.shape[1]:
         # assume (N, T) -> (T, N)
         roi = roi.T
+    active_mask = None
+    active_neuron_count = None
+    silent_neuron_count = None
+    if filter_inactive_neurons:
+        roi, active_mask, active_neuron_count, silent_neuron_count = filter_inactive_neurons_mind(roi)
     T, N = roi.shape
 
     trial = npz["Trial"].astype(int) # (T, )
@@ -319,9 +352,25 @@ def make_sequences(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_fr
     if len(X) == 0:
         raise ValueError("No trials produced sequences (NOOOOO!!) Check trial/time vectors and args.")
     X = np.stack(X, axis=0).astype(np.float32) # [B, L, N]
-    return X, t_rs.astype(np.float32), {"trials_used": np.array(good_trial_ids), "mu": mu, "sd": sd, "N": N}
+    return X, t_rs.astype(np.float32), {
+        "trials_used": np.array(good_trial_ids),
+        "mu": mu,
+        "sd": sd,
+        "N": N,
+        "active_neuron_mask": active_mask,
+        "active_neuron_count": active_neuron_count if active_neuron_count is not None else int(N),
+        "silent_neuron_count": silent_neuron_count if silent_neuron_count is not None else 0,
+    }
 
-def make_sequences_raw(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, min_frames=10):
+def make_sequences_raw(
+    npz,
+    trial_len_s=12.0,
+    fps=10.0,
+    drop_first_trials=10,
+    min_frames=10,
+    filter_inactive_neurons=False,
+    return_meta=False,
+):
     """
     Build fixed-length per-trial sequences WITHOUT z-scoring.
     Returns:
@@ -330,6 +379,13 @@ def make_sequences_raw(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, mi
     roi = npz["roi"]
     if roi.shape[0] < roi.shape[1]:
         roi = roi.T
+
+    active_mask = None
+    active_neuron_count = None
+    silent_neuron_count = None
+    if filter_inactive_neurons:
+        roi, active_mask, active_neuron_count, silent_neuron_count = filter_inactive_neurons_mind(roi)
+
     trial = npz["Trial"].astype(int)
     time = npz["Time"].astype(float)
 
@@ -354,6 +410,13 @@ def make_sequences_raw(npz, trial_len_s=12.0, fps=10.0, drop_first_trials=10, mi
     if len(X_raw) == 0:
         raise ValueError("No trials produced sequences. Check trial/time vectors and args.")
     X_raw = np.stack(X_raw, axis=0).astype(np.float32)
+    if return_meta:
+        meta = {
+            "active_neuron_mask": active_mask,
+            "active_neuron_count": active_neuron_count if active_neuron_count is not None else int(X_raw.shape[-1]),
+            "silent_neuron_count": silent_neuron_count if silent_neuron_count is not None else 0,
+        }
+        return X_raw, t_rs.astype(np.float32), np.array(trial_ids), meta
     return X_raw, t_rs.astype(np.float32), np.array(trial_ids)
 
 def normalize_sequences(X_raw, mu=None, sd=None):
@@ -489,13 +552,21 @@ def predict_sequences(model, X, tvec, args):
 def run_r2_sweep(args):
     npz = np.load(PATHS["data"])
     enable_input_normalization = getattr(args, "normalize_inputs", True)
-    X_raw, tvec_np, trial_ids = make_sequences_raw(
+    filter_inactive_neurons = getattr(args, "filter_inactive_neurons", False)
+    X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
         npz,
         trial_len_s=args.trial_len_s,
         fps=args.fps,
         drop_first_trials=args.drop_first_trials,
         min_frames=10,
+        filter_inactive_neurons=filter_inactive_neurons,
+        return_meta=True,
     )
+    if filter_inactive_neurons:
+        print(
+            f"MIND neuron filter: removed {seq_meta['silent_neuron_count']} silent neurons; "
+            f"kept {seq_meta['active_neuron_count']} active neurons."
+        )
     dims = getattr(args, "r2_sweep_dims", list(range(1, 11)))
     if isinstance(dims, str):
         dims = [int(x.strip()) for x in dims.split(",") if x.strip()]
@@ -1262,6 +1333,7 @@ def train(args):
     use_mind_split = getattr(args, "mind_split_enabled", False)
     use_no_leakage = getattr(args, "no_leakage_preproc", False)
     use_random_split = getattr(args, "random_split_enabled", False)
+    filter_inactive_neurons = getattr(args, "filter_inactive_neurons", False)
     random_split_frac = getattr(args, "random_split_frac", 0.1)
     random_split_seed = getattr(args, "random_split_seed", 42)
     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
@@ -1294,12 +1366,14 @@ def train(args):
 
     if use_mind_split:
         # MIND-style split: random 10% trials for test, train-only normalization/PCA
-        X_raw, tvec_np, trial_ids = make_sequences_raw(
+        X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
             npz,
             trial_len_s=args.trial_len_s,
             fps=args.fps,
             drop_first_trials=args.drop_first_trials,
             min_frames=10,
+            filter_inactive_neurons=filter_inactive_neurons,
+            return_meta=True,
         )
         train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=mind_seed, test_frac=mind_test_frac)
         if len(test_idx) == 0 or len(train_idx) == 0:
@@ -1349,15 +1423,23 @@ def train(args):
         val_trial_ids = trial_ids[test_idx]
         B, L, N = X_train.shape
         print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
+        if filter_inactive_neurons:
+            print(
+                f"MIND neuron filter: removed {seq_meta['silent_neuron_count']} silent neurons; "
+                f"kept {seq_meta['active_neuron_count']} active neurons."
+            )
+        meta.update(seq_meta)
     else:
         if use_no_leakage:
             # Old v5 behavior with train-only preprocessing to avoid leakage.
-            X_raw, tvec_np, trial_ids = make_sequences_raw(
+            X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
                 npz,
                 trial_len_s=args.trial_len_s,
                 fps=args.fps,
                 drop_first_trials=args.drop_first_trials,
                 min_frames=10,
+                filter_inactive_neurons=filter_inactive_neurons,
+                return_meta=True,
             )
 
             # Optional landmark subsampling (same placement as old path, but on raw sequences)
@@ -1424,6 +1506,12 @@ def train(args):
             )
             B, L, N = X_train.shape
             pca_before_norm = pca is not None
+            if filter_inactive_neurons:
+                print(
+                    f"MIND neuron filter: removed {seq_meta['silent_neuron_count']} silent neurons; "
+                    f"kept {seq_meta['active_neuron_count']} active neurons."
+                )
+            meta.update(seq_meta)
 
             if eval_metrics_space == "raw":
                 if getattr(args, "baseline_correct", False):
@@ -1437,6 +1525,19 @@ def train(args):
             roi = npz["roi"]
             if roi.shape[0] < roi.shape[1]:
                 roi = roi.T  # [T, N]
+
+            roi_filter_meta = {}
+            if filter_inactive_neurons:
+                roi, active_mask, active_neuron_count, silent_neuron_count = filter_inactive_neurons_mind(roi)
+                print(
+                    f"MIND neuron filter: removed {silent_neuron_count} silent neurons; "
+                    f"kept {active_neuron_count} active neurons."
+                )
+                roi_filter_meta.update({
+                    "active_neuron_mask": active_mask,
+                    "active_neuron_count": active_neuron_count,
+                    "silent_neuron_count": silent_neuron_count,
+                })
 
             #   Keep 95% variance
             pca = PCA(n_components=0.95, svd_solver="full")
@@ -1452,8 +1553,10 @@ def train(args):
                 trial_len_s=args.trial_len_s,
                 fps=args.fps, 
                 drop_first_trials=args.drop_first_trials,
-                min_frames=10
+                min_frames=10,
+                filter_inactive_neurons=False,
             ) # X: [B, L, N]
+            meta.update(roi_filter_meta)
 
             # --- Step 2: Landmark Subsampling (optional) ---
             if getattr(args, "landmark_count", 0) > 0:
@@ -1519,6 +1622,7 @@ def train(args):
         "use_pca": bool(getattr(args, "use_pca", True)),
         "normalize_inputs": bool(enable_input_normalization),
         "baseline_correct": bool(getattr(args, "baseline_correct", False)),
+        "filter_inactive_neurons": bool(filter_inactive_neurons),
         "xhat_bias": bool(xhat_bias),
         "pca_before_norm": bool(pca_before_norm),
         "norm_mu": None if norm_mu is None else np.asarray(norm_mu, dtype=np.float32),

@@ -365,6 +365,15 @@ def normalize_sequences(X_raw, mu=None, sd=None):
     X_norm = (X_raw - mu) / sd
     return X_norm, mu, sd
 
+
+def maybe_normalize_sequences(X_raw, enable_normalization=True, mu=None, sd=None):
+    if enable_normalization:
+        return normalize_sequences(X_raw, mu, sd)
+    feature_dim = X_raw.shape[-1]
+    passthrough_mu = np.zeros((1, feature_dim), dtype=np.float32) if mu is None else mu
+    passthrough_sd = np.ones((1, feature_dim), dtype=np.float32) if sd is None else sd
+    return X_raw.astype(np.float32, copy=False), passthrough_mu, passthrough_sd
+
 def baseline_correct_np(X):
     baseline = X[:, :5, :].mean(axis=1, keepdims=True)
     return X - baseline
@@ -479,6 +488,7 @@ def predict_sequences(model, X, tvec, args):
 
 def run_r2_sweep(args):
     npz = np.load(PATHS["data"])
+    enable_input_normalization = getattr(args, "normalize_inputs", True)
     X_raw, tvec_np, trial_ids = make_sequences_raw(
         npz,
         trial_len_s=args.trial_len_s,
@@ -511,8 +521,16 @@ def run_r2_sweep(args):
                 continue
             X_train_raw = X_raw[train_idx]
             X_test_raw = X_raw[test_idx]
-            X_train_norm, mu, sd = normalize_sequences(X_train_raw)
-            X_test_norm, _, _ = normalize_sequences(X_test_raw, mu, sd)
+            X_train_norm, mu, sd = maybe_normalize_sequences(
+                X_train_raw,
+                enable_normalization=enable_input_normalization,
+            )
+            X_test_norm, _, _ = maybe_normalize_sequences(
+                X_test_raw,
+                enable_normalization=enable_input_normalization,
+                mu=mu,
+                sd=sd,
+            )
 
             if getattr(args, "baseline_correct", False):
                 X_train_norm = baseline_correct_np(X_train_norm)
@@ -1239,6 +1257,7 @@ def train(args):
     data_hash = compute_file_sha(PATHS["data"])
     train_trial_ids = None
     val_trial_ids = None
+    enable_input_normalization = getattr(args, "normalize_inputs", True)
 
     use_mind_split = getattr(args, "mind_split_enabled", False)
     use_no_leakage = getattr(args, "no_leakage_preproc", False)
@@ -1288,8 +1307,16 @@ def train(args):
         X_train_raw = X_raw[train_idx]
         X_val_raw = X_raw[test_idx]
 
-        X_train_norm, norm_mu, norm_sd = normalize_sequences(X_train_raw)
-        X_val_norm, _, _ = normalize_sequences(X_val_raw, norm_mu, norm_sd)
+        X_train_norm, norm_mu, norm_sd = maybe_normalize_sequences(
+            X_train_raw,
+            enable_normalization=enable_input_normalization,
+        )
+        X_val_norm, _, _ = maybe_normalize_sequences(
+            X_val_raw,
+            enable_normalization=enable_input_normalization,
+            mu=norm_mu,
+            sd=norm_sd,
+        )
 
         if getattr(args, "baseline_correct", False):
             X_train_norm = baseline_correct_np(X_train_norm)
@@ -1385,8 +1412,16 @@ def train(args):
                 X_train_pca = X_train_raw
                 X_val_pca = X_val_raw
 
-            X_train, norm_mu, norm_sd = normalize_sequences(X_train_pca)
-            X_val, _, _ = normalize_sequences(X_val_pca, norm_mu, norm_sd)
+            X_train, norm_mu, norm_sd = maybe_normalize_sequences(
+                X_train_pca,
+                enable_normalization=enable_input_normalization,
+            )
+            X_val, _, _ = maybe_normalize_sequences(
+                X_val_pca,
+                enable_normalization=enable_input_normalization,
+                mu=norm_mu,
+                sd=norm_sd,
+            )
             B, L, N = X_train.shape
             pca_before_norm = pca is not None
 
@@ -1482,6 +1517,7 @@ def train(args):
         "data_path": PATHS["data"],
         "eval_metrics_space": eval_metrics_space,
         "use_pca": bool(getattr(args, "use_pca", True)),
+        "normalize_inputs": bool(enable_input_normalization),
         "baseline_correct": bool(getattr(args, "baseline_correct", False)),
         "xhat_bias": bool(xhat_bias),
         "pca_before_norm": bool(pca_before_norm),

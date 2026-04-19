@@ -2,6 +2,40 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## April 19th, 11:21am: 
+- Thinking more about two elements:
+    1. Trial normalization to [0,1] (what started all of this)
+    2. Baseline correction 
+- I'm going to commit and push to github and then pull on the darwin side, to test and see what it looks like in a non-time-normalized way. Ideally, more realistic. May be more fragile, though.
+
+## April 19th, 10:01am:
+- Got everything running on DARWIN. 
+- Everything about how to log in on DARWIN is configured in a GitHub repository: 
+```
+https://github.com/kathigg/darwin_ode_vae_notes/blob/main/README.md
+```
+- Contemplating raw numbers and trying to re-evaluate how we're computing everything---does the visual heatmap of the reproduced data align with the original heatmap? 
+- To get a good graph of the heatmap, currently everything is time-normalized into a time bucket of 0,1.
+    - How is everything time normalized? 
+        - Scaling tvec to [0,1] before ODE integration.
+    - Why time normalize?
+        - Numerical stablility. 
+        - ODE solvers behave better when the independent variable has a simple scale.
+        - Solver tolerances and step sizes become easier to tune. 
+        - This can be useful because the model is learning a vector field and then integrating it repeatedly during training. It can be challenge of optimize otherwise. 
+    - What is baseline correction?
+        - Baseline correction means subtracting a per-trial offset before training.
+        - In v5, when baseline_correct = true, the code takes the first 5 frames of each trial, computes their mean for each neuron, and subtracts that from the whole trial. 
+        - What it does: centers each trial relative to its own starting activity (thinking about this more, and I think this is stupid, and could be the counter element to how I've been building MoE to specialize. Because why am I doing this? Isn't it causing all of the trials to normalize themselves a bit?)
+        - What it does:
+            - Centers each trial relative to its own starting activity.
+            - Removes slow offsets or drift.
+            - Makes the model focus more on changes over time than absolute starting level. 
+        - Thoughts: but I care about what their baseline is. I don't want to correct it. 
+        - Downsides to baseline correction:
+            - You lose information about absolute activity level at trial start.
+            - If th ebaseline itself is meaningful biologically, it can remove real signal. 
+
 ## February 22nd, 5:05pm:
 - Quick pull, because I'm removing v6. V1 of the paper is done. 
 

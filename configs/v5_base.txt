@@ -13,6 +13,7 @@ beta = 0.02
 kl_warmup_epochs = 30
 holdout_trials = 3
 use_pca = false
+normalize_inputs = false
 pca_variance = 0.95
 landmark_count = 100
 out_dir = ../runs/ode_vae_E65
@@ -46,7 +47,7 @@ random_split_seed = 42
 
 eval_metrics_pca = false
 
-baseline_correct = true
+baseline_correct = false
 dec_num_experts = 8
 gating_entropy_coef = 0.01
 gating_entropy_warmup = 20

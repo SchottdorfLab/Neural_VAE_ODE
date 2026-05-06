@@ -357,3 +357,4 @@ Saved run metadata → /home/4429/projects/Neural_VAE_ODE/runs/2026-05-06_182346
 Final r: 0.1706
 Final R²: 0.0255
 Results logged to /home/4429/projects/Neural_VAE_ODE/src/training_results.txt
+Exception ignored in: Exception ignored in sys.unraisablehook

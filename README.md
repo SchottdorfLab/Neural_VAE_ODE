@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+
+## May 23rd, 4:17pm:
+- Okay, 
 ## May 23rd, 3:30pm:
 - So, problem. We are getting wild loss with the 10% split. 
 Why? 

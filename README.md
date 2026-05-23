@@ -2,6 +2,21 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 23rd, 2:31pm:
+- Never mind. I was, in fact, tripping. The poor R2 in `runs/2026-04-19_090225_e729233` didn't even involve the 10% change, if you look at the configs. The biggest change was changing baseline_correct to false and normalize_inputs to false. Which just shot the model in the foot, because the low run was training directly on raw, sparse calcium values. It's collapsing into a low-variance reconstruction. 
+
+Quick Note:
+The raw roi matrix is mostly zeroes/small values, so MSE becomes easy to minmize by predicting low-amplitude near-average activity. 
+
+I've now updated the config to test just v5, and I'm pushing to Darwin. 
+## May 23rd, 2:21pm: 
+- Okay. Looking back on the previous run with the same previous configs but with the 10% random split, stuff is not looking good. Our R2 is bad. This was obscured by the previous eval method. We're going to need to change things around. 
+
+## May 6th, 6:24pm:
+```
+python scripts/run_experiment.py --script src/v5_neural_vae.py --config configs/v5_base.txt --note "trying with the 10% split, same configs as the successful past 0.7R values"
+```
+
 ## May 6th, 4:07pm:
 Okay. I want to check purely on the 10% split to see how that impacts numbers. I'm set everything in the configs back to how it was on the ~0.7 R run to see how it goes, and I'll run on DARWIN now. Wish me luck. I've also turned on preprocessing because that's how I had it before. 
 

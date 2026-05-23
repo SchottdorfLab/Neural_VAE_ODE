@@ -23,6 +23,23 @@ That produced the crazy test normalized values.
 **Fix that I'm running in the next test:**
 Quick note that Dr. Schottdorf's MIND sandbox code removes inactive neurons. MIND only keeps neurons whose total activity across the session is greater than 0. 
 
+- **The problem:** When `normalize_inputs` is true, v5, computes each neuron's mean and STD from the training split only:
+x_norm = (x-train_mean) / train_std
+And that's normally cool, because it avoids leaking test-set information into preprocessing. BUT it creates a problem if a neuron is silent in training but then ACTIVE in the test. Basically, the model will tweak. 
+
+Let's say the training values for some neuron, say 323, are all 0, and that means the train_mean and train_std are 0. To avoid division by 0, the code adds a miniscule floor: train_std = 1e-8 (0.00000001, and it is same as 1 x 10^-8 in scientific notation) 
+
+Now suppose the same neuron has a value of 0.5 in the held-out test:
+x_test_norm = (0.5 - 0) / 1e-8 = 50,000,000
+So that single neuron can make validation MSE enormous, even though the error isn't like that.
+
+Three options to fix: 
+- *Option 1:* Filter globally silent neurons, MIND-style
+    - that's going to remove neurons that are silent across the whole session before splitting.
+    - that doesn't fully solve the problem, though, because a neuron could be active somewhere in the session but still silent in the training split and active only in the test split (NEED TO VERIFY THIS, TALK MORE ABOUT IT)
+- *Option 2:* Filter train-silent neurons after the split. Then the model would only train and evaluate on neurons that have measureable variation in the training data. Downside: If a neuron is silent in training but active in test, we exclude it from evaluation. BUT that's defensible bc/ the model didn't have any information that it could use to learn the neuron's activity.
+- *Option 3:* Clamp the normalization denominator. Use a larger floor. `train_std = max(train_std, 0.01)`. Prevents huge normalized test values while keeping all neurons. 
+
 ## May 23rd, 2:31pm:
 - Never mind. I was, in fact, tripping. The poor R2 in `runs/2026-04-19_090225_e729233` didn't even involve the 10% change, if you look at the configs. The biggest change was changing baseline_correct to false and normalize_inputs to false. Which just shot the model in the foot, because the low run was training directly on raw, sparse calcium values. It's collapsing into a low-variance reconstruction. 
 

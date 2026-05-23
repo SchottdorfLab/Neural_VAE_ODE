@@ -2,6 +2,27 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 23rd, 3:30pm:
+- So, problem. We are getting wild loss with the 10% split. 
+Why? 
+- We are using selection of 100 landmark sequences, and then split them into: 
+    - 91 strain sequences
+    - 9 test sequences.
+But validation loss/recon is absurd:
+valid recon ≈ 516,390,977,536
+transition ≈ 11,803,712,512
+
+Why? 
+The model normalizes only the training split. In this random split, some neurons are completely silent in the training trials but active in the held-out test trials. 
+
+81 neurons had training standard deviation near zero (sd ,+ 1e-7).
+Several neurons had sd = 1e-8, the numerical floor.
+In test, these same neurons had activity, so normalization divided by 1e-8. 
+That produced the crazy test normalized values. 
+
+**Fix that I'm running in the next test:**
+Quick note that Dr. Schottdorf's MIND sandbox code removes inactive neurons. MIND only keeps neurons whose total activity across the session is greater than 0. 
+
 ## May 23rd, 2:31pm:
 - Never mind. I was, in fact, tripping. The poor R2 in `runs/2026-04-19_090225_e729233` didn't even involve the 10% change, if you look at the configs. The biggest change was changing baseline_correct to false and normalize_inputs to false. Which just shot the model in the foot, because the low run was training directly on raw, sparse calcium values. It's collapsing into a low-variance reconstruction. 
 

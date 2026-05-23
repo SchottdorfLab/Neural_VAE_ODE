@@ -48,7 +48,9 @@ random_split_seed = 42
 eval_metrics_pca = false
 
 baseline_correct = true
-filter_inactive_neurons = false
+filter_inactive_neurons = true
+filter_train_silent_neurons = true
+train_silent_std_threshold = 1e-7
 dec_num_experts = 8
 gating_entropy_coef = 0.01
 gating_entropy_warmup = 20

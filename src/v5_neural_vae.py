@@ -437,6 +437,47 @@ def maybe_normalize_sequences(X_raw, enable_normalization=True, mu=None, sd=None
     passthrough_sd = np.ones((1, feature_dim), dtype=np.float32) if sd is None else sd
     return X_raw.astype(np.float32, copy=False), passthrough_mu, passthrough_sd
 
+def filter_train_silent_neurons_by_std(X_train_raw, X_val_raw, min_std=1e-7):
+    """
+    Remove neurons with near-zero variance in the training split only.
+
+    This prevents train-only z-scoring from dividing held-out activity by an
+    effectively zero training standard deviation.
+    """
+    X_train_raw = np.asarray(X_train_raw)
+    X_val_raw = np.asarray(X_val_raw)
+    if X_train_raw.ndim != 3 or X_val_raw.ndim != 3:
+        raise ValueError(
+            "Expected train/validation arrays with shape [trials, time, neurons], "
+            f"got {X_train_raw.shape} and {X_val_raw.shape}."
+        )
+    if X_train_raw.shape[-1] != X_val_raw.shape[-1]:
+        raise ValueError(
+            "Training and validation feature counts differ before train-std filtering: "
+            f"{X_train_raw.shape[-1]} vs {X_val_raw.shape[-1]}."
+        )
+
+    min_std = float(min_std)
+    train_std = X_train_raw.reshape(-1, X_train_raw.shape[-1]).std(axis=0)
+    keep_mask = train_std > min_std
+    if not np.any(keep_mask):
+        raise ValueError(
+            f"Train-std filter removed every neuron. Lower train_silent_std_threshold "
+            f"(currently {min_std:g})."
+        )
+
+    meta = {
+        "train_silent_filter_enabled": True,
+        "train_silent_std_threshold": min_std,
+        "train_silent_neuron_mask": keep_mask,
+        "train_variable_neuron_count": int(keep_mask.sum()),
+        "train_silent_neuron_count": int((~keep_mask).sum()),
+        "train_std_min": float(train_std.min()),
+        "train_std_median": float(np.median(train_std)),
+        "train_std_max": float(train_std.max()),
+    }
+    return X_train_raw[..., keep_mask], X_val_raw[..., keep_mask], meta
+
 def baseline_correct_np(X):
     baseline = X[:, :5, :].mean(axis=1, keepdims=True)
     return X - baseline
@@ -1334,6 +1375,8 @@ def train(args):
     use_no_leakage = getattr(args, "no_leakage_preproc", False)
     use_random_split = getattr(args, "random_split_enabled", False)
     filter_inactive_neurons = getattr(args, "filter_inactive_neurons", False)
+    filter_train_silent_neurons = getattr(args, "filter_train_silent_neurons", False)
+    train_silent_std_threshold = float(getattr(args, "train_silent_std_threshold", 1e-7))
     random_split_frac = getattr(args, "random_split_frac", 0.1)
     random_split_seed = getattr(args, "random_split_seed", 42)
     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
@@ -1380,6 +1423,19 @@ def train(args):
             raise ValueError("MIND split produced empty train or test set. Adjust mind_test_frac.")
         X_train_raw = X_raw[train_idx]
         X_val_raw = X_raw[test_idx]
+        if filter_train_silent_neurons:
+            X_train_raw, X_val_raw, train_std_meta = filter_train_silent_neurons_by_std(
+                X_train_raw,
+                X_val_raw,
+                min_std=train_silent_std_threshold,
+            )
+            print(
+                "Train-std neuron filter: removed "
+                f"{train_std_meta['train_silent_neuron_count']} train-silent neurons; "
+                f"kept {train_std_meta['train_variable_neuron_count']} neurons "
+                f"(threshold={train_silent_std_threshold:g})."
+            )
+            meta.update(train_std_meta)
 
         X_train_norm, norm_mu, norm_sd = maybe_normalize_sequences(
             X_train_raw,
@@ -1473,6 +1529,20 @@ def train(args):
                 X_val_raw = X_raw[-holdout:]
                 train_trial_ids = trial_ids[:-holdout]
                 val_trial_ids = trial_ids[-holdout:]
+
+            if filter_train_silent_neurons:
+                X_train_raw, X_val_raw, train_std_meta = filter_train_silent_neurons_by_std(
+                    X_train_raw,
+                    X_val_raw,
+                    min_std=train_silent_std_threshold,
+                )
+                print(
+                    "Train-std neuron filter: removed "
+                    f"{train_std_meta['train_silent_neuron_count']} train-silent neurons; "
+                    f"kept {train_std_meta['train_variable_neuron_count']} neurons "
+                    f"(threshold={train_silent_std_threshold:g})."
+                )
+                meta.update(train_std_meta)
 
             # PCA on training only (if enabled), then z-score on training only
             if getattr(args, "use_pca", True):
@@ -1623,6 +1693,8 @@ def train(args):
         "normalize_inputs": bool(enable_input_normalization),
         "baseline_correct": bool(getattr(args, "baseline_correct", False)),
         "filter_inactive_neurons": bool(filter_inactive_neurons),
+        "filter_train_silent_neurons": bool(filter_train_silent_neurons),
+        "train_silent_std_threshold": float(train_silent_std_threshold),
         "xhat_bias": bool(xhat_bias),
         "pca_before_norm": bool(pca_before_norm),
         "norm_mu": None if norm_mu is None else np.asarray(norm_mu, dtype=np.float32),

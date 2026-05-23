@@ -13,7 +13,7 @@ beta = 0.02
 kl_warmup_epochs = 30
 holdout_trials = 3
 use_pca = false
-normalize_inputs = false
+normalize_inputs = true
 pca_variance = 0.95
 landmark_count = 100
 out_dir = ../runs/ode_vae_E65
@@ -37,18 +37,18 @@ encoder_pool = first
 
 
 encoder_bidirectional = false
-mind_split_enabled = true
+mind_split_enabled = false
 mind_test_frac = 0.1
 mind_split_seed = 42
-no_leakage_preproc = false
-random_split_enabled = false
+no_leakage_preproc = true
+random_split_enabled = true
 random_split_frac = 0.1
 random_split_seed = 42
 
 eval_metrics_pca = false
 
-baseline_correct = false
-filter_inactive_neurons = true
+baseline_correct = true
+filter_inactive_neurons = false
 dec_num_experts = 8
 gating_entropy_coef = 0.01
 gating_entropy_warmup = 20

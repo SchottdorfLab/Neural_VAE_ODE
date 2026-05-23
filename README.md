@@ -2,6 +2,78 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 23rd, 2:31pm:
+- Never mind. I was, in fact, tripping. The poor R2 in `runs/2026-04-19_090225_e729233` didn't even involve the 10% change, if you look at the configs. The biggest change was changing baseline_correct to false and normalize_inputs to false. Which just shot the model in the foot, because the low run was training directly on raw, sparse calcium values. It's collapsing into a low-variance reconstruction. 
+
+Quick Note:
+The raw roi matrix is mostly zeroes/small values, so MSE becomes easy to minmize by predicting low-amplitude near-average activity. 
+
+I've now updated the config to test just v5, and I'm pushing to Darwin. 
+## May 23rd, 2:21pm: 
+- Okay. Looking back on the previous run with the same previous configs but with the 10% random split, stuff is not looking good. Our R2 is bad. This was obscured by the previous eval method. We're going to need to change things around. 
+
+## May 6th, 6:24pm:
+```
+python scripts/run_experiment.py --script src/v5_neural_vae.py --config configs/v5_base.txt --note "trying with the 10% split, same configs as the successful past 0.7R values"
+```
+
+## May 6th, 4:07pm:
+Okay. I want to check purely on the 10% split to see how that impacts numbers. I'm set everything in the configs back to how it was on the ~0.7 R run to see how it goes, and I'll run on DARWIN now. Wish me luck. I've also turned on preprocessing because that's how I had it before. 
+
+## May 6th, 3:18pm:
+Okay, an update to my understanding on the Schottdorf Matlab code. I thought that his preprocessing dropped silent time points. To clarify:
+It does two seperate global filters. 
+1. It drops frames (timepoints) where the population is entirely silent, `Datarange = sum(ROIactivities, 2) > 0`, e.g removing rows where all neurons are zero.
+2. It drops neurons that are silent for the whole session. `Neurons = sum(ROIactivities, 2) > 0`; removing columns where a neuron's activity is always 0. 
+
+## May 6th, 2:53pm:
+I'm very sleepy.
+In summary: 10% split is set up correctly. Moving on from that. Only thing that makes it different from Matlab is the fact that the Matlab code uses raw frame blocks instead of the fixed-length resampled trial sequences we have going on in the ODE-VAE (this is an ongoing debate/issue). 
+
+First, I've set everything up with the 10% random trial. When I say 10%, it isn't exactly. What I'm trying to replaced is the "last 3 trials" situation, which was kind of dumb. 
+How do we get the 10% random trials? How do we ensure that the model isn't training on them, and how are they selected?
+1. Trials are first extracted using npz["Trial"], which basically uses npz, which accesses by key for the trials from the NumPy zip file. As a reminder, the npz file of E65_data.npz looks like this.
+*Example for the first three neurons and the first eight timepoints:*
+```
+[[0.         0.         0.         0.         0.         0.
+  0.         0.        ]
+ [0.5980197  0.6945128  0.82022977 0.95790523 1.0819852  1.1445193
+  1.1155797  0.99577606]
+ [0.         0.         0.         0.         0.         0.
+  0.         0.        ]]
+```
+Where there are 375 neurons, or regions of interest (ROIs) and 7,434 timepoints (frames) in the dataset. 
+2. Okay, so trials have been extracted from E65: now, each distinct trial ID becomes one sequence via `make_sequences_raw()`. 
+3. `split_trials_like_matlab()` (I know, very subtle at what I was trying to do...) sets the trials up. 
+    - The 10% is not a continuous chunk of the total time series. It works by:
+        - segmenting the continuous recording into trials first
+        - randomly assigning whole trials to train or test 
+        - then concatenating/using only the train trials for training and only the test trials for validation/evaluation 
+After splitting on E65:
+- **Total useable trials after current v5 preprocessing**:
+180.
+- **Train trials**: 
+164
+- **Test trials**:
+17
+- **Test Fraction**:
+17/180=0.0944, so it's an approximate 10%.
+Basically, we're doing a Benoulli per-trial random split; not forcing exactly 10%.
+
+**UPDATE:**
+I realized I was stupid, and I was dropping the first 10 trials, even though Dr. Schottdorf's Matlab code wasn't. So the above numbers will be different, but you get the gist. 
+
+
+*What's an npz?*
+- A .npz is a NumPy zip file that's a single compressed archive that stores multiple NumPy arrays by name. 
+
+
+## April 19th, 12:11pm:
+For next time:
+- Verify that the 10% of trials for testing is being computed how you expect, and that the model isn't also training on that 10% holdout. 
+- Decide on how you want to handle raw frame timing "*resampling*"
+- When you've decided on resampling, decide on how much fidelity you want to the original time sample---do you want time normalized? Or not? 
+
 ## April 19th, 11:43am: 
 BIG THOUGHTS FOR YOU COMING BACK:
 ***Idea: Keep raw frame timing within each trial and use variable-length trials.***

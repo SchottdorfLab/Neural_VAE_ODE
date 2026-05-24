@@ -1,0 +1,379 @@
+diff --git a/src/script_output.txt b/src/script_output.txt
+index 38a83a2..de007b2 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,371 +1,8 @@
+ Running script: v5_neural_vae.py
+-Loading configuration from /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/config.txt
++Loading configuration from /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_162435_72640b9/config.txt
+ Device: cuda
+-Selecting 100 landmark trials (greedy coverage)...
+-Subsampled to 100 sequences.
+-Built sequences: B=100, :=120, N=357
+-Train-std neuron filter: removed 63 train-silent neurons; kept 294 neurons (threshold=1e-07).
++Built sequences: B=180, :=120, N=357
++Train-std neuron filter: removed 4 train-silent neurons; kept 353 neurons (threshold=1e-07).
+ MIND neuron filter: removed 18 silent neurons; kept 357 active neurons.
+ /home/4429/envs/odevae/lib/python3.11/site-packages/torch/nn/modules/transformer.py:379: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
+   warnings.warn(
+-[001] train loss 3.90091 | recon 3.89824 | kl 2.43468 | smooth 1.00493 | trans 0.22643 | lle 0.00042 | beta 0.001
+-      valid loss 15.98954 | recon 15.91641 | kl 3.60092 | smooth 1.00888 | trans 0.62063 | lle 0.00022 | r 0.3074 | R² 0.0915 | eta 08:04
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[002] train loss 3.91166 | recon 3.90715 | kl 2.56828 | smooth 1.00488 | trans 0.23475 | lle 0.00042 | beta 0.001
+-      valid loss 15.89221 | recon 15.82833 | kl 3.13317 | smooth 1.00330 | trans 0.62063 | lle 0.00021 | r 0.3762 | R² 0.1159 | eta 07:32
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[003] train loss 3.89067 | recon 3.88235 | kl 3.60128 | smooth 1.00281 | trans 0.22670 | lle 0.00043 | beta 0.002
+-      valid loss 15.77339 | recon 15.68549 | kl 4.32906 | smooth 1.00662 | trans 0.62063 | lle 0.00025 | r 0.4240 | R² 0.1678 | eta 07:21
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[004] train loss 3.77673 | recon 3.76287 | kl 4.76154 | smooth 1.00810 | trans 0.22205 | lle 0.00046 | beta 0.003
+-      valid loss 15.68951 | recon 15.58780 | kl 5.01432 | smooth 1.01329 | trans 0.62063 | lle 0.00029 | r 0.4473 | R² 0.1957 | eta 07:13
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[005] train loss 3.57082 | recon 3.55089 | kl 5.61870 | smooth 1.01289 | trans 0.22636 | lle 0.00043 | beta 0.003
+-      valid loss 15.40150 | recon 15.26687 | kl 6.65456 | smooth 1.01888 | trans 0.62062 | lle 0.00021 | r 0.4906 | R² 0.2364 | eta 07:08
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[006] train loss 3.39398 | recon 3.36497 | kl 6.94250 | smooth 1.01759 | trans 0.22715 | lle 0.00043 | beta 0.004
+-      valid loss 15.31526 | recon 15.17790 | kl 6.78601 | smooth 1.01937 | trans 0.62063 | lle 0.00031 | r 0.4843 | R² 0.2294 | eta 07:04
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[007] train loss 3.36338 | recon 3.32793 | kl 7.31890 | smooth 1.02271 | trans 0.23546 | lle 0.00045 | beta 0.005
+-      valid loss 15.22709 | recon 15.07281 | kl 7.62572 | smooth 1.03369 | trans 0.62062 | lle 0.00025 | r 0.5051 | R² 0.2509 | eta 07:01
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[008] train loss 3.24539 | recon 3.20136 | kl 8.00387 | smooth 1.03422 | trans 0.23178 | lle 0.00041 | beta 0.005
+-      valid loss 15.11267 | recon 14.93031 | kl 9.02424 | smooth 1.04267 | trans 0.62062 | lle 0.00019 | r 0.4888 | R² 0.2388 | eta 06:55
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[009] train loss 3.09528 | recon 3.04156 | kl 8.72167 | smooth 1.04128 | trans 0.23125 | lle 0.00043 | beta 0.006
+-      valid loss 14.99207 | recon 14.78736 | kl 10.13657 | smooth 1.05194 | trans 0.62062 | lle 0.00030 | r 0.5247 | R² 0.2740 | eta 06:50
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[010] train loss 2.97824 | recon 2.91434 | kl 9.36989 | smooth 1.04922 | trans 0.22907 | lle 0.00044 | beta 0.007
+-      valid loss 14.83328 | recon 14.63011 | kl 10.05378 | smooth 1.06339 | trans 0.62062 | lle 0.00023 | r 0.5186 | R² 0.2685 | eta 06:47
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[011] train loss 2.85003 | recon 2.77324 | kl 10.27144 | smooth 1.05813 | trans 0.22373 | lle 0.00048 | beta 0.007
+-      valid loss 14.81056 | recon 14.58959 | kl 10.93771 | smooth 1.07073 | trans 0.62062 | lle 0.00031 | r 0.5238 | R² 0.2737 | eta 06:42
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[012] train loss 2.80235 | recon 2.71558 | kl 10.65427 | smooth 1.06762 | trans 0.23507 | lle 0.00039 | beta 0.008
+-      valid loss 14.75259 | recon 14.51772 | kl 11.62735 | smooth 1.07914 | trans 0.62062 | lle 0.00026 | r 0.5117 | R² 0.2618 | eta 06:37
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[013] train loss 2.62079 | recon 2.52435 | kl 10.94618 | smooth 1.07566 | trans 0.22630 | lle 0.00048 | beta 0.009
+-      valid loss 14.69734 | recon 14.45196 | kl 12.14697 | smooth 1.09471 | trans 0.62062 | lle 0.00029 | r 0.5414 | R² 0.2930 | eta 06:35
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[014] train loss 2.49736 | recon 2.39093 | kl 11.23033 | smooth 1.08669 | trans 0.22485 | lle 0.00046 | beta 0.009
+-      valid loss 14.62259 | recon 14.35630 | kl 13.18660 | smooth 1.10292 | trans 0.62062 | lle 0.00027 | r 0.5234 | R² 0.2736 | eta 06:31
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[015] train loss 2.49910 | recon 2.38083 | kl 11.65818 | smooth 1.09906 | trans 0.23354 | lle 0.00044 | beta 0.010
+-      valid loss 14.65676 | recon 14.37774 | kl 13.81793 | smooth 1.10792 | trans 0.62062 | lle 0.00025 | r 0.5409 | R² 0.2925 | eta 06:29
+-[016] train loss 2.32638 | recon 2.20159 | kl 11.54085 | smooth 1.10432 | trans 0.21745 | lle 0.00045 | beta 0.011
+-      valid loss 14.54863 | recon 14.26756 | kl 13.91510 | smooth 1.11636 | trans 0.62062 | lle 0.00026 | r 0.5665 | R² 0.3208 | eta 06:25
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[017] train loss 2.19684 | recon 2.06484 | kl 11.49157 | smooth 1.11569 | trans 0.22783 | lle 0.00045 | beta 0.011
+-      valid loss 14.64843 | recon 14.39357 | kl 12.59860 | smooth 1.13198 | trans 0.62062 | lle 0.00023 | r 0.5630 | R² 0.3120 | eta 06:24
+-[018] train loss 2.28383 | recon 2.14577 | kl 11.35332 | smooth 1.12675 | trans 0.23243 | lle 0.00048 | beta 0.012
+-      valid loss 14.45654 | recon 14.20235 | kl 12.55926 | smooth 1.13623 | trans 0.62062 | lle 0.00024 | r 0.5398 | R² 0.2914 | eta 06:21
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[019] train loss 2.14779 | recon 2.00063 | kl 11.46993 | smooth 1.13509 | trans 0.23396 | lle 0.00045 | beta 0.013
+-      valid loss 14.48807 | recon 14.28641 | kl 9.92715 | smooth 1.14871 | trans 0.62061 | lle 0.00021 | r 0.5304 | R² 0.2804 | eta 06:18
+-[020] train loss 2.05733 | recon 1.89487 | kl 12.04162 | smooth 1.14718 | trans 0.22816 | lle 0.00047 | beta 0.013
+-      valid loss 14.28709 | recon 14.06072 | kl 11.15687 | smooth 1.15747 | trans 0.62062 | lle 0.00032 | r 0.5464 | R² 0.2984 | eta 06:15
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[021] train loss 1.93466 | recon 1.77545 | kl 11.23216 | smooth 1.15714 | trans 0.22889 | lle 0.00048 | beta 0.014
+-      valid loss 14.42247 | recon 14.22270 | kl 9.82187 | smooth 1.16674 | trans 0.62061 | lle 0.00027 | r 0.5549 | R² 0.3074 | eta 06:12
+-[022] train loss 1.93502 | recon 1.76946 | kl 11.15182 | smooth 1.16795 | trans 0.22843 | lle 0.00050 | beta 0.015
+-      valid loss 14.39496 | recon 14.18378 | kl 10.38637 | smooth 1.17870 | trans 0.62061 | lle 0.00023 | r 0.5165 | R² 0.2575 | eta 06:09
+-[023] train loss 1.82247 | recon 1.64994 | kl 11.11683 | smooth 1.18022 | trans 0.23238 | lle 0.00046 | beta 0.015
+-      valid loss 14.30643 | recon 14.10336 | kl 9.97506 | smooth 1.18719 | trans 0.62061 | lle 0.00024 | r 0.5744 | R² 0.3298 | eta 06:06
+-[024] train loss 1.80542 | recon 1.63137 | kl 10.74776 | smooth 1.19182 | trans 0.22330 | lle 0.00046 | beta 0.016
+-      valid loss 14.38735 | recon 14.18883 | kl 9.74182 | smooth 1.19803 | trans 0.62061 | lle 0.00025 | r 0.5700 | R² 0.3249 | eta 06:03
+-[025] train loss 1.77444 | recon 1.59550 | kl 10.60639 | smooth 1.20326 | trans 0.23005 | lle 0.00047 | beta 0.017
+-      valid loss 14.27170 | recon 14.09818 | kl 8.48624 | smooth 1.20853 | trans 0.62062 | lle 0.00032 | r 0.5816 | R² 0.3375 | eta 05:59
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[026] train loss 1.72715 | recon 1.54221 | kl 10.54156 | smooth 1.21544 | trans 0.23249 | lle 0.00053 | beta 0.017
+-      valid loss 14.20392 | recon 14.01355 | kl 9.32321 | smooth 1.22064 | trans 0.62061 | lle 0.00020 | r 0.5379 | R² 0.2854 | eta 05:57
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[027] train loss 1.62004 | recon 1.43555 | kl 10.12317 | smooth 1.22565 | trans 0.23097 | lle 0.00049 | beta 0.018
+-      valid loss 14.27512 | recon 14.10038 | kl 8.53601 | smooth 1.23013 | trans 0.62061 | lle 0.00024 | r 0.5461 | R² 0.2918 | eta 05:54
+-[028] train loss 1.62294 | recon 1.43870 | kl 9.74785 | smooth 1.23700 | trans 0.22220 | lle 0.00055 | beta 0.019
+-      valid loss 14.27536 | recon 14.11642 | kl 7.73996 | smooth 1.24046 | trans 0.62061 | lle 0.00027 | r 0.5846 | R² 0.3417 | eta 05:51
+-[029] train loss 1.68805 | recon 1.50721 | kl 9.23107 | smooth 1.24631 | trans 0.23150 | lle 0.00050 | beta 0.019
+-      valid loss 14.30829 | recon 14.13309 | kl 8.54770 | smooth 1.24942 | trans 0.62061 | lle 0.00027 | r 0.5893 | R² 0.3467 | eta 05:49
+-[030] train loss 1.63441 | recon 1.43463 | kl 9.86778 | smooth 1.25514 | trans 0.23212 | lle 0.00054 | beta 0.020
+-      valid loss 14.23013 | recon 14.07573 | kl 7.50187 | smooth 1.25579 | trans 0.62061 | lle 0.00030 | r 0.5949 | R² 0.3499 | eta 05:45
+-[031] train loss 1.60967 | recon 1.42763 | kl 8.98022 | smooth 1.26452 | trans 0.23268 | lle 0.00056 | beta 0.020
+-      valid loss 14.30426 | recon 14.14527 | kl 7.73087 | smooth 1.26651 | trans 0.62061 | lle 0.00022 | r 0.5324 | R² 0.2639 | eta 05:43
+-[032] train loss 1.56347 | recon 1.36958 | kl 9.57282 | smooth 1.27453 | trans 0.23238 | lle 0.00049 | beta 0.020
+-      valid loss 14.15333 | recon 13.99555 | kl 7.66985 | smooth 1.27503 | trans 0.62060 | lle 0.00033 | r 0.5500 | R² 0.2984 | eta 05:40
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[033] train loss 1.44930 | recon 1.26711 | kl 8.98896 | smooth 1.28230 | trans 0.22482 | lle 0.00046 | beta 0.020
+-      valid loss 14.21537 | recon 14.04518 | kl 8.29052 | smooth 1.28324 | trans 0.62060 | lle 0.00027 | r 0.5397 | R² 0.2762 | eta 05:38
+-[034] train loss 1.43293 | recon 1.25092 | kl 8.97821 | smooth 1.29204 | trans 0.23036 | lle 0.00053 | beta 0.020
+-      valid loss 14.18198 | recon 14.04274 | kl 6.74181 | smooth 1.29631 | trans 0.62060 | lle 0.00036 | r 0.5644 | R² 0.3108 | eta 05:35
+-[035] train loss 1.39021 | recon 1.20767 | kl 9.00622 | smooth 1.30289 | trans 0.22305 | lle 0.00048 | beta 0.020
+-      valid loss 14.23818 | recon 14.08924 | kl 7.22653 | smooth 1.30315 | trans 0.62060 | lle 0.00027 | r 0.5539 | R² 0.3003 | eta 05:31
+-[036] train loss 1.39662 | recon 1.22402 | kl 8.50549 | smooth 1.31282 | trans 0.23370 | lle 0.00050 | beta 0.020
+-      valid loss 14.20955 | recon 14.06849 | kl 6.83203 | smooth 1.31299 | trans 0.62061 | lle 0.00023 | r 0.5428 | R² 0.2867 | eta 05:28
+-[037] train loss 1.32211 | recon 1.16721 | kl 7.62155 | smooth 1.32255 | trans 0.22866 | lle 0.00048 | beta 0.020
+-      valid loss 14.23315 | recon 14.08097 | kl 7.38762 | smooth 1.32240 | trans 0.62060 | lle 0.00023 | r 0.5531 | R² 0.2929 | eta 05:25
+-[038] train loss 1.30357 | recon 1.14361 | kl 7.87344 | smooth 1.33312 | trans 0.23258 | lle 0.00060 | beta 0.020
+-      valid loss 14.27164 | recon 14.14141 | kl 6.28966 | smooth 1.33197 | trans 0.62060 | lle 0.00030 | r 0.5270 | R² 0.2660 | eta 05:22
+-[039] train loss 1.29985 | recon 1.13591 | kl 8.07195 | smooth 1.34400 | trans 0.23009 | lle 0.00054 | beta 0.020
+-      valid loss 14.28549 | recon 14.13619 | kl 7.24250 | smooth 1.34467 | trans 0.62060 | lle 0.00034 | r 0.5539 | R² 0.2797 | eta 05:19
+-[040] train loss 1.28441 | recon 1.12308 | kl 7.94115 | smooth 1.35316 | trans 0.22886 | lle 0.00051 | beta 0.020
+-      valid loss 14.28135 | recon 14.14147 | kl 6.77126 | smooth 1.35323 | trans 0.62060 | lle 0.00030 | r 0.5136 | R² 0.2226 | eta 05:16
+-[041] train loss 1.32322 | recon 1.16699 | kl 7.68504 | smooth 1.36335 | trans 0.23228 | lle 0.00056 | beta 0.020
+-      valid loss 14.17563 | recon 14.04400 | kl 6.35842 | smooth 1.36144 | trans 0.62060 | lle 0.00026 | r 0.5613 | R² 0.3049 | eta 05:12
+-[042] train loss 1.26557 | recon 1.10308 | kl 7.99924 | smooth 1.37198 | trans 0.22698 | lle 0.00049 | beta 0.020
+-      valid loss 14.13273 | recon 14.00536 | kl 6.14483 | smooth 1.36821 | trans 0.62060 | lle 0.00035 | r 0.5696 | R² 0.3181 | eta 05:09
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[043] train loss 1.25992 | recon 1.10526 | kl 7.60659 | smooth 1.37850 | trans 0.23073 | lle 0.00051 | beta 0.020
+-      valid loss 14.11987 | recon 13.99579 | kl 5.98020 | smooth 1.37560 | trans 0.62060 | lle 0.00027 | r 0.5609 | R² 0.3080 | eta 05:06
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[044] train loss 1.22573 | recon 1.07544 | kl 7.38823 | smooth 1.38558 | trans 0.22818 | lle 0.00058 | beta 0.020
+-      valid loss 14.18863 | recon 14.06368 | kl 6.02338 | smooth 1.38313 | trans 0.62060 | lle 0.00024 | r 0.5581 | R² 0.2982 | eta 05:03
+-[045] train loss 1.22962 | recon 1.08016 | kl 7.34548 | smooth 1.39285 | trans 0.23037 | lle 0.00054 | beta 0.020
+-      valid loss 14.16186 | recon 14.05150 | kl 5.29295 | smooth 1.39203 | trans 0.62060 | lle 0.00031 | r 0.5585 | R² 0.2915 | eta 04:59
+-[046] train loss 1.20151 | recon 1.05759 | kl 7.06764 | smooth 1.39907 | trans 0.23382 | lle 0.00051 | beta 0.020
+-      valid loss 14.27740 | recon 14.14459 | kl 6.41576 | smooth 1.39777 | trans 0.62060 | lle 0.00030 | r 0.5494 | R² 0.2689 | eta 04:56
+-[047] train loss 1.19744 | recon 1.04859 | kl 7.31622 | smooth 1.40584 | trans 0.22345 | lle 0.00052 | beta 0.020
+-      valid loss 14.28663 | recon 14.17989 | kl 5.11169 | smooth 1.40387 | trans 0.62060 | lle 0.00031 | r 0.5957 | R² 0.3526 | eta 04:53
+-[048] train loss 1.16900 | recon 1.02980 | kl 6.83184 | smooth 1.41463 | trans 0.22913 | lle 0.00053 | beta 0.020
+-      valid loss 14.37750 | recon 14.25693 | kl 5.80237 | smooth 1.41050 | trans 0.62061 | lle 0.00036 | r 0.6075 | R² 0.3664 | eta 04:50
+-[049] train loss 1.15837 | recon 1.01628 | kl 6.97466 | smooth 1.42089 | trans 0.23269 | lle 0.00052 | beta 0.020
+-      valid loss 14.34235 | recon 14.23668 | kl 5.05736 | smooth 1.41655 | trans 0.62061 | lle 0.00025 | r 0.5990 | R² 0.3576 | eta 04:46
+-[050] train loss 1.13905 | recon 0.99915 | kl 6.86464 | smooth 1.42795 | trans 0.23448 | lle 0.00052 | beta 0.020
+-      valid loss 14.27187 | recon 14.15830 | kl 5.45234 | smooth 1.42399 | trans 0.62061 | lle 0.00028 | r 0.6086 | R² 0.3689 | eta 04:43
+-[051] train loss 1.11567 | recon 0.97786 | kl 6.76185 | smooth 1.43720 | trans 0.22592 | lle 0.00053 | beta 0.020
+-      valid loss 14.32116 | recon 14.21706 | kl 4.97836 | smooth 1.43017 | trans 0.62060 | lle 0.00028 | r 0.6178 | R² 0.3815 | eta 04:40
+-[052] train loss 1.09712 | recon 0.95962 | kl 6.74663 | smooth 1.44615 | trans 0.22352 | lle 0.00053 | beta 0.020
+-      valid loss 14.17747 | recon 14.07278 | kl 5.00752 | smooth 1.43698 | trans 0.62060 | lle 0.00026 | r 0.5751 | R² 0.3218 | eta 04:37
+-[053] train loss 1.09217 | recon 0.96355 | kl 6.30157 | smooth 1.44859 | trans 0.22904 | lle 0.00053 | beta 0.020
+-      valid loss 14.28336 | recon 14.17720 | kl 5.08084 | smooth 1.44507 | trans 0.62060 | lle 0.00030 | r 0.5827 | R² 0.3286 | eta 04:34
+-[054] train loss 1.06452 | recon 0.93521 | kl 6.33524 | smooth 1.45832 | trans 0.22949 | lle 0.00063 | beta 0.020
+-      valid loss 14.34266 | recon 14.23159 | kl 5.32547 | smooth 1.45559 | trans 0.62060 | lle 0.00024 | r 0.5808 | R² 0.3256 | eta 04:31
+-[055] train loss 1.08120 | recon 0.95292 | kl 6.28234 | smooth 1.46639 | trans 0.23400 | lle 0.00057 | beta 0.020
+-      valid loss 14.31269 | recon 14.20130 | kl 5.34142 | smooth 1.45650 | trans 0.62060 | lle 0.00025 | r 0.5605 | R² 0.2803 | eta 04:28
+-[056] train loss 1.05578 | recon 0.92735 | kl 6.28960 | smooth 1.47313 | trans 0.23254 | lle 0.00053 | beta 0.020
+-      valid loss 14.25124 | recon 14.14223 | kl 5.22214 | smooth 1.46356 | trans 0.62060 | lle 0.00033 | r 0.5737 | R² 0.3099 | eta 04:26
+-[057] train loss 1.04681 | recon 0.92163 | kl 6.12571 | smooth 1.48213 | trans 0.23531 | lle 0.00055 | beta 0.020
+-      valid loss 14.27459 | recon 14.16686 | kl 5.15762 | smooth 1.47263 | trans 0.62060 | lle 0.00026 | r 0.5912 | R² 0.3386 | eta 04:23
+-[058] train loss 1.00887 | recon 0.88333 | kl 6.14623 | smooth 1.48724 | trans 0.22605 | lle 0.00052 | beta 0.020
+-      valid loss 14.16722 | recon 14.06741 | kl 4.76105 | smooth 1.48462 | trans 0.62059 | lle 0.00031 | r 0.5926 | R² 0.3377 | eta 04:20
+-[059] train loss 1.01466 | recon 0.89425 | kl 5.88892 | smooth 1.49547 | trans 0.22788 | lle 0.00061 | beta 0.020
+-      valid loss 14.11632 | recon 14.01873 | kl 4.65009 | smooth 1.48714 | trans 0.62059 | lle 0.00033 | r 0.5954 | R² 0.3406 | eta 04:17
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[060] train loss 1.02833 | recon 0.90664 | kl 5.95132 | smooth 1.50009 | trans 0.23187 | lle 0.00056 | beta 0.020
+-      valid loss 14.23401 | recon 14.12773 | kl 5.08386 | smooth 1.49459 | trans 0.62059 | lle 0.00036 | r 0.5760 | R² 0.3122 | eta 04:14
+-[061] train loss 1.03075 | recon 0.90927 | kl 5.94105 | smooth 1.50592 | trans 0.22945 | lle 0.00055 | beta 0.020
+-      valid loss 14.24216 | recon 14.13844 | kl 4.95559 | smooth 1.50237 | trans 0.62059 | lle 0.00027 | r 0.5838 | R² 0.3278 | eta 04:11
+-[062] train loss 1.06299 | recon 0.94261 | kl 5.88468 | smooth 1.51070 | trans 0.23394 | lle 0.00059 | beta 0.020
+-      valid loss 14.20990 | recon 14.11252 | kl 4.63813 | smooth 1.50432 | trans 0.62059 | lle 0.00046 | r 0.5630 | R² 0.3034 | eta 04:09
+-[063] train loss 1.03333 | recon 0.91027 | kl 6.01869 | smooth 1.51544 | trans 0.23340 | lle 0.00060 | beta 0.020
+-      valid loss 14.18419 | recon 14.08262 | kl 4.84772 | smooth 1.51256 | trans 0.62059 | lle 0.00029 | r 0.5909 | R² 0.3359 | eta 04:06
+-[064] train loss 0.99750 | recon 0.88110 | kl 5.68618 | smooth 1.51974 | trans 0.23110 | lle 0.00065 | beta 0.020
+-      valid loss 14.27797 | recon 14.17718 | kl 4.80875 | smooth 1.51776 | trans 0.62059 | lle 0.00029 | r 0.5809 | R² 0.3160 | eta 04:03
+-[065] train loss 0.98986 | recon 0.87916 | kl 5.40099 | smooth 1.52497 | trans 0.23008 | lle 0.00056 | beta 0.020
+-      valid loss 14.24508 | recon 14.14874 | kl 4.58569 | smooth 1.52004 | trans 0.62059 | lle 0.00026 | r 0.5833 | R² 0.3256 | eta 04:00
+-[066] train loss 0.98418 | recon 0.86908 | kl 5.62212 | smooth 1.53318 | trans 0.22417 | lle 0.00057 | beta 0.020
+-      valid loss 14.15436 | recon 14.06529 | kl 4.22199 | smooth 1.52384 | trans 0.62060 | lle 0.00027 | r 0.5924 | R² 0.3422 | eta 03:57
+-[067] train loss 0.94631 | recon 0.83997 | kl 5.18405 | smooth 1.53465 | trans 0.22534 | lle 0.00054 | beta 0.020
+-      valid loss 14.29473 | recon 14.19452 | kl 4.77862 | smooth 1.53329 | trans 0.62059 | lle 0.00034 | r 0.5818 | R² 0.3144 | eta 03:54
+-[068] train loss 0.97908 | recon 0.86920 | kl 5.35823 | smooth 1.54448 | trans 0.23494 | lle 0.00053 | beta 0.020
+-      valid loss 14.14651 | recon 14.05242 | kl 4.47220 | smooth 1.53906 | trans 0.62059 | lle 0.00024 | r 0.5845 | R² 0.3244 | eta 03:51
+-[069] train loss 0.97998 | recon 0.87249 | kl 5.24025 | smooth 1.54855 | trans 0.22570 | lle 0.00055 | beta 0.020
+-      valid loss 14.15523 | recon 14.05640 | kl 4.70903 | smooth 1.54058 | trans 0.62059 | lle 0.00040 | r 0.5937 | R² 0.3358 | eta 03:48
+-[070] train loss 0.96360 | recon 0.85450 | kl 5.31963 | smooth 1.55610 | trans 0.22892 | lle 0.00070 | beta 0.020
+-      valid loss 14.25837 | recon 14.16289 | kl 4.54161 | smooth 1.54538 | trans 0.62060 | lle 0.00034 | r 0.5948 | R² 0.3346 | eta 03:45
+-[071] train loss 0.96778 | recon 0.85707 | kl 5.39911 | smooth 1.56136 | trans 0.23404 | lle 0.00058 | beta 0.020
+-      valid loss 14.08814 | recon 13.99661 | kl 4.34360 | smooth 1.54960 | trans 0.62059 | lle 0.00033 | r 0.5981 | R² 0.3492 | eta 03:42
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[072] train loss 0.95222 | recon 0.84733 | kl 5.10845 | smooth 1.56401 | trans 0.23017 | lle 0.00059 | beta 0.020
+-      valid loss 14.14635 | recon 14.04844 | kl 4.66253 | smooth 1.55609 | trans 0.62059 | lle 0.00033 | r 0.6126 | R² 0.3593 | eta 03:39
+-[073] train loss 0.94805 | recon 0.84048 | kl 5.24173 | smooth 1.57106 | trans 0.23333 | lle 0.00055 | beta 0.020
+-      valid loss 14.07659 | recon 13.98540 | kl 4.32595 | smooth 1.56030 | trans 0.62059 | lle 0.00030 | r 0.5972 | R² 0.3398 | eta 03:36
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[074] train loss 0.94644 | recon 0.84117 | kl 5.12634 | smooth 1.57413 | trans 0.23324 | lle 0.00053 | beta 0.020
+-      valid loss 14.25636 | recon 14.16408 | kl 4.38038 | smooth 1.57160 | trans 0.62059 | lle 0.00028 | r 0.5745 | R² 0.3092 | eta 03:34
+-[075] train loss 0.92866 | recon 0.82648 | kl 4.97154 | smooth 1.57791 | trans 0.23205 | lle 0.00060 | beta 0.020
+-      valid loss 14.19673 | recon 14.10550 | kl 4.32712 | smooth 1.57630 | trans 0.62059 | lle 0.00031 | r 0.6002 | R² 0.3430 | eta 03:31
+-[076] train loss 0.92989 | recon 0.82777 | kl 4.96958 | smooth 1.58612 | trans 0.22844 | lle 0.00061 | beta 0.020
+-      valid loss 14.07811 | recon 13.98729 | kl 4.30682 | smooth 1.57892 | trans 0.62059 | lle 0.00036 | r 0.6070 | R² 0.3589 | eta 03:28
+-[077] train loss 0.93629 | recon 0.83627 | kl 4.86381 | smooth 1.59327 | trans 0.22910 | lle 0.00062 | beta 0.020
+-      valid loss 14.04380 | recon 13.95717 | kl 4.09743 | smooth 1.58071 | trans 0.62058 | lle 0.00036 | r 0.6172 | R² 0.3735 | eta 03:25
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[078] train loss 0.94448 | recon 0.84430 | kl 4.87220 | smooth 1.59454 | trans 0.22783 | lle 0.00057 | beta 0.020
+-      valid loss 14.03523 | recon 13.94920 | kl 4.06685 | smooth 1.58428 | trans 0.62058 | lle 0.00027 | r 0.6100 | R² 0.3633 | eta 03:22
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/ode_vae_best.pt
+-[079] train loss 0.91618 | recon 0.81636 | kl 4.85315 | smooth 1.60051 | trans 0.23062 | lle 0.00067 | beta 0.020
+-      valid loss 14.07712 | recon 13.99162 | kl 4.03996 | smooth 1.59202 | trans 0.62058 | lle 0.00027 | r 0.6070 | R² 0.3538 | eta 03:19
+-[080] train loss 0.88992 | recon 0.79416 | kl 4.65208 | smooth 1.60125 | trans 0.22393 | lle 0.00062 | beta 0.020
+-      valid loss 14.13147 | recon 14.04613 | kl 4.03231 | smooth 1.59475 | trans 0.62058 | lle 0.00026 | r 0.6039 | R² 0.3528 | eta 03:16
+-[081] train loss 0.89703 | recon 0.80018 | kl 4.70418 | smooth 1.60736 | trans 0.23234 | lle 0.00057 | beta 0.020
+-      valid loss 14.14512 | recon 14.05648 | kl 4.19670 | smooth 1.59638 | trans 0.62058 | lle 0.00024 | r 0.5968 | R² 0.3429 | eta 03:13
+-[082] train loss 0.90462 | recon 0.80736 | kl 4.72476 | smooth 1.61023 | trans 0.23099 | lle 0.00056 | beta 0.020
+-      valid loss 14.23427 | recon 14.14195 | kl 4.38040 | smooth 1.61012 | trans 0.62059 | lle 0.00035 | r 0.6103 | R² 0.3506 | eta 03:10
+-[083] train loss 0.87378 | recon 0.77852 | kl 4.62465 | smooth 1.61928 | trans 0.22918 | lle 0.00058 | beta 0.020
+-      valid loss 14.09442 | recon 14.01576 | kl 3.69735 | smooth 1.61181 | trans 0.62059 | lle 0.00032 | r 0.6086 | R² 0.3614 | eta 03:08
+-[084] train loss 0.88813 | recon 0.79478 | kl 4.52905 | smooth 1.62166 | trans 0.22745 | lle 0.00056 | beta 0.020
+-      valid loss 14.25240 | recon 14.16454 | kl 4.15692 | smooth 1.61624 | trans 0.62059 | lle 0.00028 | r 0.6049 | R² 0.3493 | eta 03:05
+-[085] train loss 0.89366 | recon 0.79892 | kl 4.59692 | smooth 1.62644 | trans 0.23318 | lle 0.00056 | beta 0.020
+-      valid loss 14.11600 | recon 14.03199 | kl 3.96438 | smooth 1.61883 | trans 0.62059 | lle 0.00024 | r 0.6054 | R² 0.3527 | eta 03:02
+-[086] train loss 0.87191 | recon 0.77675 | kl 4.61887 | smooth 1.63015 | trans 0.22882 | lle 0.00061 | beta 0.020
+-      valid loss 14.18668 | recon 14.10100 | kl 4.04808 | smooth 1.61562 | trans 0.62059 | lle 0.00035 | r 0.6041 | R² 0.3526 | eta 02:59
+-[087] train loss 0.88902 | recon 0.79464 | kl 4.57932 | smooth 1.63074 | trans 0.23310 | lle 0.00063 | beta 0.020
+-      valid loss 14.24628 | recon 14.16187 | kl 3.98421 | smooth 1.62399 | trans 0.62059 | lle 0.00034 | r 0.6083 | R² 0.3563 | eta 02:56
+-[088] train loss 0.87071 | recon 0.77519 | kl 4.63642 | smooth 1.63634 | trans 0.23076 | lle 0.00061 | beta 0.020
+-      valid loss 14.15417 | recon 14.07044 | kl 3.94995 | smooth 1.62726 | trans 0.62059 | lle 0.00030 | r 0.5935 | R² 0.3304 | eta 02:53
+-[089] train loss 0.88564 | recon 0.79320 | kl 4.48178 | smooth 1.64208 | trans 0.23273 | lle 0.00056 | beta 0.020
+-      valid loss 14.29899 | recon 14.20647 | kl 4.38919 | smooth 1.63684 | trans 0.62059 | lle 0.00028 | r 0.6163 | R² 0.3617 | eta 02:50
+-[090] train loss 0.86112 | recon 0.76898 | kl 4.46806 | smooth 1.64314 | trans 0.22761 | lle 0.00066 | beta 0.020
+-      valid loss 14.20630 | recon 14.12756 | kl 3.69934 | smooth 1.63984 | trans 0.62059 | lle 0.00035 | r 0.5952 | R² 0.3408 | eta 02:47
+-[091] train loss 0.88088 | recon 0.78935 | kl 4.43584 | smooth 1.65049 | trans 0.23201 | lle 0.00056 | beta 0.020
+-      valid loss 14.28464 | recon 14.19936 | kl 4.02702 | smooth 1.63527 | trans 0.62059 | lle 0.00040 | r 0.6115 | R² 0.3542 | eta 02:44
+-[092] train loss 0.85976 | recon 0.76680 | kl 4.50783 | smooth 1.65060 | trans 0.22996 | lle 0.00059 | beta 0.020
+-      valid loss 14.17927 | recon 14.09367 | kl 4.04333 | smooth 1.63455 | trans 0.62059 | lle 0.00032 | r 0.6080 | R² 0.3547 | eta 02:42
+-[093] train loss 0.86349 | recon 0.77327 | kl 4.37012 | smooth 1.65440 | trans 0.23296 | lle 0.00061 | beta 0.020
+-      valid loss 14.23731 | recon 14.15513 | kl 3.87093 | smooth 1.65043 | trans 0.62059 | lle 0.00030 | r 0.6012 | R² 0.3446 | eta 02:39
+-[094] train loss 0.85168 | recon 0.76082 | kl 4.40250 | smooth 1.65870 | trans 0.22963 | lle 0.00064 | beta 0.020
+-      valid loss 14.10721 | recon 14.02551 | kl 3.84784 | smooth 1.63965 | trans 0.62058 | lle 0.00029 | r 0.6167 | R² 0.3722 | eta 02:36
+-[095] train loss 0.83734 | recon 0.74935 | kl 4.25944 | smooth 1.65821 | trans 0.22859 | lle 0.00059 | beta 0.020
+-      valid loss 14.14218 | recon 14.06018 | kl 3.86217 | smooth 1.65502 | trans 0.62059 | lle 0.00035 | r 0.6023 | R² 0.3453 | eta 02:33
+-[096] train loss 0.83457 | recon 0.74765 | kl 4.20601 | smooth 1.66482 | trans 0.22713 | lle 0.00058 | beta 0.020
+-      valid loss 14.12782 | recon 14.04765 | kl 3.77036 | smooth 1.65162 | trans 0.62058 | lle 0.00029 | r 0.6203 | R² 0.3780 | eta 02:30
+-[097] train loss 0.84839 | recon 0.75868 | kl 4.34395 | smooth 1.66919 | trans 0.23174 | lle 0.00064 | beta 0.020
+-      valid loss 14.17530 | recon 14.09425 | kl 3.81417 | smooth 1.65879 | trans 0.62058 | lle 0.00027 | r 0.6115 | R² 0.3618 | eta 02:27
+-[098] train loss 0.83552 | recon 0.74615 | kl 4.32890 | smooth 1.67279 | trans 0.22215 | lle 0.00063 | beta 0.020
+-      valid loss 14.18564 | recon 14.10698 | kl 3.69463 | smooth 1.66292 | trans 0.62058 | lle 0.00030 | r 0.6173 | R² 0.3726 | eta 02:25
+-[099] train loss 0.80650 | recon 0.71954 | kl 4.20755 | smooth 1.67682 | trans 0.22530 | lle 0.00061 | beta 0.020
+-      valid loss 14.09562 | recon 14.01855 | kl 3.61530 | smooth 1.66113 | trans 0.62058 | lle 0.00022 | r 0.6143 | R² 0.3723 | eta 02:22
+-[100] train loss 0.83259 | recon 0.74410 | kl 4.28205 | smooth 1.68236 | trans 0.23307 | lle 0.00054 | beta 0.020
+-      valid loss 14.08443 | recon 14.00547 | kl 3.70904 | smooth 1.66739 | trans 0.62058 | lle 0.00032 | r 0.6135 | R² 0.3674 | eta 02:19
+-[101] train loss 0.80134 | recon 0.71487 | kl 4.18370 | smooth 1.68263 | trans 0.22256 | lle 0.00061 | beta 0.020
+-      valid loss 14.26070 | recon 14.17988 | kl 3.80173 | smooth 1.67651 | trans 0.62059 | lle 0.00026 | r 0.6051 | R² 0.3537 | eta 02:16
+-[102] train loss 0.84103 | recon 0.75377 | kl 4.21958 | smooth 1.69042 | trans 0.23623 | lle 0.00063 | beta 0.020
+-      valid loss 14.10422 | recon 14.02423 | kl 3.76020 | smooth 1.67389 | trans 0.62058 | lle 0.00032 | r 0.6147 | R² 0.3645 | eta 02:13
+-[103] train loss 0.81576 | recon 0.73101 | kl 4.09621 | smooth 1.69472 | trans 0.22582 | lle 0.00058 | beta 0.020
+-      valid loss 14.12481 | recon 14.04809 | kl 3.59659 | smooth 1.68422 | trans 0.62058 | lle 0.00030 | r 0.6144 | R² 0.3649 | eta 02:10
+-[104] train loss 0.83989 | recon 0.75472 | kl 4.11549 | smooth 1.69747 | trans 0.23074 | lle 0.00061 | beta 0.020
+-      valid loss 14.06409 | recon 13.98484 | kl 3.72334 | smooth 1.68119 | trans 0.62058 | lle 0.00038 | r 0.6176 | R² 0.3689 | eta 02:08
+-[105] train loss 0.83425 | recon 0.74932 | kl 4.10581 | smooth 1.69804 | trans 0.22255 | lle 0.00065 | beta 0.020
+-      valid loss 14.12003 | recon 14.04007 | kl 3.75792 | smooth 1.69431 | trans 0.62058 | lle 0.00029 | r 0.6172 | R² 0.3633 | eta 02:05
+-[106] train loss 0.81334 | recon 0.72947 | kl 4.05232 | smooth 1.69790 | trans 0.22550 | lle 0.00066 | beta 0.020
+-      valid loss 14.17009 | recon 14.09089 | kl 3.71996 | smooth 1.69181 | trans 0.62058 | lle 0.00040 | r 0.6223 | R² 0.3750 | eta 02:02
+-[107] train loss 0.81671 | recon 0.73328 | kl 4.02950 | smooth 1.70175 | trans 0.22710 | lle 0.00067 | beta 0.020
+-      valid loss 14.16446 | recon 14.08950 | kl 3.50806 | smooth 1.69497 | trans 0.62058 | lle 0.00035 | r 0.6150 | R² 0.3664 | eta 01:59
+-[108] train loss 0.81414 | recon 0.73074 | kl 4.02673 | smooth 1.70527 | trans 0.23107 | lle 0.00061 | beta 0.020
+-      valid loss 14.19376 | recon 14.12004 | kl 3.44632 | smooth 1.69111 | trans 0.62058 | lle 0.00036 | r 0.6181 | R² 0.3676 | eta 01:56
+-[109] train loss 0.81130 | recon 0.73021 | kl 3.91218 | smooth 1.70639 | trans 0.22714 | lle 0.00058 | beta 0.020
+-      valid loss 14.12493 | recon 14.04818 | kl 3.59764 | smooth 1.69638 | trans 0.62058 | lle 0.00021 | r 0.6263 | R² 0.3814 | eta 01:54
+-[110] train loss 0.80754 | recon 0.72594 | kl 3.93626 | smooth 1.71233 | trans 0.23161 | lle 0.00068 | beta 0.020
+-      valid loss 14.18313 | recon 14.10382 | kl 3.72463 | smooth 1.70557 | trans 0.62058 | lle 0.00027 | r 0.6189 | R² 0.3690 | eta 01:51
+-[111] train loss 0.82956 | recon 0.74708 | kl 3.97952 | smooth 1.71708 | trans 0.23372 | lle 0.00066 | beta 0.020
+-      valid loss 14.21079 | recon 14.13454 | kl 3.57181 | smooth 1.70822 | trans 0.62058 | lle 0.00026 | r 0.6179 | R² 0.3702 | eta 01:48
+-[112] train loss 0.80285 | recon 0.72044 | kl 3.97710 | smooth 1.72064 | trans 0.22912 | lle 0.00061 | beta 0.020
+-      valid loss 14.24466 | recon 14.17162 | kl 3.41110 | smooth 1.71164 | trans 0.62058 | lle 0.00032 | r 0.6091 | R² 0.3596 | eta 01:45
+-[113] train loss 0.80372 | recon 0.72100 | kl 3.99061 | smooth 1.72566 | trans 0.23449 | lle 0.00061 | beta 0.020
+-      valid loss 14.21076 | recon 14.13344 | kl 3.62524 | smooth 1.70796 | trans 0.62058 | lle 0.00036 | r 0.6205 | R² 0.3743 | eta 01:42
+-[114] train loss 0.81317 | recon 0.73321 | kl 3.85317 | smooth 1.72651 | trans 0.23293 | lle 0.00060 | beta 0.020
+-      valid loss 14.22565 | recon 14.15340 | kl 3.37160 | smooth 1.71284 | trans 0.62058 | lle 0.00039 | r 0.6147 | R² 0.3650 | eta 01:40
+-[115] train loss 0.80397 | recon 0.72338 | kl 3.88431 | smooth 1.73011 | trans 0.23431 | lle 0.00060 | beta 0.020
+-      valid loss 14.22832 | recon 14.15228 | kl 3.56106 | smooth 1.71515 | trans 0.62058 | lle 0.00025 | r 0.6255 | R² 0.3736 | eta 01:37
+-[116] train loss 0.79694 | recon 0.71557 | kl 3.92375 | smooth 1.73260 | trans 0.23173 | lle 0.00064 | beta 0.020
+-      valid loss 14.14228 | recon 14.06579 | kl 3.58326 | smooth 1.71255 | trans 0.62058 | lle 0.00029 | r 0.6292 | R² 0.3859 | eta 01:34
+-[117] train loss 0.79123 | recon 0.71151 | kl 3.84281 | smooth 1.72765 | trans 0.22560 | lle 0.00058 | beta 0.020
+-      valid loss 14.23874 | recon 14.16435 | kl 3.47853 | smooth 1.71343 | trans 0.62058 | lle 0.00042 | r 0.6294 | R² 0.3904 | eta 01:31
+-[118] train loss 0.77869 | recon 0.69918 | kl 3.83128 | smooth 1.73182 | trans 0.22932 | lle 0.00066 | beta 0.020
+-      valid loss 14.28010 | recon 14.20665 | kl 3.43157 | smooth 1.72298 | trans 0.62058 | lle 0.00031 | r 0.6225 | R² 0.3739 | eta 01:28
+-[119] train loss 0.79316 | recon 0.71434 | kl 3.79730 | smooth 1.73870 | trans 0.22753 | lle 0.00060 | beta 0.020
+-      valid loss 14.20391 | recon 14.12943 | kl 3.48308 | smooth 1.71468 | trans 0.62058 | lle 0.00033 | r 0.6247 | R² 0.3710 | eta 01:26
+-[120] train loss 0.79671 | recon 0.71865 | kl 3.75948 | smooth 1.73781 | trans 0.22703 | lle 0.00063 | beta 0.020
+-      valid loss 14.27942 | recon 14.20260 | kl 3.59969 | smooth 1.72650 | trans 0.62058 | lle 0.00025 | r 0.6177 | R² 0.3681 | eta 01:23
+-[121] train loss 0.79891 | recon 0.71861 | kl 3.86998 | smooth 1.74030 | trans 0.23224 | lle 0.00070 | beta 0.020
+-      valid loss 14.32084 | recon 14.24123 | kl 3.73800 | smooth 1.73683 | trans 0.62058 | lle 0.00037 | r 0.6212 | R² 0.3665 | eta 01:20
+-[122] train loss 0.79097 | recon 0.71198 | kl 3.80334 | smooth 1.74425 | trans 0.23407 | lle 0.00063 | beta 0.020
+-      valid loss 14.32763 | recon 14.25366 | kl 3.45671 | smooth 1.73158 | trans 0.62058 | lle 0.00047 | r 0.6176 | R² 0.3663 | eta 01:17
+-[123] train loss 0.80369 | recon 0.72503 | kl 3.78697 | smooth 1.74715 | trans 0.23330 | lle 0.00059 | beta 0.020
+-      valid loss 14.25853 | recon 14.18510 | kl 3.42944 | smooth 1.73555 | trans 0.62058 | lle 0.00039 | r 0.6237 | R² 0.3753 | eta 01:14
+-[124] train loss 0.78744 | recon 0.71087 | kl 3.68368 | smooth 1.74384 | trans 0.23002 | lle 0.00059 | beta 0.020
+-      valid loss 14.28791 | recon 14.21494 | kl 3.40593 | smooth 1.74091 | trans 0.62058 | lle 0.00035 | r 0.6337 | R² 0.3894 | eta 01:12
+-[125] train loss 0.78543 | recon 0.70936 | kl 3.65881 | smooth 1.75002 | trans 0.22716 | lle 0.00059 | beta 0.020
+-      valid loss 14.30602 | recon 14.23621 | kl 3.24799 | smooth 1.74428 | trans 0.62058 | lle 0.00032 | r 0.6207 | R² 0.3742 | eta 01:09
+-[126] train loss 0.79009 | recon 0.71541 | kl 3.59002 | smooth 1.75184 | trans 0.22471 | lle 0.00064 | beta 0.020
+-      valid loss 14.23849 | recon 14.16742 | kl 3.31126 | smooth 1.73319 | trans 0.62058 | lle 0.00028 | r 0.6257 | R² 0.3817 | eta 01:06
+-[127] train loss 0.79150 | recon 0.71449 | kl 3.70425 | smooth 1.75204 | trans 0.23502 | lle 0.00062 | beta 0.020
+-      valid loss 14.18531 | recon 14.11092 | kl 3.47743 | smooth 1.74141 | trans 0.62058 | lle 0.00026 | r 0.6312 | R² 0.3792 | eta 01:03
+-[128] train loss 0.78441 | recon 0.71018 | kl 3.56724 | smooth 1.75106 | trans 0.22593 | lle 0.00068 | beta 0.020
+-      valid loss 14.21665 | recon 14.14652 | kl 3.26379 | smooth 1.74392 | trans 0.62058 | lle 0.00039 | r 0.6305 | R² 0.3883 | eta 01:00
+-[129] train loss 0.78584 | recon 0.71048 | kl 3.62415 | smooth 1.75562 | trans 0.22417 | lle 0.00066 | beta 0.020
+-      valid loss 14.17855 | recon 14.10802 | kl 3.28410 | smooth 1.74242 | trans 0.62058 | lle 0.00031 | r 0.6309 | R² 0.3943 | eta 00:58
+-[130] train loss 0.80341 | recon 0.72719 | kl 3.66349 | smooth 1.76368 | trans 0.23509 | lle 0.00062 | beta 0.020
+-      valid loss 14.21380 | recon 14.14199 | kl 3.34831 | smooth 1.74154 | trans 0.62057 | lle 0.00038 | r 0.6230 | R² 0.3763 | eta 00:55
+-[131] train loss 0.79110 | recon 0.71516 | kl 3.65056 | smooth 1.76150 | trans 0.23132 | lle 0.00059 | beta 0.020
+-      valid loss 14.35274 | recon 14.27922 | kl 3.43347 | smooth 1.75130 | trans 0.62057 | lle 0.00031 | r 0.6271 | R² 0.3758 | eta 00:52
+-[132] train loss 0.78810 | recon 0.71240 | kl 3.64107 | smooth 1.75733 | trans 0.22428 | lle 0.00065 | beta 0.020
+-      valid loss 14.21782 | recon 14.14458 | kl 3.41959 | smooth 1.74798 | trans 0.62057 | lle 0.00031 | r 0.6213 | R² 0.3749 | eta 00:49
+-[133] train loss 0.75958 | recon 0.68408 | kl 3.63152 | smooth 1.76133 | trans 0.22215 | lle 0.00067 | beta 0.020
+-      valid loss 14.13048 | recon 14.05716 | kl 3.42287 | smooth 1.75568 | trans 0.62057 | lle 0.00059 | r 0.6295 | R² 0.3863 | eta 00:47
+-[134] train loss 0.78641 | recon 0.71218 | kl 3.56524 | smooth 1.76183 | trans 0.23259 | lle 0.00063 | beta 0.020
+-      valid loss 14.22921 | recon 14.15799 | kl 3.31773 | smooth 1.76420 | trans 0.62057 | lle 0.00035 | r 0.6285 | R² 0.3783 | eta 00:44
+-[135] train loss 0.78750 | recon 0.71300 | kl 3.57911 | smooth 1.76865 | trans 0.22980 | lle 0.00062 | beta 0.020
+-      valid loss 14.31781 | recon 14.24704 | kl 3.29535 | smooth 1.75705 | trans 0.62059 | lle 0.00024 | r 0.6232 | R² 0.3799 | eta 00:41
+-[136] train loss 0.78659 | recon 0.71080 | kl 3.64282 | smooth 1.76272 | trans 0.23218 | lle 0.00062 | beta 0.020
+-      valid loss 14.24527 | recon 14.17195 | kl 3.42299 | smooth 1.75259 | trans 0.62058 | lle 0.00033 | r 0.6408 | R² 0.4051 | eta 00:38
+-[137] train loss 0.78182 | recon 0.70698 | kl 3.59473 | smooth 1.76109 | trans 0.23428 | lle 0.00069 | beta 0.020
+-      valid loss 14.17725 | recon 14.10288 | kl 3.47557 | smooth 1.75558 | trans 0.62056 | lle 0.00034 | r 0.6248 | R² 0.3691 | eta 00:35
+-[138] train loss 0.75047 | recon 0.67526 | kl 3.61592 | smooth 1.77083 | trans 0.22485 | lle 0.00059 | beta 0.020
+-      valid loss 14.25630 | recon 14.18224 | kl 3.45950 | smooth 1.76105 | trans 0.62057 | lle 0.00028 | r 0.6390 | R² 0.3944 | eta 00:33
+-[139] train loss 0.76810 | recon 0.69448 | kl 3.53776 | smooth 1.77017 | trans 0.21808 | lle 0.00063 | beta 0.020
+-      valid loss 14.19978 | recon 14.12908 | kl 3.29151 | smooth 1.76814 | trans 0.62058 | lle 0.00032 | r 0.6204 | R² 0.3717 | eta 00:30
+-[140] train loss 0.76038 | recon 0.68636 | kl 3.55569 | smooth 1.76981 | trans 0.22722 | lle 0.00067 | beta 0.020
+-      valid loss 14.37909 | recon 14.30920 | kl 3.25011 | smooth 1.77555 | trans 0.62058 | lle 0.00033 | r 0.6255 | R² 0.3823 | eta 00:27
+-[141] train loss 0.78600 | recon 0.71391 | kl 3.45938 | smooth 1.77056 | trans 0.22623 | lle 0.00075 | beta 0.020
+-      valid loss 14.23286 | recon 14.15889 | kl 3.45446 | smooth 1.77257 | trans 0.62058 | lle 0.00044 | r 0.6319 | R² 0.3838 | eta 00:24
+-[142] train loss 0.79137 | recon 0.71663 | kl 3.59041 | smooth 1.77476 | trans 0.22976 | lle 0.00063 | beta 0.020
+-      valid loss 14.23447 | recon 14.16345 | kl 3.30705 | smooth 1.77637 | trans 0.62057 | lle 0.00026 | r 0.6370 | R² 0.3975 | eta 00:22
+-[143] train loss 0.76679 | recon 0.69384 | kl 3.50105 | smooth 1.77321 | trans 0.23040 | lle 0.00065 | beta 0.020
+-      valid loss 14.12115 | recon 14.05145 | kl 3.24082 | smooth 1.77242 | trans 0.62057 | lle 0.00029 | r 0.6360 | R² 0.3972 | eta 00:19
+-[144] train loss 0.75670 | recon 0.68472 | kl 3.45137 | smooth 1.77843 | trans 0.23315 | lle 0.00075 | beta 0.020
+-      valid loss 14.23146 | recon 14.16249 | kl 3.20441 | smooth 1.77845 | trans 0.62058 | lle 0.00026 | r 0.6328 | R² 0.3871 | eta 00:16
+-[145] train loss 0.77685 | recon 0.70374 | kl 3.50796 | smooth 1.78330 | trans 0.23300 | lle 0.00057 | beta 0.020
+-      valid loss 14.27825 | recon 14.20983 | kl 3.17669 | smooth 1.78271 | trans 0.62058 | lle 0.00034 | r 0.6305 | R² 0.3882 | eta 00:13
+-[146] train loss 0.75910 | recon 0.68736 | kl 3.44256 | smooth 1.77831 | trans 0.22086 | lle 0.00069 | beta 0.020
+-      valid loss 14.22288 | recon 14.15070 | kl 3.36522 | smooth 1.77390 | trans 0.62057 | lle 0.00031 | r 0.6343 | R² 0.3882 | eta 00:11
+-[147] train loss 0.77991 | recon 0.70776 | kl 3.46157 | smooth 1.78443 | trans 0.22695 | lle 0.00066 | beta 0.020
+-      valid loss 14.14172 | recon 14.07566 | kl 3.05912 | smooth 1.77611 | trans 0.62056 | lle 0.00028 | r 0.6339 | R² 0.3959 | eta 00:08
+-[148] train loss 0.75116 | recon 0.67928 | kl 3.44692 | smooth 1.78862 | trans 0.22888 | lle 0.00056 | beta 0.020
+-      valid loss 14.20417 | recon 14.13353 | kl 3.28766 | smooth 1.78958 | trans 0.62057 | lle 0.00029 | r 0.6394 | R² 0.3953 | eta 00:05
+-[149] train loss 0.76967 | recon 0.69779 | kl 3.44683 | smooth 1.78594 | trans 0.23068 | lle 0.00061 | beta 0.020
+-      valid loss 14.14573 | recon 14.07855 | kl 3.11473 | smooth 1.78368 | trans 0.62057 | lle 0.00028 | r 0.6320 | R² 0.3877 | eta 00:02
+-[150] train loss 0.75912 | recon 0.68896 | kl 3.36111 | smooth 1.78631 | trans 0.23021 | lle 0.00066 | beta 0.020
+-      valid loss 14.25580 | recon 14.18587 | kl 3.25175 | smooth 1.78881 | trans 0.62057 | lle 0.00031 | r 0.6334 | R² 0.3865 | eta 00:00
+-/home/4429/envs/odevae/lib/python3.11/site-packages/sklearn/manifold/_mds.py:754: FutureWarning: The default value of `init` will change from 'random' to 'classical_mds' in 1.10. To suppress this warning, provide some value of `init`.
+-  warnings.warn(
+-/home/4429/envs/odevae/lib/python3.11/site-packages/sklearn/manifold/_mds.py:771: FutureWarning: The `dissimilarity` parameter is deprecated and will be removed in 1.10. Use `metric` instead.
+-  warnings.warn(
+-      wrote /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/latent_manifold_mds.png
+-done.
+-experts.0.0.bias 0.04440505430102348
+-experts.0.2.bias 0.006925294175744057
+-experts.0.4.bias 0.01461807731539011
+-experts.1.0.bias 0.03752093389630318
+-experts.1.2.bias 0.0034297597594559193
+-experts.1.4.bias 0.012445708736777306
+-experts.2.0.bias 0.045956969261169434
+-experts.2.2.bias -0.0037882167380303144
+-experts.2.4.bias 0.01299365796148777
+-experts.3.0.bias 0.04697215557098389
+-experts.3.2.bias -0.0026460883673280478
+-experts.3.4.bias 0.016795333474874496
+-experts.4.0.bias 0.03102744184434414
+-experts.4.2.bias -0.0038913232274353504
+-experts.4.4.bias 0.014369617216289043
+-experts.5.0.bias 0.008892177604138851
+-experts.5.2.bias 4.211650229990482e-05
+-experts.5.4.bias 0.013960033655166626
+-experts.6.0.bias 0.03519679978489876
+-experts.6.2.bias -0.00181654654443264
+-experts.6.4.bias 0.013829328119754791
+-experts.7.0.bias 0.05494870990514755
+-experts.7.2.bias -0.001431961078196764
+-experts.7.4.bias 0.013740570284426212
+-Saved run metadata → /home/4429/projects/Neural_VAE_ODE/runs/2026-05-23_154932_3933d9f/run_metadata.json
+-Final r: 0.6334
+-Final R²: 0.3865
+-Results logged to /home/4429/projects/Neural_VAE_ODE/src/training_results.txt

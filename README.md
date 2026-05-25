@@ -2,9 +2,35 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 25th, 7:46pm:
+**Current Issues:** 
+
+## May 25th, 7:32pm:
+**Notes from Dr. Schottdorf on testing ODE code:**
+```
+Code is pushed. These are neural dynamics encoding a great circle. Geodesic dynamics should fit this perfectly, but Neural ODEs (I think) should not do a good job. A fundamental property of a first-order ODEs like neural ODEs is the uniquness of solution. If a trajectory passes through a specific state x, its velocity x' at that point is completely and uniquely determined by x'=F(x). Trajectories in a first-order system can never cross each other. For geodesics on a sphere (or any manifold) this is not true becuase they can intersect. 
+```
+- *Notes/Explanation:* 
+    - "Trajectories in a first-order system can never cross each other."
+
+## May 25th, 7:22pm:
+- **First-order system definition:** 
+    - A first-order system is a dynamical system where the future state is determined by the current state, not directly by acceleration or higher derivatives. 
+    - So the model learns a vector field that says: "given where the neural activity is on the latent manifold right now, which direction should it move next? 
+    - This differs from a second-order system, such as a geodesic equation. 
+    - First-order system: models velocity from current state.
+    - Second-order systems: models acceleration from current state and velocity. 
+    - A geodesic equation models second-order dynamics. ODE is first-order latent dynamics. 
+    - *Example of a first-order system:* coffee cooling in a room. This is first-order because the system only needs the current temperature T to determine how the temperature changes next. 
+    - *Example of a second-order system:* Mass on a spring. This is second-order because the equation directly describes acceleration, not just velocity. 
+    - In a second-order system, the future is determine by the current position and velocity (first-derivative), and the equation tells you the acceleration. 
+    - In a first-order system, you only need the current state/position, and the model computes the first derivative (i.e. the velocity or direction of change). 
 ## May 25th, 7:12pm:
 - landmark i = one selected point in neural activity space. (it's a repreentative neural population state). 
 - Each entry means: P(i->j) = probability that neural activity moves from landmark i to landmark j
+- Removed landmark sampling entirely. 
+- Cons: R2 may initially drop because the model now sees harder, more hetergeneous trials. 
+
 ## May 24th, 2:17pm: 
 - The results with no landmarks are poor. 
 `runs/2026-05-23_162754_72640b9`
@@ -42,7 +68,7 @@ Notes on VAEs and KL:
 - So, problem. We are getting wild loss with the 10% split. 
 Why? 
 - We are using selection of 100 landmark sequences, and then split them into: 
-    - 91 strain sequences
+    - 91 train sequences
     - 9 test sequences.
 But validation loss/recon is absurd:
 valid recon ≈ 516,390,977,536

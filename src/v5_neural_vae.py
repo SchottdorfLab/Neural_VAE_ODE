@@ -12,7 +12,6 @@ What it does today:
 - Data: loads E65 .npz from PATHS["data"] (note: config.txt also exists but the script is still largely path-driven).
 - Preprocessing: PCA to retain ~95% variance (hard-coded), then trial grouping + resampling to fixed length.
 - Normalizes per neuron (session z-score) and time-normalizes tvec to [0,1].
-- Optional landmark subsampling via greedy coverage on flattened sequences (speed optimization).
 - Optional per-trial baseline correction (subtract mean of first 5 frames).
 
 Model architecture:
@@ -23,7 +22,6 @@ Model architecture:
 Loss / regularizers (in addition to recon + KL + smoothness):
 - Transition-aware regularization (lambda_transition):
   penalizes mismatch of decoded dynamics Δx̂(t)=x̂(t+1)-x̂(t) vs Δx(t) (with linear warmup).
-  Optionally computed on only a subset of trials per batch (transition_landmark_count) to avoid over-regularizing noisy trials.
 - Soft LLE latent constraint (lambda_lle):
   flattens latent trajectory points, finds kNN in latent space, and reconstructs each point from neighbors
   using softmax weights; penalizes reconstruction error to encourage locally linear structure.
@@ -52,7 +50,6 @@ from torchdiffeq import odeint
 import datetime
 import random
 from sklearn.decomposition import PCA
-from sklearn.metrics import pairwise_distances
 from sklearn.manifold import MDS
 import matplotlib.pyplot as plt
 import json
@@ -608,14 +605,6 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
             if lambda_transition > 0:
                 dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
                 dx_true = xb[:, 1:, :] - xb[:, :-1, :]
-                if getattr(args, "transition_landmark_count", 0) > 0:
-                    trial_features = xb.mean(dim=1).detach().cpu().numpy()
-                    lm_idx = greedy_landmarks(
-                        trial_features,
-                        k=min(args.transition_landmark_count, xb.shape[0])
-                    )
-                    dx_hat = dx_hat[lm_idx]
-                    dx_true = dx_true[lm_idx]
                 transition_loss = torch.mean((dx_hat - dx_true) ** 2)
             lle_loss = None
             lambda_lle = getattr(args, "lambda_lle", 0.0)
@@ -800,21 +789,6 @@ def run_r2_sweep(args):
     plt.close()
     print(f"Wrote r sweep plot -> {out_path}")
     return results
-
-def greedy_landmarks(X, k=200):
-    """
-    Greedy selection of k landmarks from X to maximize coverage.
-    Equivalent to MIND's greedyvq.m
-    """
-    X = np.asarray(X)
-    n = len(X)
-    if n <= k:
-        return np.arange(n)
-    landmarks = [np.random.randint(n)]
-    for _ in range(k - 1):
-        d = pairwise_distances(X, X[landmarks]).min(axis=1)
-        landmarks.append(np.argmax(d))
-    return np.array(landmarks)
 
 class SeqDataset(td.Dataset):
     def __init__(self, X):
@@ -1567,15 +1541,6 @@ def train(args):
                 return_meta=True,
             )
 
-            # Optional landmark subsampling (same placement as old path, but on raw sequences)
-            if getattr(args, "landmark_count", 0) > 0:
-                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
-                X_flat = X_raw.reshape(-1, X_raw.shape[-1])
-                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
-                X_raw = X_raw[lm_idx % X_raw.shape[0]]
-                trial_ids = trial_ids[lm_idx % trial_ids.shape[0]]
-                print(f"Subsampled to {X_raw.shape[0]} sequences.")
-
             B, L, N = X_raw.shape
             print(f"Built sequences: B={B}, :={L}, N={N}")
 
@@ -1696,17 +1661,6 @@ def train(args):
                 filter_inactive_neurons=False,
             ) # X: [B, L, N]
             meta.update(roi_filter_meta)
-
-            # --- Step 2: Landmark Subsampling (optional) ---
-            if getattr(args, "landmark_count", 0) > 0:
-                print(f"Selecting {args.landmark_count} landmark trials (greedy coverage)...")
-                # Flatten trials along time for selection
-                X_flat = X.reshape(-1, X.shape[-1])
-                lm_idx = greedy_landmarks(X_flat, k=args.landmark_count)
-                X = X[lm_idx % X.shape[0]]  # map back to batch level
-                if isinstance(meta, dict) and "trials_used" in meta:
-                    meta["trials_used"] = meta["trials_used"][lm_idx % meta["trials_used"].shape[0]]
-                print(f"Subsampled to {X.shape[0]} sequences.")
 
             B, L, N = X.shape
             print(f"Built sequences: B={B}, :={L}, N={N}")
@@ -1836,14 +1790,6 @@ def train(args):
                 # match decoded transition dynamics without re-decoding z_pred
                 dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
                 dx_true = xb[:, 1:, :] - xb[:, :-1, :]
-                if getattr(args, "transition_landmark_count", 0) > 0:
-                    trial_features = xb.mean(dim=1).detach().cpu().numpy()
-                    lm_idx = greedy_landmarks(
-                        trial_features,
-                        k=min(args.transition_landmark_count, xb.shape[0])
-                    )
-                    dx_hat = dx_hat[lm_idx]
-                    dx_true = dx_true[lm_idx]
                 transition_loss = torch.mean((dx_hat - dx_true) ** 2)
             lle_loss = None
             lambda_lle = getattr(args, "lambda_lle", 0.0)
@@ -1909,14 +1855,6 @@ def train(args):
                 if lambda_transition > 0:
                     dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
                     dx_true = xb[:, 1:, :] - xb[:, :-1, :]
-                    if getattr(args, "transition_landmark_count", 0) > 0:
-                        trial_features = xb.mean(dim=1).detach().cpu().numpy()
-                        lm_idx = greedy_landmarks(
-                            trial_features,
-                            k=min(args.transition_landmark_count, xb.shape[0])
-                        )
-                        dx_hat = dx_hat[lm_idx]
-                        dx_true = dx_true[lm_idx]
                     transition_loss = torch.mean((dx_hat - dx_true) ** 2)
                 lle_loss = None
                 lambda_lle = getattr(args, "lambda_lle", 0.0)

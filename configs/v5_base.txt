@@ -31,7 +31,7 @@ decoder_emb_dim = 16
 decoder_hidden = 256
 cv_folds = 4
 k_neighbors = 16 
-decoder_type = mlp
+decoder_type = moe
 
 encoder_type = transformer
 encoder_hidden = 256

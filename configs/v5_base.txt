@@ -1,6 +1,12 @@
 data_path = ../npz_e65_data/E65_data.npz
 trial_len_s = 12
 fps = 10
+sequence_alignment = position
+position_key = Position
+position_min = 0
+position_max = 300
+position_clip = true
+position_monotonic_policy = cumulative_max
 drop_first_trials = 10
 
 latent_dim = 7
@@ -15,7 +21,6 @@ holdout_trials = 3
 use_pca = false
 normalize_inputs = true
 pca_variance = 0.95
-landmark_count = 0
 out_dir = ../runs/ode_vae_E65
 pca_dim = 0
 num_experts = 4

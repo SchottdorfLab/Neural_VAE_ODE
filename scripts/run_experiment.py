@@ -153,6 +153,7 @@ def _collect_artifacts(run_dir):
         "trained_pca.pkl",
         "latent_manifold_mds.png",
         "analysis_cache_best.npz",
+        "raw_vs_recon_t0_15_n0_40.png",
         "run_metadata.json",
     ]
     artifacts = []

@@ -11,8 +11,9 @@ will rely on config.txt, which is the global config file.
 What it does today:
 - Data: loads E65 .npz from PATHS["data"] (note: config.txt also exists but the script is still largely path-driven).
 - Preprocessing: PCA to retain ~95% variance (hard-coded), then trial grouping + resampling to fixed length.
-- Normalizes per neuron (session z-score) and time-normalizes tvec to [0,1].
-- Optional per-trial baseline correction (subtract mean of first 5 frames).
+- Sequences can be aligned by elapsed time or by normalized maze position; position alignment is preferred for VR trials.
+- Normalizes per neuron (session z-score) and uses the resampled sequence axis as the ODE coordinate.
+- Optional per-trial baseline correction (subtract mean of first 5 sequence bins).
 
 Model architecture:
 - Encoder: MLP x(t0) -> (mu, logvar), optionally a sequence encoder over x(t1..L).
@@ -324,7 +325,7 @@ def group_indices_by_trial(trial_vec):
 
 def resample_sequence(x, t_src, L, t0 = None, t1 = None): 
     """
-    x: [Ts, N] values at times t_src[Ts]
+    x: [Ts, N] values at source coordinates t_src[Ts]
     return x_rs: [L, N] resampled on L points between t0..t1
     """
 
@@ -332,13 +333,88 @@ def resample_sequence(x, t_src, L, t0 = None, t1 = None):
     if t0 is None: t0 = float(t_src[0])
     if t1 is None: t1 = float(t_src[-1]) if t_src[-1] > t_src[0] else (t_src[0]+ 1.0)
     t_dst = np.linspace(t0, t1, L, dtype=np.float32)
-    # vectorized 1D linear interpolation for each neuron
-    # fallback to numpy.interp per neuron to keep code simple and robust
-    x_rs = np.empty((L, N), dtype=np.float32)
     t_src_np = np.asarray(t_src, dtype=np.float32)
+    x_np = np.asarray(x, dtype=np.float32)
+    valid = np.isfinite(t_src_np)
+    valid &= np.all(np.isfinite(x_np), axis=1)
+    t_src_np = t_src_np[valid]
+    x_np = x_np[valid]
+    if t_src_np.size < 2:
+        raise ValueError("Need at least two valid source points to resample a sequence.")
+
+    order = np.argsort(t_src_np)
+    t_src_np = t_src_np[order]
+    x_np = x_np[order]
+
+    # np.interp expects increasing coordinates. If repeated coordinates exist
+    # because the mouse pauses at one maze position, average the frames there.
+    unique_t, inverse = np.unique(t_src_np, return_inverse=True)
+    if unique_t.size < 2:
+        raise ValueError("Need at least two unique source coordinates to resample a sequence.")
+    if unique_t.size != t_src_np.size:
+        x_unique = np.zeros((unique_t.size, N), dtype=np.float32)
+        counts = np.zeros(unique_t.size, dtype=np.float32)
+        np.add.at(x_unique, inverse, x_np)
+        np.add.at(counts, inverse, 1.0)
+        x_np = x_unique / counts[:, None]
+        t_src_np = unique_t
+
+    x_rs = np.empty((L, N), dtype=np.float32)
     for j in range(N):
-        x_rs[:, j] = np.interp(t_dst, t_src_np, x[:, j])
+        x_rs[:, j] = np.interp(t_dst, t_src_np, x_np[:, j])
     return x_rs, t_dst
+
+
+def get_sequence_axis(
+    npz,
+    idx,
+    time,
+    alignment="time",
+    position_key="Position",
+    position_min=None,
+    position_max=None,
+    position_clip=True,
+    position_monotonic_policy="cumulative_max",
+):
+    """
+    Return the coordinate used to align one trial.
+
+    time: elapsed trial time, in seconds.
+    position: normalized maze position, so each sequence bin corresponds to
+    the same physical maze location rather than the same elapsed time.
+    """
+    alignment = str(alignment).strip().lower()
+    if alignment in ("time", "elapsed_time"):
+        return time[idx] - time[idx][0], 0.0, None, "time"
+    if alignment not in ("position", "maze_position"):
+        raise ValueError(f"Unknown sequence_alignment='{alignment}'. Use 'time' or 'position'.")
+    if position_key not in npz:
+        raise KeyError(f"sequence_alignment='position' requires npz key '{position_key}'.")
+
+    pos = np.asarray(npz[position_key], dtype=float)[idx]
+    p0 = float(np.nanmin(pos)) if position_min is None else float(position_min)
+    p1 = float(np.nanmax(pos)) if position_max is None else float(position_max)
+    if not np.isfinite(p0) or not np.isfinite(p1) or p1 <= p0:
+        raise ValueError(f"Invalid position range for alignment: min={p0}, max={p1}")
+
+    axis = (pos - p0) / (p1 - p0)
+    if position_clip:
+        axis = np.clip(axis, 0.0, 1.0)
+
+    policy = str(position_monotonic_policy).strip().lower()
+    if policy in ("cumulative_max", "cummax"):
+        # VR maze position is conceptually one-way. Small backward samples are
+        # usually tracking jitter/brief reversals; treat them as pauses rather
+        # than reordering the temporal sequence across maze position.
+        axis = np.maximum.accumulate(axis)
+    elif policy in ("none", "sort"):
+        pass
+    else:
+        raise ValueError(
+            "Unknown position_monotonic_policy="
+            f"'{position_monotonic_policy}'. Use 'cumulative_max' or 'none'."
+        )
+    return axis, 0.0, 1.0, "position"
 
 
 def filter_inactive_neurons_mind(roi):
@@ -368,13 +444,20 @@ def make_sequences(
     drop_first_trials=10,
     min_frames=10,
     filter_inactive_neurons=False,
+    sequence_alignment="time",
+    position_key="Position",
+    position_min=None,
+    position_max=None,
+    position_clip=True,
+    position_monotonic_policy="cumulative_max",
 ):
     """
-    Build fixed-length oer-trial sequences by:
+    Build fixed-length per-trial sequences by:
     - grouping frames by trial
-    - resampling each trial to L frames (L = trial_len_s * fps)
+    - resampling each trial to L bins (L = trial_len_s * fps)
+      over either elapsed time or normalized maze position
     Returns: 
-    X: [B, L, N], tvec: [L], meta: dict
+    X: [B, L, N], axis: [L], meta: dict
     """
 
     roi = npz["roi"] # [N, T] or [T, N] depending on the export 
@@ -410,19 +493,37 @@ def make_sequences(
         if idx.size < min_frames: # skip trivial trials 
             continue
         x_tr = roi[idx, :] # [Ts, N]
-        t_tr = time[idx] - time[idx][0] # start each trial at t=0
-        x_rs, t_rs = resample_sequence(x_tr, t_tr, L, t0=0.0, t1=trial_len_s)
+        axis_tr, axis0, axis1, axis_name = get_sequence_axis(
+            npz,
+            idx,
+            time,
+            alignment=sequence_alignment,
+            position_key=position_key,
+            position_min=position_min,
+            position_max=position_max,
+            position_clip=position_clip,
+            position_monotonic_policy=position_monotonic_policy,
+        )
+        if axis1 is None:
+            axis1 = trial_len_s
+        x_rs, axis_rs = resample_sequence(x_tr, axis_tr, L, t0=axis0, t1=axis1)
         X.append(x_rs)
         good_trial_ids.append(tr)
 
     if len(X) == 0:
         raise ValueError("No trials produced sequences (NOOOOO!!) Check trial/time vectors and args.")
     X = np.stack(X, axis=0).astype(np.float32) # [B, L, N]
-    return X, t_rs.astype(np.float32), {
+    return X, axis_rs.astype(np.float32), {
         "trials_used": np.array(good_trial_ids),
         "mu": mu,
         "sd": sd,
         "N": N,
+        "sequence_alignment": axis_name,
+        "sequence_axis_key": position_key if axis_name == "position" else "Time",
+        "position_min": position_min if axis_name == "position" else None,
+        "position_max": position_max if axis_name == "position" else None,
+        "position_clip": bool(position_clip) if axis_name == "position" else None,
+        "position_monotonic_policy": position_monotonic_policy if axis_name == "position" else None,
         "active_neuron_mask": active_mask,
         "active_neuron_count": active_neuron_count if active_neuron_count is not None else int(N),
         "silent_neuron_count": silent_neuron_count if silent_neuron_count is not None else 0,
@@ -435,12 +536,18 @@ def make_sequences_raw(
     drop_first_trials=10,
     min_frames=10,
     filter_inactive_neurons=False,
+    sequence_alignment="time",
+    position_key="Position",
+    position_min=None,
+    position_max=None,
+    position_clip=True,
+    position_monotonic_policy="cumulative_max",
     return_meta=False,
 ):
     """
     Build fixed-length per-trial sequences WITHOUT z-scoring.
     Returns:
-    X_raw: [B, L, N], tvec: [L], trial_ids: [B]
+    X_raw: [B, L, N], axis: [L], trial_ids: [B]
     """
     roi = npz["roi"]
     if roi.shape[0] < roi.shape[1]:
@@ -468,8 +575,20 @@ def make_sequences_raw(
         if idx.size < min_frames:
             continue
         x_tr = roi[idx, :]
-        t_tr = time[idx] - time[idx][0]
-        x_rs, t_rs = resample_sequence(x_tr, t_tr, L, t0=0.0, t1=trial_len_s)
+        axis_tr, axis0, axis1, axis_name = get_sequence_axis(
+            npz,
+            idx,
+            time,
+            alignment=sequence_alignment,
+            position_key=position_key,
+            position_min=position_min,
+            position_max=position_max,
+            position_clip=position_clip,
+            position_monotonic_policy=position_monotonic_policy,
+        )
+        if axis1 is None:
+            axis1 = trial_len_s
+        x_rs, axis_rs = resample_sequence(x_tr, axis_tr, L, t0=axis0, t1=axis1)
         X_raw.append(x_rs)
         trial_ids.append(tr)
 
@@ -481,9 +600,15 @@ def make_sequences_raw(
             "active_neuron_mask": active_mask,
             "active_neuron_count": active_neuron_count if active_neuron_count is not None else int(X_raw.shape[-1]),
             "silent_neuron_count": silent_neuron_count if silent_neuron_count is not None else 0,
+            "sequence_alignment": axis_name,
+            "sequence_axis_key": position_key if axis_name == "position" else "Time",
+            "position_min": position_min if axis_name == "position" else None,
+            "position_max": position_max if axis_name == "position" else None,
+            "position_clip": bool(position_clip) if axis_name == "position" else None,
+            "position_monotonic_policy": position_monotonic_policy if axis_name == "position" else None,
         }
-        return X_raw, t_rs.astype(np.float32), np.array(trial_ids), meta
-    return X_raw, t_rs.astype(np.float32), np.array(trial_ids)
+        return X_raw, axis_rs.astype(np.float32), np.array(trial_ids), meta
+    return X_raw, axis_rs.astype(np.float32), np.array(trial_ids)
 
 def normalize_sequences(X_raw, mu=None, sd=None):
     flat = X_raw.reshape(-1, X_raw.shape[-1])
@@ -583,7 +708,7 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
     ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec_t = torch.from_numpy(tvec).to(device)
-    loader = td.DataLoader(SeqDataset(X_train), batch_size=args.batch_size, shuffle=True, drop_last=True)
+    loader = td.DataLoader(SeqDataset(X_train), batch_size=args.batch_size, shuffle=True, drop_last=False)
     epochs = getattr(args, "r2_sweep_epochs", args.epochs)
 
     for epoch in range(1, epochs + 1):
@@ -652,6 +777,12 @@ def run_r2_sweep(args):
     npz = np.load(PATHS["data"])
     enable_input_normalization = getattr(args, "normalize_inputs", True)
     filter_inactive_neurons = getattr(args, "filter_inactive_neurons", False)
+    sequence_alignment = getattr(args, "sequence_alignment", "time")
+    position_key = getattr(args, "position_key", "Position")
+    position_min = getattr(args, "position_min", None)
+    position_max = getattr(args, "position_max", None)
+    position_clip = getattr(args, "position_clip", True)
+    position_monotonic_policy = getattr(args, "position_monotonic_policy", "cumulative_max")
     X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
         npz,
         trial_len_s=args.trial_len_s,
@@ -659,6 +790,12 @@ def run_r2_sweep(args):
         drop_first_trials=args.drop_first_trials,
         min_frames=10,
         filter_inactive_neurons=filter_inactive_neurons,
+        sequence_alignment=sequence_alignment,
+        position_key=position_key,
+        position_min=position_min,
+        position_max=position_max,
+        position_clip=position_clip,
+        position_monotonic_policy=position_monotonic_policy,
         return_meta=True,
     )
     if filter_inactive_neurons:
@@ -1424,6 +1561,12 @@ def train(args):
     random_split_seed = getattr(args, "random_split_seed", 42)
     mind_test_frac = getattr(args, "mind_test_frac", 0.1)
     mind_seed = getattr(args, "mind_split_seed", 42)
+    sequence_alignment = getattr(args, "sequence_alignment", "time")
+    position_key = getattr(args, "position_key", "Position")
+    position_min = getattr(args, "position_min", None)
+    position_max = getattr(args, "position_max", None)
+    position_clip = getattr(args, "position_clip", True)
+    position_monotonic_policy = getattr(args, "position_monotonic_policy", "cumulative_max")
     eval_metrics_pca = getattr(args, "eval_metrics_pca", None)
     eval_metrics_raw = getattr(args, "eval_metrics_raw", None)
     eval_metrics_space = getattr(args, "eval_metrics_space", None)
@@ -1459,6 +1602,12 @@ def train(args):
             drop_first_trials=args.drop_first_trials,
             min_frames=10,
             filter_inactive_neurons=filter_inactive_neurons,
+            sequence_alignment=sequence_alignment,
+            position_key=position_key,
+            position_min=position_min,
+            position_max=position_max,
+            position_clip=position_clip,
+            position_monotonic_policy=position_monotonic_policy,
             return_meta=True,
         )
         train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=mind_seed, test_frac=mind_test_frac)
@@ -1538,6 +1687,12 @@ def train(args):
                 drop_first_trials=args.drop_first_trials,
                 min_frames=10,
                 filter_inactive_neurons=filter_inactive_neurons,
+                sequence_alignment=sequence_alignment,
+                position_key=position_key,
+                position_min=position_min,
+                position_max=position_max,
+                position_clip=position_clip,
+                position_monotonic_policy=position_monotonic_policy,
                 return_meta=True,
             )
 
@@ -1659,6 +1814,12 @@ def train(args):
                 drop_first_trials=args.drop_first_trials,
                 min_frames=10,
                 filter_inactive_neurons=False,
+                sequence_alignment=sequence_alignment,
+                position_key=position_key,
+                position_min=position_min,
+                position_max=position_max,
+                position_clip=position_clip,
+                position_monotonic_policy=position_monotonic_policy,
             ) # X: [B, L, N]
             meta.update(roi_filter_meta)
 
@@ -1700,10 +1861,17 @@ def train(args):
         X_val_eval = None
         xhat_bias = True
 
-    # --- Normalize time vector to [0,1] for numerical stability ---
-    tvec_np = tvec_np / tvec_np[-1]
+    # Normalize the ODE coordinate to [0,1] for numerical stability. When
+    # sequence_alignment=position, this coordinate is normalized maze position.
+    if tvec_np[-1] != 0:
+        tvec_np = tvec_np / tvec_np[-1]
+    print(
+        f"Sequence alignment: {meta.get('sequence_alignment', sequence_alignment)} "
+        f"({meta.get('sequence_axis_key', 'Time')}); coordinate range "
+        f"{float(tvec_np[0]):.3f}-{float(tvec_np[-1]):.3f}"
+    )
 
-    train_loader = td.DataLoader(SeqDataset(X_train), batch_size = args.batch_size, shuffle=True, drop_last = True)
+    train_loader = td.DataLoader(SeqDataset(X_train), batch_size = args.batch_size, shuffle=True, drop_last = False)
     val_loader = td.DataLoader(SeqDataset(X_val), batch_size = args.batch_size, shuffle=False)
 
     if not isinstance(meta, dict):
@@ -1715,6 +1883,12 @@ def train(args):
         "use_pca": bool(getattr(args, "use_pca", True)),
         "normalize_inputs": bool(enable_input_normalization),
         "baseline_correct": bool(getattr(args, "baseline_correct", False)),
+        "sequence_alignment": str(meta.get("sequence_alignment", sequence_alignment)),
+        "sequence_axis_key": str(meta.get("sequence_axis_key", position_key if str(sequence_alignment).lower() == "position" else "Time")),
+        "position_min": position_min,
+        "position_max": position_max,
+        "position_clip": bool(position_clip),
+        "position_monotonic_policy": str(position_monotonic_policy),
         "filter_inactive_neurons": bool(filter_inactive_neurons),
         "filter_train_silent_neurons": bool(filter_train_silent_neurons),
         "train_silent_std_threshold": float(train_silent_std_threshold),
@@ -1768,10 +1942,10 @@ def train(args):
         for xb in train_loader:
             xb = xb.to(device) # [B, L, N]
 
-            # this is trial-wise baseline correction, getting rid of the first 5 frames
+            # this is trial-wise baseline correction, getting rid of the first 5 sequence bins
             # so the latent doesn't waste space capacity on slow drifs/offsets
             if getattr(args, "baseline_correct", False):
-                # subtract per-trial baseline over first 5 frames
+                # subtract per-trial baseline over first 5 sequence bins
                 baseline = xb[:, :5, :].mean(dim=1, keepdim=True)  # [B, 1, N]
                 xb = xb - baseline
 
@@ -1840,10 +2014,10 @@ def train(args):
             val_true_batches = []
             val_trial_cache = {"x_true": None, "x_pred": None, "trial_ids": None, "metric_space": eval_metrics_space}
             for xb in val_loader:
-                # this is trial-wise baseline correction, getting rid of the first 5 frames
+                # this is trial-wise baseline correction, getting rid of the first 5 sequence bins
                 # so the latent doesn't waste space capacity on slow drifs/offsets
                 if getattr(args, "baseline_correct", False):
-                    # subtract per-trial baseline over first 5 frames
+                    # subtract per-trial baseline over first 5 sequence bins
                     baseline = xb[:, :5, :].mean(dim=1, keepdim=True)  # [B, 1, N]
                     xb = xb - baseline
                 xb = xb.to(device)

@@ -2,14 +2,33 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 25th, 8:01pm: 
+- *So basically--don't align trials by elapsed time, align them by maze position.* That's the change I'm making right now.
+- Also, landmarks are removed. 
+- Also, I turned off drop_last trials to get rid of the issue with discarding each epoch if the train count is not divisible by batch size. **VERIFY THIS ISN'T BREAKING ANYTHING.** 
+
+What should we do about near-silent neurons? How did Dr. Schottdorf's code handle them? 
+
+What it looks like now for **location based, not time based, modeling:**
+- Position-aware sequence alignment. 
+- Trials are now intempolated onto a common normalized maxe-position grid from 0 to 1.
+- The model still sees mixed-length sequences, btu bisn now mean the same maze position, not the same elapsed time.
+- Resampling now covers non-monotonic/repeated positon values by sorting position and averaging repeated coordinates. **RED FLAG.**
+- Now; bin 0.5 means halfway through the maxe (approx. 150 cm), previously 0.5 meant halfway through the time trial. 
+
 ## May 25th, 7:46pm:
 **Current Issues:** 
-
+- **Near-silent neurons can explode.** Neurons with tiny train variance can still become huge after z-scoring. 
+- **Time warping is still unresolved.** 
+- **Training loader drops trials:** `drop_last = True` means a few training trials are discarded each epoch if the train count is not divisible by batch size. 
+- **Best checkpoint is selected by validation loss, not R2**
 ## May 25th, 7:32pm:
 **Notes from Dr. Schottdorf on testing ODE code:**
+
 ```
 Code is pushed. These are neural dynamics encoding a great circle. Geodesic dynamics should fit this perfectly, but Neural ODEs (I think) should not do a good job. A fundamental property of a first-order ODEs like neural ODEs is the uniquness of solution. If a trajectory passes through a specific state x, its velocity x' at that point is completely and uniquely determined by x'=F(x). Trajectories in a first-order system can never cross each other. For geodesics on a sphere (or any manifold) this is not true becuase they can intersect. 
 ```
+
 - *Notes/Explanation:* 
     - "Trajectories in a first-order system can never cross each other."
 
@@ -39,7 +58,7 @@ Code is pushed. These are neural dynamics encoding a great circle. Geodesic dyna
 final r  = 0.2086
 final R² = -0.1207
 ```
-WHY?? "The no-landmark run evaluated on more trials and many more neyrons. That is likely the biggest reason it looks worse." 
+WHY?? "The no-landmark run evaluated on more trials and many more neurons. That is likely the biggest reason it looks worse." 
 
 Landmark_count is a subsampling shortcut. Instead of training/evaluating on all available trial sequences v5 flattens the trial data, chooses a subset of representative points via greedy coverage, and then keeps only the associated trials/sequences. 
 

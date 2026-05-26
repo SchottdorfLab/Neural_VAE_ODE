@@ -1,6 +1,12 @@
 data_path = ../npz_e65_data/E65_data.npz
 trial_len_s = 12
 fps = 10
+sequence_alignment = position
+position_key = Position
+position_min = 0
+position_max = 300
+position_clip = true
+position_monotonic_policy = cumulative_max
 drop_first_trials = 10
 
 latent_dim = 7

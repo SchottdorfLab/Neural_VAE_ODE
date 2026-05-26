@@ -33,7 +33,7 @@ cv_folds = 4
 k_neighbors = 16 
 decoder_type = mlp
 
-encoder_type = first
+encoder_type = transformer
 encoder_hidden = 256
 encoder_layers = 1
 encoder_heads = 2

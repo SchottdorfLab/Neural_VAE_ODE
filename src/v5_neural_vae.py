@@ -705,6 +705,7 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
         ode_rtol=getattr(args, "ode_rtol", 1e-3),
         ode_atol=getattr(args, "ode_atol", 1e-4),
         ode_step_size=getattr(args, "ode_step_size", None),
+        deterministic_z=getattr(args, "deterministic_z", False),
     ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec_t = torch.from_numpy(tvec).to(device)
@@ -1358,6 +1359,7 @@ class ODEVAE(nn.Module):
         ode_rtol=1e-3,
         ode_atol=1e-4,
         ode_step_size=None,
+        deterministic_z=False,
     ):
         super().__init__()
         enc_type = str(encoder_type).lower()
@@ -1434,6 +1436,7 @@ class ODEVAE(nn.Module):
         if isinstance(ode_step_size, str) and ode_step_size.strip().lower() in ("none", "null", ""):
             ode_step_size = None
         self.ode_step_size = None if ode_step_size is None else float(ode_step_size)
+        self.deterministic_z = bool(deterministic_z)
 
     def reparam(self, mu, logvar):
         eps = torch.randn_like(mu)
@@ -1482,7 +1485,10 @@ class ODEVAE(nn.Module):
             mu, logvar = self.enc(x0)          # [B, D], [B, D]
         else:
             mu, logvar = self.enc(x_seq)       # [B, D], [B, D]
-        z0 = self.reparam(mu, logvar).float()
+        if self.deterministic_z:
+            z0 = mu.float()
+        else:
+            z0 = self.reparam(mu, logvar).float()
         tvec = tvec.float()
 
         z_traj = self._integrate_latent(z0, tvec, method=self.ode_solver)
@@ -1883,6 +1889,7 @@ def train(args):
         "use_pca": bool(getattr(args, "use_pca", True)),
         "normalize_inputs": bool(enable_input_normalization),
         "baseline_correct": bool(getattr(args, "baseline_correct", False)),
+        "deterministic_z": bool(getattr(args, "deterministic_z", False)),
         "sequence_alignment": str(meta.get("sequence_alignment", sequence_alignment)),
         "sequence_axis_key": str(meta.get("sequence_axis_key", position_key if str(sequence_alignment).lower() == "position" else "Time")),
         "position_min": position_min,
@@ -1901,27 +1908,28 @@ def train(args):
     })
 
     model = ODEVAE(
-    n_neurons=N,
-    latent_dim=args.latent_dim,
-    num_experts=args.num_experts,
-    decoder_type=args.decoder_type,
-    k_neighbors=getattr(args, "k_neighbors", 16),
-    dec_num_experts=getattr(args, "dec_num_experts", 4),
-    encoder_type=getattr(args, "encoder_type", "first"),
-    encoder_hidden=getattr(args, "encoder_hidden", 256),
-    encoder_layers=getattr(args, "encoder_layers", 1),
-    encoder_bidirectional=getattr(args, "encoder_bidirectional", False),
-    encoder_dropout=getattr(args, "encoder_dropout", 0.0),
-    encoder_heads=getattr(args, "encoder_heads", 4),
-    encoder_ffn_dim=getattr(args, "encoder_ffn_dim", 512),
-    encoder_pool=getattr(args, "encoder_pool", "mean"),
-    ode_time_dependent=getattr(args, "ode_time_dependent", False),
-    ode_time_embed_dim=getattr(args, "ode_time_embed_dim", 16),
-    ode_solver=getattr(args, "ode_solver", "dopri5"),
-    ode_rtol=getattr(args, "ode_rtol", 1e-3),
-    ode_atol=getattr(args, "ode_atol", 1e-4),
-    ode_step_size=getattr(args, "ode_step_size", None),
-        ).to(device)
+        n_neurons=N,
+        latent_dim=args.latent_dim,
+        num_experts=args.num_experts,
+        decoder_type=args.decoder_type,
+        k_neighbors=getattr(args, "k_neighbors", 16),
+        dec_num_experts=getattr(args, "dec_num_experts", 4),
+        encoder_type=getattr(args, "encoder_type", "first"),
+        encoder_hidden=getattr(args, "encoder_hidden", 256),
+        encoder_layers=getattr(args, "encoder_layers", 1),
+        encoder_bidirectional=getattr(args, "encoder_bidirectional", False),
+        encoder_dropout=getattr(args, "encoder_dropout", 0.0),
+        encoder_heads=getattr(args, "encoder_heads", 4),
+        encoder_ffn_dim=getattr(args, "encoder_ffn_dim", 512),
+        encoder_pool=getattr(args, "encoder_pool", "mean"),
+        ode_time_dependent=getattr(args, "ode_time_dependent", False),
+        ode_time_embed_dim=getattr(args, "ode_time_embed_dim", 16),
+        ode_solver=getattr(args, "ode_solver", "dopri5"),
+        ode_rtol=getattr(args, "ode_rtol", 1e-3),
+        ode_atol=getattr(args, "ode_atol", 1e-4),
+        ode_step_size=getattr(args, "ode_step_size", None),
+        deterministic_z=getattr(args, "deterministic_z", False),
+    ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)
 

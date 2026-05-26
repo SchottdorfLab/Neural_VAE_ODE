@@ -15,11 +15,12 @@ batch_size = 8
 epochs = 150
 lr = 0.001
 weight_decay = 0.00001
-beta = 0.02
-kl_warmup_epochs = 30
+beta = 0
+deterministic_z = true
+kl_warmup_epochs = 0
 holdout_trials = 3
 use_pca = false
-normalize_inputs = true
+normalize_inputs = false
 pca_variance = 0.95
 out_dir = ../runs/ode_vae_E65
 pca_dim = 0
@@ -30,9 +31,9 @@ decoder_emb_dim = 16
 decoder_hidden = 256
 cv_folds = 4
 k_neighbors = 16 
-decoder_type = moe
+decoder_type = mlp
 
-encoder_type = transformer
+encoder_type = first
 encoder_hidden = 256
 encoder_layers = 1
 encoder_heads = 2
@@ -52,7 +53,7 @@ random_split_seed = 42
 
 eval_metrics_pca = false
 
-baseline_correct = true
+baseline_correct = false
 filter_inactive_neurons = true
 filter_train_silent_neurons = true
 train_silent_std_threshold = 1e-7
@@ -80,9 +81,9 @@ r2_sweep_repeats = 3
 r2_sweep_seed = 42
 r2_sweep_epochs = 100
 
-lambda_transition = 0.005
-lambda_lle = 0.005
-lambda_smooth = 0.001
+lambda_transition = 0
+lambda_lle = 0
+lambda_smooth = 0
 
 ode_solver = rk4
 ode_rtol = 1e-2

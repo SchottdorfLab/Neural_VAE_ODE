@@ -1,0 +1,22 @@
+{
+  "run_id": "2026-05-27_181238_b8d648b",
+  "timestamp": "2026-05-27_181238",
+  "script": "/home/4429/projects/Neural_VAE_ODE/src/v6_neural_vae.py",
+  "config": "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/config.txt",
+  "config_original": "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/config_original.txt",
+  "note": "v6 MIND geometry",
+  "git_commit": "b8d648b15778c9fae1e19c6b1a22f11ca8a63f58",
+  "git_short": "b8d648b",
+  "git_dirty": true,
+  "git_status": "M runs/index.csv\n M src/script_output.txt\n M src/training_results.txt\n?? runs/2026-05-27_150042_feea6a9/",
+  "git_diff_patch": "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/git_diff.patch",
+  "code_change_summary": "Changed 6 files: README.md (13 lines), configs/v6_mind_geometry.txt (99 lines), .../analysis_cache_best_regenerated.npz (0 lines), .../raw_vs_recon_t0_15_n0_40.png (0 lines), src/__pycache__/v5_neural_vae.cpython-312.pyc (103189 lines)....",
+  "exit_code": -9,
+  "artifacts": [
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/preview.png",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/ode_vae_best.pt",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/analysis_cache_best.npz",
+    "/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/raw_vs_recon_t0_15_n0_40.png"
+  ],
+  "metrics": {}
+}

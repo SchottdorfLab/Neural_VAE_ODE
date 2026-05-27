@@ -1,0 +1,18 @@
+Running script: v6_neural_vae.py
+Loading configuration from /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/config.txt
+Device: cpu
+Train-std neuron filter: removed 4 train-silent neurons; kept 353 neurons (threshold=1e-07).
+MIND split: train trials=163 | test trials=17
+MIND neuron filter: removed 18 silent neurons; kept 357 active neurons.
+Sequence alignment: position (Position); coordinate range 0.000-1.000
+/home/4429/envs/odevae/lib/python3.11/site-packages/torch/nn/modules/transformer.py:379: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
+  warnings.warn(
+[001] train loss 0.99060 | recon 0.99031 | kl 0.35579 | smooth 0.00000 | trans 0.08696 | lle 0.02244 | metric 0.80856 | beta 0.000
+      valid loss 2.21813 | recon 2.21783 | kl 0.22303 | smooth 0.00000 | trans 0.07304 | lle 0.00595 | metric 0.86010 | r 0.2145 | R² 0.0460 | eta 20:46
+      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/ode_vae_best.pt
+[002] train loss 1.00543 | recon 1.00486 | kl 0.21631 | smooth 0.00000 | trans 0.09028 | lle 0.01377 | metric 0.79358 | beta 0.000
+      valid loss 2.21733 | recon 2.21673 | kl 0.12395 | smooth 0.00000 | trans 0.07304 | lle 0.00947 | metric 0.86150 | r 0.2301 | R² 0.0528 | eta 21:23
+      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/ode_vae_best.pt
+[003] train loss 0.98871 | recon 0.98784 | kl 0.22955 | smooth 0.00000 | trans 0.09125 | lle 0.01588 | metric 0.80649 | beta 0.000
+      valid loss 2.21590 | recon 2.21506 | kl 0.28301 | smooth 0.00000 | trans 0.07304 | lle 0.00845 | metric 0.79948 | r 0.2347 | R² 0.0548 | eta 21:46
+      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_181238_b8d648b/ode_vae_best.pt

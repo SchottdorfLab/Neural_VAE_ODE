@@ -1,0 +1,2608 @@
+"""
+v6_neural_vae.py — MIND-informed Latent Neural ODE VAE/AE (CUDA-first)
+
+IF YOU WANT TO RUN THIS BAD BOY, check either the config.txt file or the v5_base.txt file. There are a lot of different ways you
+can run and configure this file. I designed all of this with an experimental architecture, which means it is highly customizable
+and research driven. 
+- Using the experiment system will rely on the configs in v5_base.txt. 
+- Using the non-experiemental system---e.g. not using the experiement wrapper, and just straight-up running it with python + no flags
+will rely on config.txt, which is the global config file. 
+
+What it does today:
+- Data: loads E65 .npz from PATHS["data"] (note: config.txt also exists but the script is still largely path-driven).
+- Preprocessing: PCA to retain ~95% variance (hard-coded), then trial grouping + resampling to fixed length.
+- Sequences can be aligned by elapsed time or by normalized maze position; position alignment is preferred for VR trials.
+- Normalizes per neuron (session z-score) and uses the resampled sequence axis as the ODE coordinate.
+- Optional per-trial baseline correction (subtract mean of first 5 sequence bins).
+
+Model architecture:
+- Encoder: MLP x(t0) -> (mu, logvar), optionally a sequence encoder over x(t1..L).
+- Latent dynamics: MoELatentODEFunc (mixture of expert ODE vector fields).
+- Decoder options (decoder_type): MLP / NeuronAware / LocalAttention / MoE decoder.
+
+Loss / regularizers (in addition to recon + KL + smoothness):
+- Decoded transition regularization (lambda_transition):
+  penalizes mismatch of decoded dynamics Δx̂(t)=x̂(t+1)-x̂(t) vs Δx(t).
+- MIND-style observed LLE constraint (lambda_lle):
+  computes local neighborhoods and LLE reconstruction weights from observed neural states
+  augmented with observed transitions, then enforces those same local relationships in latent space.
+- Transition-metric constraint (lambda_metric):
+  preserves local transition-aware distances from observed neural state space in latent space.
+
+Compute/compatibility:
+- Device selection is CUDA-first, then CPU (no MPS path).
+- Uses torchdiffeq odeint (dopri5) for latent integration.
+
+Outputs:
+- Saves metrics/plots/checkpoints under pt_files/ and logs training to training_results.txt.
+"""
+
+# Written by Kathleen Higgins
+# Worked as of 2025-09-10
+# src/v6_neural_vae.py
+# MIND-informed version of the neural ODE VAE for neural data
+
+import os, math, argparse, datetime, time
+import sys
+import atexit
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.utils.data as td
+from torchdiffeq import odeint
+import datetime
+import random
+from sklearn.decomposition import PCA
+from sklearn.manifold import MDS
+import matplotlib.pyplot as plt
+import json
+import hashlib
+import joblib
+
+# Utility: convert NumPy/tensor types into JSON-friendly Python types
+def to_jsonable(obj):
+    if isinstance(obj, (np.floating, np.float32, np.float64)):
+        return float(obj)
+    if isinstance(obj, (np.integer, np.int32, np.int64)):
+        return int(obj)
+    if isinstance(obj, (np.ndarray, list, tuple)):
+        return [to_jsonable(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: to_jsonable(v) for k, v in obj.items()}
+    return obj
+
+# used to compute file sha256 checksum, used to log the hash of the input file (for reproducibility)
+def compute_file_sha(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    return hashlib.sha256(data).hexdigest()
+
+
+def save_analysis_cache(path, x_true, x_pred, tvec, metric_space, trial_ids=None):
+    np.savez(
+        path,
+        x_true=np.asarray(x_true, dtype=np.float32),
+        x_pred=np.asarray(x_pred, dtype=np.float32),
+        tvec=np.asarray(tvec, dtype=np.float32),
+        metric_space=np.asarray(metric_space),
+        trial_ids=np.asarray([] if trial_ids is None else trial_ids),
+    )
+
+def save_raw_vs_recon_window_plot(
+    path,
+    x_true,
+    x_pred,
+    t_start=0,
+    t_end=15,
+    neuron_start=0,
+    neuron_end=40,
+    trial_index=0,
+    metric_space="raw",
+):
+    """
+    Save a compact raw-vs-reconstruction heatmap for quick per-run inspection.
+
+    Indices are inclusive: time 0-15 and neuron 0-40 become slices 0:16 and 0:41.
+    Expected input shape is [trials, time, neurons].
+    """
+    x_true = np.asarray(x_true)
+    x_pred = np.asarray(x_pred)
+    if x_true.ndim != 3 or x_pred.ndim != 3:
+        raise ValueError(
+            "Expected x_true/x_pred with shape [trials, time, neurons], "
+            f"got {x_true.shape} and {x_pred.shape}."
+        )
+    if x_true.shape != x_pred.shape:
+        raise ValueError(f"x_true and x_pred shapes differ: {x_true.shape} vs {x_pred.shape}.")
+
+    trial_index = int(np.clip(trial_index, 0, x_true.shape[0] - 1))
+    t0 = max(0, int(t_start))
+    t1 = min(int(t_end) + 1, x_true.shape[1])
+    n0 = max(0, int(neuron_start))
+    n1 = min(int(neuron_end) + 1, x_true.shape[2])
+    if t0 >= t1 or n0 >= n1:
+        raise ValueError(
+            f"Requested empty plot window for shape {x_true.shape}: "
+            f"time {t_start}-{t_end}, neurons {neuron_start}-{neuron_end}."
+        )
+
+    true_win = x_true[trial_index, t0:t1, n0:n1]
+    pred_win = x_pred[trial_index, t0:t1, n0:n1]
+    vmin = float(np.nanmin([np.nanmin(true_win), np.nanmin(pred_win)]))
+    vmax = float(np.nanmax([np.nanmax(true_win), np.nanmax(pred_win)]))
+    if not np.isfinite(vmin) or not np.isfinite(vmax) or vmin == vmax:
+        vmin, vmax = None, None
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True, sharey=True)
+    im0 = axes[0].imshow(true_win.T, aspect="auto", cmap="viridis", vmin=vmin, vmax=vmax, interpolation="nearest")
+    axes[0].set_title("Raw")
+    axes[0].set_xlabel("Time bin")
+    axes[0].set_ylabel("Neuron index")
+    axes[0].set_xticks(np.arange(t1 - t0))
+    axes[0].set_xticklabels(np.arange(t0, t1), rotation=90, fontsize=7)
+    axes[0].set_yticks(np.arange(n1 - n0)[:: max(1, (n1 - n0) // 8)])
+    axes[0].set_yticklabels(np.arange(n0, n1)[:: max(1, (n1 - n0) // 8)], fontsize=7)
+
+    axes[1].imshow(pred_win.T, aspect="auto", cmap="viridis", vmin=vmin, vmax=vmax, interpolation="nearest")
+    axes[1].set_title("Reconstruction")
+    axes[1].set_xlabel("Time bin")
+    axes[1].set_xticks(np.arange(t1 - t0))
+    axes[1].set_xticklabels(np.arange(t0, t1), rotation=90, fontsize=7)
+
+    fig.suptitle(
+        f"Trial {trial_index}: time bins {t0}-{t1 - 1}, neurons {n0}-{n1 - 1} ({metric_space})",
+        fontsize=10,
+    )
+    fig.colorbar(im0, ax=axes.ravel().tolist(), shrink=0.8, label="Activity")
+    fig.savefig(path, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+
+# used to set the seed, later used to sweep across seeds 
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.use_deterministic_algorithms(False)  # allow non-deterministic ops for exploration
+
+    # ensures CuDNN kernels behave deterministically 
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+
+#____________________metrics__________________#
+def compute_r2(y_true, y_pred):
+    """
+    Compute coefficient of determination (R^2) between ground truth and prediction.
+    Works with torch tensors or numpy arrays.
+    """
+    if isinstance(y_true, torch.Tensor):
+        y_true = y_true.detach().cpu().numpy()
+    if isinstance(y_pred, torch.Tensor):
+        y_pred = y_pred.detach().cpu().numpy()
+
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    if ss_tot == 0:
+        return np.nan  # Avoid divide-by-zero for constant sequences
+    return 1 - (ss_res / ss_tot)
+
+def compute_r(y_true, y_pred):
+    """
+    Compute Pearson correlation coefficient (r) between ground truth and prediction.
+    Works with torch tensors or numpy arrays.
+    """
+    if isinstance(y_true, torch.Tensor):
+        y_true = y_true.detach().cpu().numpy()
+    if isinstance(y_pred, torch.Tensor):
+        y_pred = y_pred.detach().cpu().numpy()
+
+    y_true = np.asarray(y_true).reshape(-1)
+    y_pred = np.asarray(y_pred).reshape(-1)
+    if y_true.size == 0 or y_pred.size == 0:
+        return np.nan
+
+    x = y_true - np.mean(y_true)
+    y = y_pred - np.mean(y_pred)
+    denom = np.sqrt(np.sum(x * x) * np.sum(y * y))
+    if denom == 0:
+        return np.nan
+    return np.sum(x * y) / denom
+
+def format_duration(seconds):
+    seconds = max(0, int(seconds))
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    s = seconds % 60
+    if h > 0:
+        return f"{h:02d}:{m:02d}:{s:02d}"
+    return f"{m:02d}:{s:02d}"
+
+# --- Root directory auto-detection --- #
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SRC_DIR)
+
+# --- Root directory auto-detection --- #
+SRC_DIR  = os.path.dirname(os.path.abspath(__file__))
+
+PATHS = {
+    "data":          os.path.join(SRC_DIR, "npz_e65_data", "E65_data.npz"),
+    # "data":          os.path.join(SRC_DIR, "random_walk_data", "synthetic_rat_data.npz"),
+    "out_dir":       os.path.join(SRC_DIR, "pt_files"),
+    "final_metrics": os.path.join(SRC_DIR, "pt_files", "final_metrics.pt"),
+    "preview":       os.path.join(SRC_DIR, "preview.png"),
+    "training_log":  os.path.join(SRC_DIR, "training_results.txt"),
+    "config":        os.path.join(SRC_DIR, "config.txt"),
+    "run_output":    os.path.join(SRC_DIR, "script_output.txt"),
+}
+os.makedirs(PATHS["out_dir"], exist_ok=True)
+
+
+class Tee:
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data):
+        for stream in self.streams:
+            try:
+                stream.write(data)
+            except UnicodeEncodeError:
+                safe = data.encode("ascii", "replace").decode("ascii", "replace")
+                stream.write(safe)
+            stream.flush()
+
+    def flush(self):
+        for stream in self.streams:
+            stream.flush()
+
+    def isatty(self):
+        return any(getattr(stream, "isatty", lambda: False)() for stream in self.streams)
+
+
+def setup_run_logging(log_path):
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    try:
+        # Prefer UTF-8 for console output on Windows to avoid UnicodeEncodeError.
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+    log_file = open(log_path, "w", encoding="utf-8")
+    sys.stdout = Tee(sys.stdout, log_file)
+    sys.stderr = Tee(sys.stderr, log_file)
+
+    def _close_log():
+        try:
+            log_file.flush()
+            log_file.close()
+        except Exception:
+            pass
+
+    atexit.register(_close_log)
+
+
+def load_config_from_txt(path):
+    """Load key=value pairs from a text file into a dict."""
+    cfg = {}
+    with open(path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                k, v = [x.strip() for x in line.split("=", 1)]
+                # try casting to float or int when possible
+                if v.lower() in ("true", "false"):
+                    v = v.lower() == "true"
+                elif "." in v and v.replace(".", "", 1).isdigit():
+                    v = float(v)
+                elif v.isdigit():
+                    v = int(v)
+                cfg[k] = v
+    return cfg
+
+#____________________utils__________________#
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
+
+def zscore_per_neuron(x):
+    # x: [T, N]
+    mu = x.mean(axis = 0, keepdims=True)
+    sd = x.std(axis = 0, keepdims=True) + 1e-8
+    return (x- mu) / sd, mu, sd
+
+def group_indices_by_trial(trial_vec):
+    # trial_vec: (5,)
+    # returns list of index arrays, one per trial in ascending order
+    trial_vec = np.asarray(trial_vec).astype(int)
+    trials = np.unique(trial_vec)
+    groups = []
+    for tr in trials:
+        idx = np.where(trial_vec == tr)[0]
+        if idx.size > 0:
+            groups.append(idx)
+    return trials, groups
+
+def resample_sequence(x, t_src, L, t0 = None, t1 = None): 
+    """
+    x: [Ts, N] values at source coordinates t_src[Ts]
+    return x_rs: [L, N] resampled on L points between t0..t1
+    """
+
+    Ts, N = x.shape
+    if t0 is None: t0 = float(t_src[0])
+    if t1 is None: t1 = float(t_src[-1]) if t_src[-1] > t_src[0] else (t_src[0]+ 1.0)
+    t_dst = np.linspace(t0, t1, L, dtype=np.float32)
+    t_src_np = np.asarray(t_src, dtype=np.float32)
+    x_np = np.asarray(x, dtype=np.float32)
+    valid = np.isfinite(t_src_np)
+    valid &= np.all(np.isfinite(x_np), axis=1)
+    t_src_np = t_src_np[valid]
+    x_np = x_np[valid]
+    if t_src_np.size < 2:
+        raise ValueError("Need at least two valid source points to resample a sequence.")
+
+    order = np.argsort(t_src_np)
+    t_src_np = t_src_np[order]
+    x_np = x_np[order]
+
+    # np.interp expects increasing coordinates. If repeated coordinates exist
+    # because the mouse pauses at one maze position, average the frames there.
+    unique_t, inverse = np.unique(t_src_np, return_inverse=True)
+    if unique_t.size < 2:
+        raise ValueError("Need at least two unique source coordinates to resample a sequence.")
+    if unique_t.size != t_src_np.size:
+        x_unique = np.zeros((unique_t.size, N), dtype=np.float32)
+        counts = np.zeros(unique_t.size, dtype=np.float32)
+        np.add.at(x_unique, inverse, x_np)
+        np.add.at(counts, inverse, 1.0)
+        x_np = x_unique / counts[:, None]
+        t_src_np = unique_t
+
+    x_rs = np.empty((L, N), dtype=np.float32)
+    for j in range(N):
+        x_rs[:, j] = np.interp(t_dst, t_src_np, x_np[:, j])
+    return x_rs, t_dst
+
+
+def get_sequence_axis(
+    npz,
+    idx,
+    time,
+    alignment="time",
+    position_key="Position",
+    position_min=None,
+    position_max=None,
+    position_clip=True,
+    position_monotonic_policy="cumulative_max",
+):
+    """
+    Return the coordinate used to align one trial.
+
+    time: elapsed trial time, in seconds.
+    position: normalized maze position, so each sequence bin corresponds to
+    the same physical maze location rather than the same elapsed time.
+    """
+    alignment = str(alignment).strip().lower()
+    if alignment in ("time", "elapsed_time"):
+        return time[idx] - time[idx][0], 0.0, None, "time"
+    if alignment not in ("position", "maze_position"):
+        raise ValueError(f"Unknown sequence_alignment='{alignment}'. Use 'time' or 'position'.")
+    if position_key not in npz:
+        raise KeyError(f"sequence_alignment='position' requires npz key '{position_key}'.")
+
+    pos = np.asarray(npz[position_key], dtype=float)[idx]
+    p0 = float(np.nanmin(pos)) if position_min is None else float(position_min)
+    p1 = float(np.nanmax(pos)) if position_max is None else float(position_max)
+    if not np.isfinite(p0) or not np.isfinite(p1) or p1 <= p0:
+        raise ValueError(f"Invalid position range for alignment: min={p0}, max={p1}")
+
+    axis = (pos - p0) / (p1 - p0)
+    if position_clip:
+        axis = np.clip(axis, 0.0, 1.0)
+
+    policy = str(position_monotonic_policy).strip().lower()
+    if policy in ("cumulative_max", "cummax"):
+        # VR maze position is conceptually one-way. Small backward samples are
+        # usually tracking jitter/brief reversals; treat them as pauses rather
+        # than reordering the temporal sequence across maze position.
+        axis = np.maximum.accumulate(axis)
+    elif policy in ("none", "sort"):
+        pass
+    else:
+        raise ValueError(
+            "Unknown position_monotonic_policy="
+            f"'{position_monotonic_policy}'. Use 'cumulative_max' or 'none'."
+        )
+    return axis, 0.0, 1.0, "position"
+
+
+def filter_inactive_neurons_mind(roi):
+    """
+    Match the MIND Matlab criterion:
+        Neurons = sum(ROIactivities,1) > 0;
+
+    Input/Output are both [T, N].
+    Returns filtered roi plus masks/count metadata.
+    """
+    roi = np.asarray(roi)
+    if roi.ndim != 2:
+        raise ValueError(f"Expected 2D ROI array, got shape {roi.shape}")
+    active_mask = roi.sum(axis=0) > 0
+    silent_mask = ~active_mask
+    return (
+        roi[:, active_mask],
+        active_mask,
+        int(active_mask.sum()),
+        int(silent_mask.sum()),
+    )
+
+def make_sequences(
+    npz,
+    trial_len_s=12.0,
+    fps=10.0,
+    drop_first_trials=10,
+    min_frames=10,
+    filter_inactive_neurons=False,
+    sequence_alignment="time",
+    position_key="Position",
+    position_min=None,
+    position_max=None,
+    position_clip=True,
+    position_monotonic_policy="cumulative_max",
+):
+    """
+    Build fixed-length per-trial sequences by:
+    - grouping frames by trial
+    - resampling each trial to L bins (L = trial_len_s * fps)
+      over either elapsed time or normalized maze position
+    Returns: 
+    X: [B, L, N], axis: [L], meta: dict
+    """
+
+    roi = npz["roi"] # [N, T] or [T, N] depending on the export 
+    roi = (roi - roi.mean(axis=0)) / (roi.std(axis=0) + 1e-8)
+    # thr printout showed roi shape (375, 7434) => (N, %). Transpose to [T, N]. 
+    if roi.shape[0] < roi.shape[1]:
+        # assume (N, T) -> (T, N)
+        roi = roi.T
+    active_mask = None
+    active_neuron_count = None
+    silent_neuron_count = None
+    if filter_inactive_neurons:
+        roi, active_mask, active_neuron_count, silent_neuron_count = filter_inactive_neurons_mind(roi)
+    T, N = roi.shape
+
+    trial = npz["Trial"].astype(int) # (T, )
+    time = npz["Time"].astype(float) # (T, )
+
+    # zscore per neuron (session level)
+    roi, mu, sd = zscore_per_neuron(roi)
+    trials, groups = group_indices_by_trial(trial)
+
+    # drop first K trials
+    if drop_first_trials > 0 and len(trials) > drop_first_trials:
+        keep_mask = trials >= trials[0] + drop_first_trials
+        groups = [g for g, keep in zip(groups, keep_mask) if keep]
+        trials = trials[keep_mask]
+
+    L = int(round(trial_len_s * fps))
+    X = []
+    good_trial_ids = []
+    for tr, idx in zip(trials, groups):
+        if idx.size < min_frames: # skip trivial trials 
+            continue
+        x_tr = roi[idx, :] # [Ts, N]
+        axis_tr, axis0, axis1, axis_name = get_sequence_axis(
+            npz,
+            idx,
+            time,
+            alignment=sequence_alignment,
+            position_key=position_key,
+            position_min=position_min,
+            position_max=position_max,
+            position_clip=position_clip,
+            position_monotonic_policy=position_monotonic_policy,
+        )
+        if axis1 is None:
+            axis1 = trial_len_s
+        x_rs, axis_rs = resample_sequence(x_tr, axis_tr, L, t0=axis0, t1=axis1)
+        X.append(x_rs)
+        good_trial_ids.append(tr)
+
+    if len(X) == 0:
+        raise ValueError("No trials produced sequences (NOOOOO!!) Check trial/time vectors and args.")
+    X = np.stack(X, axis=0).astype(np.float32) # [B, L, N]
+    return X, axis_rs.astype(np.float32), {
+        "trials_used": np.array(good_trial_ids),
+        "mu": mu,
+        "sd": sd,
+        "N": N,
+        "sequence_alignment": axis_name,
+        "sequence_axis_key": position_key if axis_name == "position" else "Time",
+        "position_min": position_min if axis_name == "position" else None,
+        "position_max": position_max if axis_name == "position" else None,
+        "position_clip": bool(position_clip) if axis_name == "position" else None,
+        "position_monotonic_policy": position_monotonic_policy if axis_name == "position" else None,
+        "active_neuron_mask": active_mask,
+        "active_neuron_count": active_neuron_count if active_neuron_count is not None else int(N),
+        "silent_neuron_count": silent_neuron_count if silent_neuron_count is not None else 0,
+    }
+
+def make_sequences_raw(
+    npz,
+    trial_len_s=12.0,
+    fps=10.0,
+    drop_first_trials=10,
+    min_frames=10,
+    filter_inactive_neurons=False,
+    sequence_alignment="time",
+    position_key="Position",
+    position_min=None,
+    position_max=None,
+    position_clip=True,
+    position_monotonic_policy="cumulative_max",
+    return_meta=False,
+):
+    """
+    Build fixed-length per-trial sequences WITHOUT z-scoring.
+    Returns:
+    X_raw: [B, L, N], axis: [L], trial_ids: [B]
+    """
+    roi = npz["roi"]
+    if roi.shape[0] < roi.shape[1]:
+        roi = roi.T
+
+    active_mask = None
+    active_neuron_count = None
+    silent_neuron_count = None
+    if filter_inactive_neurons:
+        roi, active_mask, active_neuron_count, silent_neuron_count = filter_inactive_neurons_mind(roi)
+
+    trial = npz["Trial"].astype(int)
+    time = npz["Time"].astype(float)
+
+    trials, groups = group_indices_by_trial(trial)
+    if drop_first_trials > 0 and len(trials) > drop_first_trials:
+        keep_mask = trials >= trials[0] + drop_first_trials
+        groups = [g for g, keep in zip(groups, keep_mask) if keep]
+        trials = trials[keep_mask]
+
+    L = int(round(trial_len_s * fps))
+    X_raw = []
+    trial_ids = []
+    for tr, idx in zip(trials, groups):
+        if idx.size < min_frames:
+            continue
+        x_tr = roi[idx, :]
+        axis_tr, axis0, axis1, axis_name = get_sequence_axis(
+            npz,
+            idx,
+            time,
+            alignment=sequence_alignment,
+            position_key=position_key,
+            position_min=position_min,
+            position_max=position_max,
+            position_clip=position_clip,
+            position_monotonic_policy=position_monotonic_policy,
+        )
+        if axis1 is None:
+            axis1 = trial_len_s
+        x_rs, axis_rs = resample_sequence(x_tr, axis_tr, L, t0=axis0, t1=axis1)
+        X_raw.append(x_rs)
+        trial_ids.append(tr)
+
+    if len(X_raw) == 0:
+        raise ValueError("No trials produced sequences. Check trial/time vectors and args.")
+    X_raw = np.stack(X_raw, axis=0).astype(np.float32)
+    if return_meta:
+        meta = {
+            "active_neuron_mask": active_mask,
+            "active_neuron_count": active_neuron_count if active_neuron_count is not None else int(X_raw.shape[-1]),
+            "silent_neuron_count": silent_neuron_count if silent_neuron_count is not None else 0,
+            "sequence_alignment": axis_name,
+            "sequence_axis_key": position_key if axis_name == "position" else "Time",
+            "position_min": position_min if axis_name == "position" else None,
+            "position_max": position_max if axis_name == "position" else None,
+            "position_clip": bool(position_clip) if axis_name == "position" else None,
+            "position_monotonic_policy": position_monotonic_policy if axis_name == "position" else None,
+        }
+        return X_raw, axis_rs.astype(np.float32), np.array(trial_ids), meta
+    return X_raw, axis_rs.astype(np.float32), np.array(trial_ids)
+
+def normalize_sequences(X_raw, mu=None, sd=None):
+    flat = X_raw.reshape(-1, X_raw.shape[-1])
+    if mu is None:
+        mu = flat.mean(axis=0, keepdims=True)
+    if sd is None:
+        sd = flat.std(axis=0, keepdims=True) + 1e-8
+    X_norm = (X_raw - mu) / sd
+    return X_norm, mu, sd
+
+
+def maybe_normalize_sequences(X_raw, enable_normalization=True, mu=None, sd=None):
+    if enable_normalization:
+        return normalize_sequences(X_raw, mu, sd)
+    feature_dim = X_raw.shape[-1]
+    passthrough_mu = np.zeros((1, feature_dim), dtype=np.float32) if mu is None else mu
+    passthrough_sd = np.ones((1, feature_dim), dtype=np.float32) if sd is None else sd
+    return X_raw.astype(np.float32, copy=False), passthrough_mu, passthrough_sd
+
+def filter_train_silent_neurons_by_std(X_train_raw, X_val_raw, min_std=1e-7):
+    """
+    Remove neurons with near-zero variance in the training split only.
+
+    This prevents train-only z-scoring from dividing held-out activity by an
+    effectively zero training standard deviation.
+    """
+    X_train_raw = np.asarray(X_train_raw)
+    X_val_raw = np.asarray(X_val_raw)
+    if X_train_raw.ndim != 3 or X_val_raw.ndim != 3:
+        raise ValueError(
+            "Expected train/validation arrays with shape [trials, time, neurons], "
+            f"got {X_train_raw.shape} and {X_val_raw.shape}."
+        )
+    if X_train_raw.shape[-1] != X_val_raw.shape[-1]:
+        raise ValueError(
+            "Training and validation feature counts differ before train-std filtering: "
+            f"{X_train_raw.shape[-1]} vs {X_val_raw.shape[-1]}."
+        )
+
+    min_std = float(min_std)
+    train_std = X_train_raw.reshape(-1, X_train_raw.shape[-1]).std(axis=0)
+    keep_mask = train_std > min_std
+    if not np.any(keep_mask):
+        raise ValueError(
+            f"Train-std filter removed every neuron. Lower train_silent_std_threshold "
+            f"(currently {min_std:g})."
+        )
+
+    meta = {
+        "train_silent_filter_enabled": True,
+        "train_silent_std_threshold": min_std,
+        "train_silent_neuron_mask": keep_mask,
+        "train_variable_neuron_count": int(keep_mask.sum()),
+        "train_silent_neuron_count": int((~keep_mask).sum()),
+        "train_std_min": float(train_std.min()),
+        "train_std_median": float(np.median(train_std)),
+        "train_std_max": float(train_std.max()),
+    }
+    return X_train_raw[..., keep_mask], X_val_raw[..., keep_mask], meta
+
+def baseline_correct_np(X):
+    baseline = X[:, :5, :].mean(axis=1, keepdims=True)
+    return X - baseline
+
+def baseline_correct_torch(X):
+    baseline = X[:, :5, :].mean(dim=1, keepdim=True)
+    return X - baseline
+
+def r2_var_explained(x, xhat):
+    x = np.asarray(x)
+    xhat = np.asarray(xhat)
+    denom = np.var(x)
+    if denom == 0:
+        return np.nan
+    return 1.0 - (np.var(x - xhat) / denom)
+
+def split_trials_like_matlab(trial_ids, seed=42, test_frac=0.1):
+    rng = np.random.default_rng(seed)
+    mask = rng.random(len(trial_ids)) > test_frac
+    train_idx = np.where(mask)[0]
+    test_idx = np.where(~mask)[0]
+    return train_idx, test_idx
+
+def train_model_on_sequences(args, X_train, tvec, latent_dim):
+    device = get_device()
+    model = ODEVAE(
+        n_neurons=X_train.shape[-1],
+        latent_dim=latent_dim,
+        num_experts=args.num_experts,
+        decoder_type=args.decoder_type,
+        k_neighbors=getattr(args, "k_neighbors", 16),
+        dec_num_experts=getattr(args, "dec_num_experts", 4),
+        ode_solver=getattr(args, "ode_solver", "dopri5"),
+        ode_rtol=getattr(args, "ode_rtol", 1e-3),
+        ode_atol=getattr(args, "ode_atol", 1e-4),
+        ode_step_size=getattr(args, "ode_step_size", None),
+        deterministic_z=getattr(args, "deterministic_z", False),
+    ).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    tvec_t = torch.from_numpy(tvec).to(device)
+    loader = td.DataLoader(SeqDataset(X_train), batch_size=args.batch_size, shuffle=True, drop_last=False)
+    epochs = getattr(args, "r2_sweep_epochs", args.epochs)
+
+    for epoch in range(1, epochs + 1):
+        model.train()
+        for xb in loader:
+            xb = xb.to(device)
+            if getattr(args, "baseline_correct", False):
+                xb = baseline_correct_torch(xb)
+            opt.zero_grad()
+            xhat, mu, logvar, z_traj, zdiff = model(xb, tvec_t)
+            if args.kl_warmup_epochs > 0:
+                beta = args.beta * min(1.0, epoch / args.kl_warmup_epochs)
+            else:
+                beta = args.beta
+            transition_loss = None
+            lambda_transition = getattr(args, "lambda_transition", 0.0)
+            if getattr(args, "lambda_transition_warmup_epochs", 0) > 0:
+                lambda_transition *= min(1.0, epoch / args.lambda_transition_warmup_epochs)
+            if lambda_transition > 0:
+                dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
+                dx_true = xb[:, 1:, :] - xb[:, :-1, :]
+                transition_loss = torch.mean((dx_hat - dx_true) ** 2)
+            lle_loss = None
+            lambda_lle = getattr(args, "lambda_lle", 0.0)
+            if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                lambda_lle *= min(1.0, epoch / args.geometry_warmup_epochs)
+            if lambda_lle > 0:
+                lle_loss = compute_observed_lle_loss(
+                    z_traj,
+                    xb,
+                    k=getattr(args, "lle_k", 8),
+                    max_points=getattr(args, "lle_max_points", 256),
+                    ridge=getattr(args, "lle_ridge", 1e-3),
+                    transition_weight=getattr(args, "lle_transition_weight", 1.0),
+                    standardize=getattr(args, "mind_geometry_standardize", True),
+                )
+            metric_loss = None
+            lambda_metric = getattr(args, "lambda_metric", 0.0)
+            if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                lambda_metric *= min(1.0, epoch / args.geometry_warmup_epochs)
+            if lambda_metric > 0:
+                metric_loss = compute_transition_metric_loss(
+                    z_traj,
+                    xb,
+                    k=getattr(args, "metric_k", getattr(args, "lle_k", 8)),
+                    max_points=getattr(args, "metric_max_points", getattr(args, "lle_max_points", 256)),
+                    transition_weight=getattr(args, "metric_transition_weight", getattr(args, "lle_transition_weight", 1.0)),
+                    standardize=getattr(args, "mind_geometry_standardize", True),
+                    temperature=getattr(args, "metric_temperature", 0.5),
+                )
+            loss, *_ = vae_loss(
+                xhat,
+                xb,
+                mu,
+                logvar,
+                zdiff,
+                beta=beta,
+                lambda_smooth=args.lambda_smooth,
+                transition_loss=transition_loss,
+                lambda_transition=lambda_transition,
+                lle_loss=lle_loss,
+                lambda_lle=lambda_lle,
+                metric_loss=metric_loss,
+                lambda_metric=lambda_metric,
+            )
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+    return model
+
+def predict_sequences(model, X, tvec, args):
+    device = get_device()
+    model.eval()
+    preds = []
+    tvec_t = torch.from_numpy(tvec).to(device)
+    loader = td.DataLoader(SeqDataset(X), batch_size=args.batch_size, shuffle=False)
+    with torch.no_grad():
+        for xb in loader:
+            xb = xb.to(device)
+            if getattr(args, "baseline_correct", False):
+                xb = baseline_correct_torch(xb)
+            xhat, *_ = model(xb, tvec_t)
+            preds.append(xhat.cpu().numpy())
+    return np.concatenate(preds, axis=0)
+
+def run_r2_sweep(args):
+    npz = np.load(PATHS["data"])
+    enable_input_normalization = getattr(args, "normalize_inputs", True)
+    filter_inactive_neurons = getattr(args, "filter_inactive_neurons", False)
+    sequence_alignment = getattr(args, "sequence_alignment", "time")
+    position_key = getattr(args, "position_key", "Position")
+    position_min = getattr(args, "position_min", None)
+    position_max = getattr(args, "position_max", None)
+    position_clip = getattr(args, "position_clip", True)
+    position_monotonic_policy = getattr(args, "position_monotonic_policy", "cumulative_max")
+    X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
+        npz,
+        trial_len_s=args.trial_len_s,
+        fps=args.fps,
+        drop_first_trials=args.drop_first_trials,
+        min_frames=10,
+        filter_inactive_neurons=filter_inactive_neurons,
+        sequence_alignment=sequence_alignment,
+        position_key=position_key,
+        position_min=position_min,
+        position_max=position_max,
+        position_clip=position_clip,
+        position_monotonic_policy=position_monotonic_policy,
+        return_meta=True,
+    )
+    if filter_inactive_neurons:
+        print(
+            f"MIND neuron filter: removed {seq_meta['silent_neuron_count']} silent neurons; "
+            f"kept {seq_meta['active_neuron_count']} active neurons."
+        )
+    dims = getattr(args, "r2_sweep_dims", list(range(1, 11)))
+    if isinstance(dims, str):
+        dims = [int(x.strip()) for x in dims.split(",") if x.strip()]
+    elif not isinstance(dims, list):
+        dims = [int(dims)]
+    repeats = getattr(args, "r2_sweep_repeats", 3)
+    seed = getattr(args, "r2_sweep_seed", 42)
+    total_runs = len(dims) * repeats
+    sweep_start_time = time.time()
+    completed_runs = 0
+
+    results = {}
+    for d in dims:
+        results[int(d)] = {
+            "overall_r2": [],
+            "trials_r2": [],
+            "overall_r": [],
+            "trials_r": [],
+        }
+        for rep in range(repeats):
+            train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=seed + rep, test_frac=0.1)
+            if len(test_idx) == 0 or len(train_idx) == 0:
+                continue
+            X_train_raw = X_raw[train_idx]
+            X_test_raw = X_raw[test_idx]
+            X_train_norm, mu, sd = maybe_normalize_sequences(
+                X_train_raw,
+                enable_normalization=enable_input_normalization,
+            )
+            X_test_norm, _, _ = maybe_normalize_sequences(
+                X_test_raw,
+                enable_normalization=enable_input_normalization,
+                mu=mu,
+                sd=sd,
+            )
+
+            if getattr(args, "baseline_correct", False):
+                X_train_norm = baseline_correct_np(X_train_norm)
+                X_test_norm = baseline_correct_np(X_test_norm)
+                X_test_eval = baseline_correct_np(X_test_raw)
+                xhat_bias = False
+            else:
+                X_test_eval = X_test_raw
+                xhat_bias = True
+
+            n_components = getattr(args, "pca_dim", 0)
+            if isinstance(n_components, int) and n_components > 0:
+                n_components = n_components
+            else:
+                n_components = getattr(args, "pca_variance", 0.95)
+            pca = PCA(n_components=n_components, svd_solver="full")
+            flat_train = X_train_norm.reshape(-1, X_train_norm.shape[-1])
+            pca.fit(flat_train)
+
+            X_train_pca = pca.transform(flat_train).reshape(X_train_norm.shape[0], X_train_norm.shape[1], -1)
+            X_test_pca = pca.transform(X_test_norm.reshape(-1, X_test_norm.shape[-1])).reshape(X_test_norm.shape[0], X_test_norm.shape[1], -1)
+
+            model = train_model_on_sequences(args, X_train_pca, tvec_np, latent_dim=int(d))
+            xhat_pca = predict_sequences(model, X_test_pca, tvec_np, args)
+
+            xhat_norm = pca.inverse_transform(xhat_pca.reshape(-1, xhat_pca.shape[-1])).reshape(X_test_pca.shape[0], X_test_pca.shape[1], -1)
+            if xhat_bias:
+                xhat_raw = xhat_norm * sd + mu
+            else:
+                xhat_raw = xhat_norm * sd
+
+            r2_all = r2_var_explained(X_test_eval, xhat_raw)
+            r_all = compute_r(X_test_eval, xhat_raw)
+            if not np.isnan(r2_all):
+                results[int(d)]["overall_r2"].append(r2_all)
+            if not np.isnan(r_all):
+                results[int(d)]["overall_r"].append(r_all)
+            for i in range(X_test_eval.shape[0]):
+                r2_i = r2_var_explained(X_test_eval[i], xhat_raw[i])
+                r_i = compute_r(X_test_eval[i], xhat_raw[i])
+                if not np.isnan(r2_i):
+                    results[int(d)]["trials_r2"].append(r2_i)
+                if not np.isnan(r_i):
+                    results[int(d)]["trials_r"].append(r_i)
+
+            completed_runs += 1
+            elapsed = time.time() - sweep_start_time
+            avg_run = elapsed / max(1, completed_runs)
+            remaining = avg_run * max(0, total_runs - completed_runs)
+            eta_str = format_duration(remaining)
+            print(f"Sweep progress {completed_runs}/{total_runs} | ETA {eta_str}")
+
+    # plot (MATLAB-style) for R2
+    plt.figure(figsize=(6, 4))
+    for d in dims:
+        d = int(d)
+        ys = results[d]["trials_r2"]
+        plt.scatter([d] * len(ys), ys, facecolors="none", edgecolors="k", alpha=0.6, s=30)
+        if results[d]["overall_r2"]:
+            plt.scatter(d, np.mean(results[d]["overall_r2"]), color="red", s=40, zorder=3)
+    plt.xlabel("Embedding dimension")
+    plt.ylabel("Crossval R2")
+    plt.xlim(0, max(dims) + 1)
+    plt.ylim(0, 1)
+    out_path = os.path.join(PATHS["out_dir"], "r2_sweep.png")
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160)
+    plt.close()
+    print(f"Wrote R2 sweep plot -> {out_path}")
+
+    # plot r
+    plt.figure(figsize=(6, 4))
+    for d in dims:
+        d = int(d)
+        ys = results[d]["trials_r"]
+        plt.scatter([d] * len(ys), ys, facecolors="none", edgecolors="k", alpha=0.6, s=30)
+        if results[d]["overall_r"]:
+            plt.scatter(d, np.mean(results[d]["overall_r"]), color="red", s=40, zorder=3)
+    plt.xlabel("Embedding dimension")
+    plt.ylabel("Crossval r")
+    plt.xlim(0, max(dims) + 1)
+    plt.ylim(-1, 1)
+    out_path = os.path.join(PATHS["out_dir"], "r_sweep.png")
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160)
+    plt.close()
+    print(f"Wrote r sweep plot -> {out_path}")
+    return results
+
+class SeqDataset(td.Dataset):
+    def __init__(self, X):
+        self.X = X
+
+    def __len__(self): 
+        return self.X.shape[0]
+    
+    def __getitem__(self, i):
+        return self.X[i] # [L, N]
+
+#____________________model__________________#
+class Encoder(nn.Module):
+    def __init__(self, n_in, latent_dim):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_in, 512), nn.ReLU(),
+            nn.Linear(512, 256), nn.ReLU(),
+            nn.Linear(256, 128), nn.ReLU(),
+        )
+        self.mu = nn.Linear(128, latent_dim)
+        self.logvar = nn.Linear(128, latent_dim)
+    def forward(self, x0): # x0: [B, N]
+        h = self.net(x0)
+        return self.mu(h), self.logvar(h)
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_len=5000):
+        super().__init__()
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)  # [1, max_len, d_model]
+        self.register_buffer("pe", pe)
+
+    def forward(self, x):
+        # x: [B, L, D]
+        L = x.size(1)
+        return x + self.pe[:, :L, :]
+
+class SequenceEncoderGRU(nn.Module):
+    def __init__(self, n_in, latent_dim, hidden=256, layers=1, bidirectional=False, dropout=0.0):
+        super().__init__()
+        self.gru = nn.GRU(
+            input_size=n_in,
+            hidden_size=hidden,
+            num_layers=layers,
+            batch_first=True,
+            bidirectional=bidirectional,
+            dropout=dropout if layers > 1 else 0.0,
+        )
+        out_dim = hidden * (2 if bidirectional else 1)
+        self.mu = nn.Linear(out_dim, latent_dim)
+        self.logvar = nn.Linear(out_dim, latent_dim)
+        self.bidirectional = bidirectional
+
+    def forward(self, x_seq):  # x_seq: [B, L, N]
+        _, h_n = self.gru(x_seq)  # h_n: [layers*dirs, B, hidden]
+        if self.bidirectional:
+            h_last = torch.cat([h_n[-2], h_n[-1]], dim=-1)  # [B, hidden*2]
+        else:
+            h_last = h_n[-1]  # [B, hidden]
+        return self.mu(h_last), self.logvar(h_last)
+
+class SequenceEncoderTransformer(nn.Module):
+    def __init__(self, n_in, latent_dim, hidden=256, layers=2, heads=4, ffn_dim=512, dropout=0.1, pool="mean"):
+        super().__init__()
+        self.proj = nn.Linear(n_in, hidden)
+        self.pos = PositionalEncoding(hidden)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden,
+            nhead=heads,
+            dim_feedforward=ffn_dim,
+            dropout=dropout,
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=layers)
+        self.mu = nn.Linear(hidden, latent_dim)
+        self.logvar = nn.Linear(hidden, latent_dim)
+        self.pool = pool
+
+    def forward(self, x_seq):  # x_seq: [B, L, N]
+        x = self.proj(x_seq)          # [B, L, H]
+        x = self.pos(x)
+        x = x.transpose(0, 1)         # [L, B, H]
+        h = self.encoder(x)
+        h = h.transpose(0, 1)         # [B, L, H]
+        if self.pool == "last":
+            pooled = h[:, -1, :]
+        elif self.pool == "first":
+            pooled = h[:, 0, :]
+        else:
+            pooled = h.mean(dim=1)
+        return self.mu(pooled), self.logvar(pooled)
+
+class SequenceEncoderAttention(nn.Module):
+    def __init__(self, n_in, latent_dim, hidden=256, dropout=0.0):
+        super().__init__()
+        self.proj = nn.Sequential(
+            nn.Linear(n_in, hidden),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+        )
+        self.score = nn.Sequential(
+            nn.Linear(hidden, hidden),
+            nn.Tanh(),
+            nn.Linear(hidden, 1),
+        )
+        self.mu = nn.Linear(hidden, latent_dim)
+        self.logvar = nn.Linear(hidden, latent_dim)
+
+    def forward(self, x_seq):  # x_seq: [B, L, N]
+        h = self.proj(x_seq)                  # [B, L, H]
+        scores = self.score(h).squeeze(-1)    # [B, L]
+        attn = torch.softmax(scores, dim=1)   # [B, L]
+        pooled = (attn.unsqueeze(-1) * h).sum(dim=1)
+        return self.mu(pooled), self.logvar(pooled)
+    
+class MoELatentODEFunc(nn.Module):
+    def __init__(self, latent_dim, num_experts=4, hidden=128, time_dependent=False, time_embed_dim=16):
+        super().__init__()
+        self.num_experts = num_experts
+        self.latent_dim = latent_dim
+        self.time_dependent = time_dependent
+        self.time_embed_dim = time_embed_dim
+
+        in_dim = latent_dim
+        if self.time_dependent:
+            in_dim = latent_dim + time_embed_dim
+            self.time_mlp = nn.Sequential(
+                nn.Linear(1, time_embed_dim),
+                nn.SiLU(),
+                nn.Linear(time_embed_dim, time_embed_dim),
+            )
+
+        # ----- gating network -----
+        self.gate = nn.Sequential(
+            nn.Linear(in_dim, hidden),
+            nn.SiLU(),
+            nn.Linear(hidden, num_experts)   # logits
+        )
+
+        # ----- expert ODE vector fields -----
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(in_dim, hidden),
+                nn.SiLU(),
+                nn.Linear(hidden, hidden),
+                nn.SiLU(),
+                nn.Linear(hidden, latent_dim),
+            )
+            for _ in range(num_experts)
+        ])
+
+        # layernorm for stability
+        self.ln = nn.LayerNorm(latent_dim)
+
+    def forward(self, t, z):
+        """
+        z: [B, D]
+        returns z': [B, D]
+        """
+
+        if self.time_dependent:
+            # t is a scalar or tensor; expand to [B, 1]
+            if not torch.is_tensor(t):
+                t = torch.tensor(t, device=z.device, dtype=z.dtype)
+            if t.dim() == 0:
+                t = t.expand(z.size(0)).unsqueeze(1)
+            elif t.dim() == 1:
+                t = t.unsqueeze(1)
+            t_feat = self.time_mlp(t)
+            z_in = torch.cat([z, t_feat], dim=-1)
+        else:
+            z_in = z
+
+        # ----- gating -----
+        logits = self.gate(z_in)                    # [B, num_experts]
+        weights = torch.softmax(logits, dim=-1)     # convex combination
+
+        # ----- compute each expert’s derivative -----
+        # result: list of E tensors, each [B, D]
+        expert_outs = torch.stack(
+            [expert(z_in) for expert in self.experts],  # [E, B, D]
+            dim=0
+        )
+
+        # ----- combine using weights -----
+        # weights: [B, E] → reshape to [E, B, 1] to match broadcasting
+        weights_expanded = weights.transpose(0,1).unsqueeze(-1)  # [E, B, 1]
+
+        dz = (weights_expanded * expert_outs).sum(dim=0)         # [B, D]
+
+        # layernorm for stability (important!)
+        return self.ln(dz)
+
+class LatentODEFunc(nn.Module):
+    def __init__(self, latent_dim):
+        super().__init__()
+        h = 128
+        self.f1 = nn.Sequential(nn.Linear(latent_dim, h), nn.SiLU(),
+                                nn.Linear(h, h), nn.SiLU())
+        self.f2 = nn.Linear(h, latent_dim)
+        self.ln = nn.LayerNorm(latent_dim)
+
+    def forward(self, t, z):
+        h = self.f1(z)
+        dz = self.f2(h)
+        # simple residual-normalized field for stability
+        return self.ln(dz)
+
+class LocalAttentionDecoder(nn.Module):
+    """
+    A decoder that reconstructs each neuron using a weighted combination
+    of nearby neurons in latent space — approximating LLE-like locality.
+
+    For each neuron i:
+        x_i(t) = f( concat[z_t, sum_j w_ij * z_t] )
+    """
+    def __init__(self, latent_dim, n_neurons, k_neighbors=16, hidden=256):
+        super().__init__()
+        self.n_neurons = n_neurons
+        self.k = min(k_neighbors, n_neurons)
+
+        # Learnable embeddings to define similarity between neurons
+        self.emb = nn.Embedding(n_neurons, latent_dim)
+
+        # Decoder MLP
+        self.net = nn.Sequential(
+            nn.Linear(latent_dim * 2, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1)
+        )
+
+    def forward(self, z_traj):
+        """
+        z_traj: [B, L, D]
+        Output: [B, L, N]
+        """
+        B, L, D = z_traj.shape
+        device   = z_traj.device
+        N        = self.n_neurons
+
+        # --------------------------------------------------------
+        # 1. Compute pairwise similarity between neuron embeddings
+        # --------------------------------------------------------
+        emb = self.emb.weight                     # [N, D]
+        sim = emb @ emb.t()                       # [N, N]
+
+        # --------------------------------------------------------
+        # 2. Get top-k nearest neighbors for each neuron
+        # --------------------------------------------------------
+        _, idx = torch.topk(sim, k=self.k+1, dim=-1)
+        idx = idx[:, 1:]                           # remove self-neuron
+        # idx: [N, k]
+
+        # ------------------------------------------------------
+        # 3. Compute attention weights for neighbors
+        # --------------------------------------------------------
+        neigh_emb = emb[idx]                      # [N, k, D]
+
+        # attention score for neighbor j of neuron i
+        # dot product: (i·j)
+        attn = torch.softmax(
+            (emb.unsqueeze(1) * neigh_emb).sum(-1),   # [N, k]
+            dim=-1
+        )
+
+        # --------------------------------------------------------
+        # 4. Compute local latent: weighted sum of neighbor latents :)
+        # --------------------------------------------------------
+        # z_traj: [B, L, D]
+        # expand to: [B, L, 1, D] → [B, L, N, D]
+        z_expanded = z_traj[:, :, None, :].expand(B, L, N, D)
+
+        # build neighbor latent tensor: [B, L, N, k, D]
+        z_neigh = z_traj[:, :, None, None, :].expand(B, L, N, self.k, D)
+
+        # attn: [N, k] → expand: [1, 1, N, k, 1]
+        attn_expanded = attn[None, None, :, :, None]
+
+        # local aggregate: [B, L, N, D]
+        z_loc = (attn_expanded * z_neigh).sum(dim=3)
+
+        # --------------------------------------------------------
+        # 5. Decode each neuron: concat(global, local)
+        # --------------------------------------------------------
+        dec_in = torch.cat([z_expanded, z_loc], dim=-1)  # [B, L, N, 2D]
+
+        out = self.net(dec_in.reshape(B*L*N, 2*D)).view(B, L, N)
+        return out
+    
+class NeuronAwareDecoder(nn.Module):
+    def __init__(self, latent_dim, n_neurons, emb_dim=16, hidden=256):
+        """
+        latent_dim: dim of z_t
+        n_neurons:  number of output channels (N)
+        emb_dim:    size of per-neuron embedding vector
+        hidden:     hidden width of the MLP
+        """
+        super().__init__()
+        self.n_neurons = n_neurons
+        self.emb = nn.Embedding(n_neurons, emb_dim)
+
+        self.net = nn.Sequential(
+            nn.Linear(latent_dim + emb_dim, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1)  # predict one value per neuron
+        )
+
+    def forward(self, z_traj):  # z_traj: [B, L, D]
+        B, L, D = z_traj.shape
+        device = z_traj.device
+        N = self.n_neurons
+
+        # neuron indices 0..N-1
+        neuron_idx = torch.arange(N, device=device)         # [N]
+        neuron_emb = self.emb(neuron_idx)                   # [N, E]
+
+        # broadcast latent trajectory over neurons
+        # z_exp: [B, L, N, D]
+        z_exp = z_traj.unsqueeze(2).expand(B, L, N, D)
+
+        # broadcast embeddings over (B, L)
+        # e_exp: [B, L, N, E]
+        e_exp = neuron_emb.view(1, 1, N, -1).expand(B, L, N, neuron_emb.shape[1])
+
+        # combine and run through MLP
+        inp = torch.cat([z_exp, e_exp], dim=-1)             # [B, L, N, D+E]
+        inp = inp.reshape(B * L * N, D + neuron_emb.shape[1])
+
+        out = self.net(inp).view(B, L, N)                   # [B, L, N]
+        return out
+
+class MoEDecoder(nn.Module):
+    """
+    Decoder MoE:
+      - E shared decoder experts: f_e(z_t) -> R^N
+      - Each neuron i has its own softmax over experts w_{i,e}.
+      - Output: x(t) = sum_e w[:, e] * f_e(z_t).
+    """
+    def __init__(self, latent_dim, n_neurons, num_experts=4, hidden=256):
+        super().__init__()
+        self.num_experts = num_experts
+        self.n_neurons = n_neurons
+
+        # E experts: each maps latent_dim -> n_neurons
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(latent_dim, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, n_neurons)
+            )
+            for _ in range(num_experts)
+        ])
+
+        # Per-neuron logits over experts: [N, E]
+        # Softmax over dim=-1 gives w_{i,e}
+        self.neuron_logits = nn.Parameter(
+            torch.zeros(n_neurons, num_experts)
+        )
+
+    def forward(self, z_traj):  # [B, L, D]
+        B, L, D = z_traj.shape
+        E = self.num_experts
+        N = self.n_neurons
+
+        # compute experts' outputs
+        z_flat = z_traj.reshape(B * L, D)  # [B*L, D]
+        expert_outs = []
+
+        for e in self.experts:
+            y = e(z_flat).view(B, L, N)    # [B, L, N]
+            expert_outs.append(y)
+
+        # [E, B, L, N]
+        expert_outs = torch.stack(expert_outs, dim=0)
+
+        # neuron-specific mixture weights: [N, E] -> softmax over experts
+        w = torch.softmax(self.neuron_logits, dim=-1)       # [N, E]
+        # reshape for broadcasting with [E, B, L, N]
+        w = w.permute(1, 0).view(E, 1, 1, N)                # [E, 1, 1, N]
+
+        # weighted sum over experts
+        y = (expert_outs * w).sum(dim=0)                    # [B, L, N]
+        return y
+
+class Decoder(nn.Module):
+    def __init__(self, latent_dim, n_out):
+        super().__init__()
+        self.net = nn.Sequential(
+        nn.Linear(latent_dim, 512),
+        nn.ReLU(),
+        nn.Linear(512, 512),      # ← extra hidden layer
+        nn.ReLU(),
+        nn.Linear(512, n_out)
+)
+    def forward(self, z_traj): # [B, L, D]
+        B, L, D = z_traj.shape
+        x = self.net(z_traj.reshape(B*L, D)) # [B*L, N]
+        return x.reshape(B, L, -1)
+    
+class ODEVAE(nn.Module):
+    def __init__(
+        self,
+        n_neurons,
+        latent_dim,
+        num_experts,
+        decoder_type="mlp",
+        k_neighbors=16,
+        dec_num_experts=4,
+        encoder_type="first",
+        encoder_hidden=256,
+        encoder_layers=1,
+        encoder_bidirectional=False,
+        encoder_dropout=0.0,
+        encoder_heads=4,
+        encoder_ffn_dim=512,
+        encoder_pool="mean",
+        ode_time_dependent=False,
+        ode_time_embed_dim=16,
+        ode_solver="dopri5",
+        ode_rtol=1e-3,
+        ode_atol=1e-4,
+        ode_step_size=None,
+        deterministic_z=False,
+    ):
+        super().__init__()
+        enc_type = str(encoder_type).lower()
+        if enc_type in ("first", "frame", "mlp"):
+            self.enc = Encoder(n_neurons, latent_dim)
+            self.enc_type = "first"
+        elif enc_type == "gru":
+            self.enc = SequenceEncoderGRU(
+                n_neurons,
+                latent_dim,
+                hidden=encoder_hidden,
+                layers=encoder_layers,
+                bidirectional=encoder_bidirectional,
+                dropout=encoder_dropout,
+            )
+            self.enc_type = "sequence"
+        elif enc_type in ("transformer", "trans"):
+            self.enc = SequenceEncoderTransformer(
+                n_neurons,
+                latent_dim,
+                hidden=encoder_hidden,
+                layers=encoder_layers,
+                heads=encoder_heads,
+                ffn_dim=encoder_ffn_dim,
+                dropout=encoder_dropout,
+                pool=encoder_pool,
+            )
+            self.enc_type = "sequence"
+        elif enc_type in ("attention", "attn", "temporal_attn"):
+            self.enc = SequenceEncoderAttention(
+                n_neurons,
+                latent_dim,
+                hidden=encoder_hidden,
+                dropout=encoder_dropout,
+            )
+            self.enc_type = "sequence"
+        else:
+            raise ValueError(f"Unknown encoder_type: {encoder_type}")
+        self.odefunc = MoELatentODEFunc(
+            latent_dim,
+            num_experts=num_experts,
+            time_dependent=ode_time_dependent,
+            time_embed_dim=ode_time_embed_dim,
+        )
+        # add noise during training to prevent the ODE from overfitting tiny 
+        # geometric details
+        # self.latent_noise_std = 0.0
+
+        # select your decoder!
+        if decoder_type.lower() == "mlp":
+            self.dec = Decoder(latent_dim, n_neurons)
+
+        elif decoder_type.lower() == "neuronaware":
+            self.dec = NeuronAwareDecoder(latent_dim, n_neurons)
+
+        elif decoder_type.lower() == "localattn":
+            self.dec = LocalAttentionDecoder(
+                latent_dim=latent_dim,
+                n_neurons=n_neurons,
+                k_neighbors=k_neighbors
+            )
+        elif decoder_type.lower() == "moe":
+            self.dec = MoEDecoder(
+                latent_dim=latent_dim,
+                n_neurons=n_neurons,
+                num_experts=dec_num_experts,
+                hidden=256
+            )
+        else:
+            raise ValueError(f"Unknown decoder_type: {decoder_type}")
+        self.ode_solver = str(ode_solver).lower()
+        self.ode_rtol = float(ode_rtol)
+        self.ode_atol = float(ode_atol)
+        if isinstance(ode_step_size, str) and ode_step_size.strip().lower() in ("none", "null", ""):
+            ode_step_size = None
+        self.ode_step_size = None if ode_step_size is None else float(ode_step_size)
+        self.deterministic_z = bool(deterministic_z)
+
+    def reparam(self, mu, logvar):
+        eps = torch.randn_like(mu)
+        return mu + torch.exp(0.5 * logvar) * eps
+
+    def _integrate_latent(self, z0, tvec, method=None):
+        """
+        Integrate latent dynamics.
+        method: "rk4" (fixed step) or "dopri5" (adaptive).
+        """
+        if method is None:
+            method = self.ode_solver
+        if method == "rk4":
+            if self.ode_step_size is not None:
+                safe_step = float(self.ode_step_size)
+            else:
+                step = (tvec[1] - tvec[0]).abs().item()
+                safe_step = step / 2.0
+
+            z_traj = odeint(
+                self.odefunc,
+                z0,
+                tvec,
+                method ="rk4",
+                options={"step_size": safe_step}
+            )
+            return z_traj
+        z_traj = odeint(
+            self.odefunc,
+            z0,
+            tvec,
+            method=method,
+            rtol=self.ode_rtol,
+            atol=self.ode_atol
+        )
+        return z_traj
+
+    def forward(self, x_seq, tvec):
+        """
+        x_seq: [B, L, N]
+        tvec:  [L] strictly increasing (float tensor)
+        """
+        B, L, N = x_seq.shape
+        if self.enc_type == "first":
+            x0 = x_seq[:, 0, :]                # [B, N]
+            mu, logvar = self.enc(x0)          # [B, D], [B, D]
+        else:
+            mu, logvar = self.enc(x_seq)       # [B, D], [B, D]
+        if self.deterministic_z:
+            z0 = mu.float()
+        else:
+            z0 = self.reparam(mu, logvar).float()
+        tvec = tvec.float()
+
+        z_traj = self._integrate_latent(z0, tvec, method=self.ode_solver)
+
+        z_traj = z_traj.permute(1, 0, 2).contiguous()                 # [B, L, D]
+
+        # finite-difference for smoothness penalty
+        dt = (tvec[1:] - tvec[:-1]).view(1, -1, 1)                    # [1, L-1, 1]
+        zdiff = (z_traj[:, 1:, :] - z_traj[:, :-1, :]) / dt
+
+        xhat = self.dec(z_traj)                                       # [B, L, N]
+        return xhat, mu, logvar, z_traj, zdiff
+    
+#___________________loss_________________#
+def compute_lle_loss(z_traj, k=8, max_points=256, temperature=0.1):
+    # soft LLE: reconstruct each point from neighbors using softmax weights
+    z_flat = z_traj.reshape(-1, z_traj.shape[-1])
+    n = z_flat.shape[0]
+    if n <= k:
+        return z_traj.new_tensor(0.0)
+    if n > max_points:
+        idx = torch.randperm(n, device=z_traj.device)[:max_points]
+        z_flat = z_flat[idx]
+        n = z_flat.shape[0]
+    dists = torch.cdist(z_flat, z_flat)
+    eye = torch.eye(n, device=z_traj.device, dtype=torch.bool)
+    dists = dists.masked_fill(eye, float("inf"))
+    knn_dist, knn_idx = torch.topk(dists, k=k, largest=False)
+    neigh = z_flat[knn_idx]
+    weights = torch.softmax(-knn_dist / max(temperature, 1e-6), dim=-1)
+    recon = (weights.unsqueeze(-1) * neigh).sum(dim=1)
+    return torch.mean((z_flat - recon) ** 2)
+
+def _observed_transition_features(x, transition_weight=1.0, standardize=True):
+    """
+    Build MIND-style local geometry features from observed neural states.
+
+    Features are [x_t, transition_weight * Δx_t]. This makes neighborhoods
+    depend on both population state and local neural transition direction.
+    """
+    B, L, N = x.shape
+    x_flat = x.reshape(B * L, N)
+    transition_weight = float(transition_weight)
+    if transition_weight > 0:
+        dx = torch.zeros_like(x)
+        if L > 1:
+            dx[:, :-1, :] = x[:, 1:, :] - x[:, :-1, :]
+            dx[:, -1, :] = dx[:, -2, :]
+        dx_flat = dx.reshape(B * L, N)
+        feat = torch.cat([x_flat, transition_weight * dx_flat], dim=-1)
+    else:
+        feat = x_flat
+    if standardize:
+        feat = (feat - feat.mean(dim=0, keepdim=True)) / (feat.std(dim=0, keepdim=True) + 1e-6)
+    return feat
+
+
+def compute_observed_lle_loss(
+    z_traj,
+    x,
+    k=8,
+    max_points=256,
+    ridge=1e-3,
+    transition_weight=1.0,
+    standardize=True,
+):
+    """
+    MIND-style LLE regularizer.
+
+    Unlike the v5 latent-only LLE loss, neighbors and reconstruction weights
+    are computed from observed neural states augmented with observed
+    transitions. Those same weights are then imposed on the latent states.
+    """
+    z_flat_all = z_traj.reshape(-1, z_traj.shape[-1])
+    feat_all = _observed_transition_features(
+        x,
+        transition_weight=transition_weight,
+        standardize=standardize,
+    ).detach()
+    n = z_flat_all.shape[0]
+    k = int(k)
+    if n <= k or k <= 0:
+        return z_traj.new_tensor(0.0)
+    if n > max_points:
+        idx = torch.randperm(n, device=z_traj.device)[:int(max_points)]
+        z_flat = z_flat_all[idx]
+        feat = feat_all[idx]
+    else:
+        z_flat = z_flat_all
+        feat = feat_all
+    n = z_flat.shape[0]
+    if n <= k:
+        return z_traj.new_tensor(0.0)
+
+    dists = torch.cdist(feat, feat)
+    eye_mask = torch.eye(n, device=z_traj.device, dtype=torch.bool)
+    dists = dists.masked_fill(eye_mask, float("inf"))
+    _, knn_idx = torch.topk(dists, k=k, largest=False)
+
+    neigh_feat = feat[knn_idx]
+    centered = neigh_feat - feat.unsqueeze(1)
+    cov = torch.bmm(centered, centered.transpose(1, 2))
+    trace = torch.diagonal(cov, dim1=-2, dim2=-1).sum(dim=-1, keepdim=True)
+    reg = (float(ridge) * trace / max(k, 1) + 1e-6).view(n, 1, 1)
+    cov = cov + reg * torch.eye(k, device=z_traj.device).unsqueeze(0)
+
+    ones = torch.ones(n, k, 1, device=z_traj.device, dtype=z_traj.dtype)
+    weights = torch.linalg.solve(cov, ones).squeeze(-1)
+    weights = weights / (weights.sum(dim=-1, keepdim=True) + 1e-8)
+
+    neigh_z = z_flat[knn_idx]
+    z_recon = (weights.unsqueeze(-1) * neigh_z).sum(dim=1)
+    return torch.mean((z_flat - z_recon) ** 2)
+
+
+def compute_transition_metric_loss(
+    z_traj,
+    x,
+    k=8,
+    max_points=256,
+    transition_weight=1.0,
+    standardize=True,
+    temperature=0.5,
+):
+    """
+    Preserve local transition-aware distances from observed state space.
+
+    The loss compares local neighbor distances in observed [x, Δx] feature
+    space against local neighbor distances in latent space, after normalizing
+    each distance scale. This makes the constraint about local geometry rather
+    than absolute units.
+    """
+    z_flat_all = z_traj.reshape(-1, z_traj.shape[-1])
+    feat_all = _observed_transition_features(
+        x,
+        transition_weight=transition_weight,
+        standardize=standardize,
+    ).detach()
+    n = z_flat_all.shape[0]
+    k = int(k)
+    if n <= k or k <= 0:
+        return z_traj.new_tensor(0.0)
+    if n > max_points:
+        idx = torch.randperm(n, device=z_traj.device)[:int(max_points)]
+        z_flat = z_flat_all[idx]
+        feat = feat_all[idx]
+    else:
+        z_flat = z_flat_all
+        feat = feat_all
+    n = z_flat.shape[0]
+    if n <= k:
+        return z_traj.new_tensor(0.0)
+
+    feat_dists = torch.cdist(feat, feat)
+    eye_mask = torch.eye(n, device=z_traj.device, dtype=torch.bool)
+    feat_dists = feat_dists.masked_fill(eye_mask, float("inf"))
+    target_d, knn_idx = torch.topk(feat_dists, k=k, largest=False)
+
+    z_neigh = z_flat[knn_idx]
+    latent_d = torch.linalg.norm(z_flat.unsqueeze(1) - z_neigh, dim=-1)
+    target_norm = target_d / (target_d.detach().mean() + 1e-8)
+    latent_norm = latent_d / (latent_d.detach().mean() + 1e-8)
+    err = (latent_norm - target_norm) ** 2
+    if temperature is not None and float(temperature) > 0:
+        weights = torch.softmax(-target_norm.detach() / float(temperature), dim=-1)
+        return torch.sum(weights * err) / (torch.sum(weights) + 1e-8)
+    return torch.mean(err)
+
+
+def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0, metric_loss=None, lambda_metric=0.0):
+    # --- Safety clamp to prevent numerical overflow ---
+    logvar = torch.clamp(logvar, min=-10.0, max=10.0)
+
+    recon = torch.mean((xhat - x) ** 2)
+    kl = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    smooth = torch.mean(zdiff**2) if lambda_smooth > 0 else x.new_tensor(0.0)
+    if transition_loss is None or lambda_transition <= 0:
+        transition = x.new_tensor(0.0)
+    else:
+        transition = transition_loss
+    if lle_loss is None or lambda_lle <= 0:
+        lle = x.new_tensor(0.0)
+    else:
+        lle = lle_loss
+    if metric_loss is None or lambda_metric <= 0:
+        metric = x.new_tensor(0.0)
+    else:
+        metric = metric_loss
+    total = recon + beta*kl + lambda_smooth*smooth + lambda_transition*transition + lambda_lle*lle + lambda_metric*metric
+    return total, recon, kl, smooth, transition, lle, metric
+
+
+#_________________training_______________#
+def train(args):
+    device = get_device()
+    print("Device:", device)
+    os.makedirs(args.out_dir, exist_ok=True)
+
+    #load data 
+    npz = np.load(PATHS["data"])
+
+    meta = {}
+    pca = None
+    data_hash = compute_file_sha(PATHS["data"])
+    train_trial_ids = None
+    val_trial_ids = None
+    enable_input_normalization = getattr(args, "normalize_inputs", True)
+
+    use_mind_split = getattr(args, "mind_split_enabled", False)
+    use_no_leakage = getattr(args, "no_leakage_preproc", False)
+    use_random_split = getattr(args, "random_split_enabled", False)
+    filter_inactive_neurons = getattr(args, "filter_inactive_neurons", False)
+    filter_train_silent_neurons = getattr(args, "filter_train_silent_neurons", False)
+    train_silent_std_threshold = float(getattr(args, "train_silent_std_threshold", 1e-7))
+    random_split_frac = getattr(args, "random_split_frac", 0.1)
+    random_split_seed = getattr(args, "random_split_seed", 42)
+    mind_test_frac = getattr(args, "mind_test_frac", 0.1)
+    mind_seed = getattr(args, "mind_split_seed", 42)
+    sequence_alignment = getattr(args, "sequence_alignment", "time")
+    position_key = getattr(args, "position_key", "Position")
+    position_min = getattr(args, "position_min", None)
+    position_max = getattr(args, "position_max", None)
+    position_clip = getattr(args, "position_clip", True)
+    position_monotonic_policy = getattr(args, "position_monotonic_policy", "cumulative_max")
+    eval_metrics_pca = getattr(args, "eval_metrics_pca", None)
+    eval_metrics_raw = getattr(args, "eval_metrics_raw", None)
+    eval_metrics_space = getattr(args, "eval_metrics_space", None)
+    if eval_metrics_pca is not None and eval_metrics_raw is not None:
+        print("Both eval_metrics_pca and eval_metrics_raw are set; eval_metrics_pca will take precedence.")
+    if eval_metrics_pca is not None:
+        eval_metrics_space = "pca" if bool(eval_metrics_pca) else "raw"
+    elif eval_metrics_raw is not None:
+        eval_metrics_space = "raw" if bool(eval_metrics_raw) else "pca"
+    else:
+        if eval_metrics_space is None:
+            eval_metrics_space = "pca"
+        elif isinstance(eval_metrics_space, bool):
+            eval_metrics_space = "raw" if eval_metrics_space else "pca"
+        else:
+            eval_metrics_space = str(eval_metrics_space).strip().lower()
+    if eval_metrics_space not in ("pca", "raw"):
+        print(f"Unknown eval_metrics_space='{eval_metrics_space}', defaulting to 'pca'.")
+        eval_metrics_space = "pca"
+
+    X_val_eval = None
+    xhat_bias = True
+    pca_before_norm = False
+    norm_mu = None
+    norm_sd = None
+
+    if use_mind_split:
+        # MIND-style split: random 10% trials for test, train-only normalization/PCA
+        X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
+            npz,
+            trial_len_s=args.trial_len_s,
+            fps=args.fps,
+            drop_first_trials=args.drop_first_trials,
+            min_frames=10,
+            filter_inactive_neurons=filter_inactive_neurons,
+            sequence_alignment=sequence_alignment,
+            position_key=position_key,
+            position_min=position_min,
+            position_max=position_max,
+            position_clip=position_clip,
+            position_monotonic_policy=position_monotonic_policy,
+            return_meta=True,
+        )
+        train_idx, test_idx = split_trials_like_matlab(trial_ids, seed=mind_seed, test_frac=mind_test_frac)
+        if len(test_idx) == 0 or len(train_idx) == 0:
+            raise ValueError("MIND split produced empty train or test set. Adjust mind_test_frac.")
+        X_train_raw = X_raw[train_idx]
+        X_val_raw = X_raw[test_idx]
+        if filter_train_silent_neurons:
+            X_train_raw, X_val_raw, train_std_meta = filter_train_silent_neurons_by_std(
+                X_train_raw,
+                X_val_raw,
+                min_std=train_silent_std_threshold,
+            )
+            print(
+                "Train-std neuron filter: removed "
+                f"{train_std_meta['train_silent_neuron_count']} train-silent neurons; "
+                f"kept {train_std_meta['train_variable_neuron_count']} neurons "
+                f"(threshold={train_silent_std_threshold:g})."
+            )
+            meta.update(train_std_meta)
+
+        X_train_norm, norm_mu, norm_sd = maybe_normalize_sequences(
+            X_train_raw,
+            enable_normalization=enable_input_normalization,
+        )
+        X_val_norm, _, _ = maybe_normalize_sequences(
+            X_val_raw,
+            enable_normalization=enable_input_normalization,
+            mu=norm_mu,
+            sd=norm_sd,
+        )
+
+        if getattr(args, "baseline_correct", False):
+            X_train_norm = baseline_correct_np(X_train_norm)
+            X_val_norm = baseline_correct_np(X_val_norm)
+            X_val_eval = baseline_correct_np(X_val_raw)
+            xhat_bias = False
+        else:
+            X_val_eval = X_val_raw
+            xhat_bias = True
+
+        pca = None
+        if getattr(args, "use_pca", True):
+            n_components = getattr(args, "pca_dim", 0)
+            if not (isinstance(n_components, int) and n_components > 0):
+                n_components = getattr(args, "pca_variance", 0.95)
+            pca = PCA(n_components=n_components, svd_solver="full")
+            flat_train = X_train_norm.reshape(-1, X_train_norm.shape[-1])
+            pca.fit(flat_train)
+            print(
+                f"PCA (train-only) reduced {X_train_norm.shape[-1]} → {pca.n_components_} dims "
+                f"({pca.explained_variance_ratio_.sum():.2%} variance)"
+            )
+            X_train = pca.transform(flat_train).reshape(X_train_norm.shape[0], X_train_norm.shape[1], -1)
+            X_val = pca.transform(X_val_norm.reshape(-1, X_val_norm.shape[-1])).reshape(X_val_norm.shape[0], X_val_norm.shape[1], -1)
+            joblib.dump(pca, os.path.join(args.out_dir, "trained_pca.pkl"))
+        else:
+            X_train = X_train_norm
+            X_val = X_val_norm
+        train_trial_ids = trial_ids[train_idx]
+        val_trial_ids = trial_ids[test_idx]
+        B, L, N = X_train.shape
+        print(f"MIND split: train trials={X_train.shape[0]} | test trials={X_val.shape[0]}")
+        if filter_inactive_neurons:
+            print(
+                f"MIND neuron filter: removed {seq_meta['silent_neuron_count']} silent neurons; "
+                f"kept {seq_meta['active_neuron_count']} active neurons."
+            )
+        meta.update(seq_meta)
+    else:
+        if use_no_leakage:
+            # Old v5 behavior with train-only preprocessing to avoid leakage.
+            X_raw, tvec_np, trial_ids, seq_meta = make_sequences_raw(
+                npz,
+                trial_len_s=args.trial_len_s,
+                fps=args.fps,
+                drop_first_trials=args.drop_first_trials,
+                min_frames=10,
+                filter_inactive_neurons=filter_inactive_neurons,
+                sequence_alignment=sequence_alignment,
+                position_key=position_key,
+                position_min=position_min,
+                position_max=position_max,
+                position_clip=position_clip,
+                position_monotonic_policy=position_monotonic_policy,
+                return_meta=True,
+            )
+
+            B, L, N = X_raw.shape
+            print(f"Built sequences: B={B}, :={L}, N={N}")
+
+            # train/val split (random 10% or hold out last K trials)
+            if use_random_split:
+                train_idx, test_idx = split_trials_like_matlab(
+                    trial_ids,
+                    seed=random_split_seed,
+                    test_frac=random_split_frac,
+                )
+                if len(test_idx) == 0 or len(train_idx) == 0:
+                    raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
+                X_train_raw = X_raw[train_idx]
+                X_val_raw = X_raw[test_idx]
+                train_trial_ids = trial_ids[train_idx]
+                val_trial_ids = trial_ids[test_idx]
+            else:
+                holdout = min(args.holdout_trials, max(1, B //5))
+                X_train_raw = X_raw[:-holdout]
+                X_val_raw = X_raw[-holdout:]
+                train_trial_ids = trial_ids[:-holdout]
+                val_trial_ids = trial_ids[-holdout:]
+
+            if filter_train_silent_neurons:
+                X_train_raw, X_val_raw, train_std_meta = filter_train_silent_neurons_by_std(
+                    X_train_raw,
+                    X_val_raw,
+                    min_std=train_silent_std_threshold,
+                )
+                print(
+                    "Train-std neuron filter: removed "
+                    f"{train_std_meta['train_silent_neuron_count']} train-silent neurons; "
+                    f"kept {train_std_meta['train_variable_neuron_count']} neurons "
+                    f"(threshold={train_silent_std_threshold:g})."
+                )
+                meta.update(train_std_meta)
+
+            # PCA on training only (if enabled), then z-score on training only
+            if getattr(args, "use_pca", True):
+                n_components = getattr(args, "pca_dim", 0)
+                if not (isinstance(n_components, int) and n_components > 0):
+                    n_components = getattr(args, "pca_variance", 0.95)
+                pca = PCA(n_components=n_components, svd_solver="full")
+                flat_train_raw = X_train_raw.reshape(-1, X_train_raw.shape[-1])
+                pca.fit(flat_train_raw)
+                print(
+                    f"PCA (train-only) reduced {X_train_raw.shape[-1]} → {pca.n_components_} dims "
+                    f"({pca.explained_variance_ratio_.sum():.2%} variance)"
+                )
+                X_train_pca = pca.transform(flat_train_raw).reshape(X_train_raw.shape[0], X_train_raw.shape[1], -1)
+                X_val_pca = pca.transform(X_val_raw.reshape(-1, X_val_raw.shape[-1])).reshape(X_val_raw.shape[0], X_val_raw.shape[1], -1)
+                joblib.dump(pca, os.path.join(args.out_dir, "trained_pca.pkl"))
+            else:
+                pca = None
+                X_train_pca = X_train_raw
+                X_val_pca = X_val_raw
+
+            X_train, norm_mu, norm_sd = maybe_normalize_sequences(
+                X_train_pca,
+                enable_normalization=enable_input_normalization,
+            )
+            X_val, _, _ = maybe_normalize_sequences(
+                X_val_pca,
+                enable_normalization=enable_input_normalization,
+                mu=norm_mu,
+                sd=norm_sd,
+            )
+            B, L, N = X_train.shape
+            pca_before_norm = pca is not None
+            if filter_inactive_neurons:
+                print(
+                    f"MIND neuron filter: removed {seq_meta['silent_neuron_count']} silent neurons; "
+                    f"kept {seq_meta['active_neuron_count']} active neurons."
+                )
+            meta.update(seq_meta)
+
+            if eval_metrics_space == "raw":
+                if getattr(args, "baseline_correct", False):
+                    X_val_eval = baseline_correct_np(X_val_raw)
+                    xhat_bias = False
+                else:
+                    X_val_eval = X_val_raw
+                    xhat_bias = True
+        else:
+            # --- Step 1: PCA Preprocessing (MIND-style) ---
+            roi = npz["roi"]
+            if roi.shape[0] < roi.shape[1]:
+                roi = roi.T  # [T, N]
+
+            roi_filter_meta = {}
+            if filter_inactive_neurons:
+                roi, active_mask, active_neuron_count, silent_neuron_count = filter_inactive_neurons_mind(roi)
+                print(
+                    f"MIND neuron filter: removed {silent_neuron_count} silent neurons; "
+                    f"kept {active_neuron_count} active neurons."
+                )
+                roi_filter_meta.update({
+                    "active_neuron_mask": active_mask,
+                    "active_neuron_count": active_neuron_count,
+                    "silent_neuron_count": silent_neuron_count,
+                })
+
+            #   Keep 95% variance
+            pca = PCA(n_components=0.95, svd_solver="full")
+            roi_pca = pca.fit_transform(roi)
+            print(f"PCA reduced {roi.shape[1]} → {roi_pca.shape[1]} dims ({pca.explained_variance_ratio_.sum():.2%} variance)")
+            joblib.dump(pca, os.path.join(args.out_dir, "trained_pca.pkl"))
+            # Replace ROI in npz-like structure
+            npz_mod = dict(npz)
+            npz_mod["roi"] = roi_pca
+            npz = npz_mod
+            X, tvec_np, meta = make_sequences(
+                npz, 
+                trial_len_s=args.trial_len_s,
+                fps=args.fps, 
+                drop_first_trials=args.drop_first_trials,
+                min_frames=10,
+                filter_inactive_neurons=False,
+                sequence_alignment=sequence_alignment,
+                position_key=position_key,
+                position_min=position_min,
+                position_max=position_max,
+                position_clip=position_clip,
+                position_monotonic_policy=position_monotonic_policy,
+            ) # X: [B, L, N]
+            meta.update(roi_filter_meta)
+
+            B, L, N = X.shape
+            print(f"Built sequences: B={B}, :={L}, N={N}")
+
+            # train/val split (random 10% or hold out last K trials)
+            if use_random_split:
+                trial_ids = None
+                if isinstance(meta, dict) and "trials_used" in meta:
+                    trial_ids = meta["trials_used"]
+                if trial_ids is None or len(trial_ids) != X.shape[0]:
+                    trial_ids = np.arange(X.shape[0])
+                train_idx, test_idx = split_trials_like_matlab(
+                    trial_ids,
+                    seed=random_split_seed,
+                    test_frac=random_split_frac,
+                )
+                if len(test_idx) == 0 or len(train_idx) == 0:
+                    raise ValueError("Random split produced empty train or test set. Adjust random_split_frac.")
+                X_train = X[train_idx]
+                X_val = X[test_idx]
+                train_trial_ids = trial_ids[train_idx]
+                val_trial_ids = trial_ids[test_idx]
+            else:
+                holdout = min(args.holdout_trials, max(1, B //5))
+                X_train = X[:-holdout]
+                X_val = X[-holdout:]
+                if isinstance(meta, dict) and "trials_used" in meta:
+                    train_trial_ids = meta["trials_used"][:-holdout]
+                    val_trial_ids = meta["trials_used"][-holdout:]
+
+    if eval_metrics_space == "raw" and not (use_mind_split or use_no_leakage):
+        print(
+            "eval_metrics_raw requested but raw-space metrics are only supported with "
+            "mind_split_enabled or no_leakage_preproc. Falling back to PCA-space metrics."
+        )
+        eval_metrics_space = "pca"
+        X_val_eval = None
+        xhat_bias = True
+
+    # Normalize the ODE coordinate to [0,1] for numerical stability. When
+    # sequence_alignment=position, this coordinate is normalized maze position.
+    if tvec_np[-1] != 0:
+        tvec_np = tvec_np / tvec_np[-1]
+    print(
+        f"Sequence alignment: {meta.get('sequence_alignment', sequence_alignment)} "
+        f"({meta.get('sequence_axis_key', 'Time')}); coordinate range "
+        f"{float(tvec_np[0]):.3f}-{float(tvec_np[-1]):.3f}"
+    )
+
+    train_loader = td.DataLoader(SeqDataset(X_train), batch_size = args.batch_size, shuffle=True, drop_last = False)
+    val_loader = td.DataLoader(SeqDataset(X_val), batch_size = args.batch_size, shuffle=False)
+
+    if not isinstance(meta, dict):
+        meta = {}
+    meta.update({
+        "N": N,
+        "data_path": PATHS["data"],
+        "eval_metrics_space": eval_metrics_space,
+        "use_pca": bool(getattr(args, "use_pca", True)),
+        "normalize_inputs": bool(enable_input_normalization),
+        "baseline_correct": bool(getattr(args, "baseline_correct", False)),
+        "deterministic_z": bool(getattr(args, "deterministic_z", False)),
+        "sequence_alignment": str(meta.get("sequence_alignment", sequence_alignment)),
+        "sequence_axis_key": str(meta.get("sequence_axis_key", position_key if str(sequence_alignment).lower() == "position" else "Time")),
+        "position_min": position_min,
+        "position_max": position_max,
+        "position_clip": bool(position_clip),
+        "position_monotonic_policy": str(position_monotonic_policy),
+        "filter_inactive_neurons": bool(filter_inactive_neurons),
+        "filter_train_silent_neurons": bool(filter_train_silent_neurons),
+        "train_silent_std_threshold": float(train_silent_std_threshold),
+        "xhat_bias": bool(xhat_bias),
+        "pca_before_norm": bool(pca_before_norm),
+        "norm_mu": None if norm_mu is None else np.asarray(norm_mu, dtype=np.float32),
+        "norm_sd": None if norm_sd is None else np.asarray(norm_sd, dtype=np.float32),
+        "train_trial_ids": None if train_trial_ids is None else np.asarray(train_trial_ids),
+        "val_trial_ids": None if val_trial_ids is None else np.asarray(val_trial_ids),
+    })
+
+    model = ODEVAE(
+        n_neurons=N,
+        latent_dim=args.latent_dim,
+        num_experts=args.num_experts,
+        decoder_type=args.decoder_type,
+        k_neighbors=getattr(args, "k_neighbors", 16),
+        dec_num_experts=getattr(args, "dec_num_experts", 4),
+        encoder_type=getattr(args, "encoder_type", "first"),
+        encoder_hidden=getattr(args, "encoder_hidden", 256),
+        encoder_layers=getattr(args, "encoder_layers", 1),
+        encoder_bidirectional=getattr(args, "encoder_bidirectional", False),
+        encoder_dropout=getattr(args, "encoder_dropout", 0.0),
+        encoder_heads=getattr(args, "encoder_heads", 4),
+        encoder_ffn_dim=getattr(args, "encoder_ffn_dim", 512),
+        encoder_pool=getattr(args, "encoder_pool", "mean"),
+        ode_time_dependent=getattr(args, "ode_time_dependent", False),
+        ode_time_embed_dim=getattr(args, "ode_time_embed_dim", 16),
+        ode_solver=getattr(args, "ode_solver", "dopri5"),
+        ode_rtol=getattr(args, "ode_rtol", 1e-3),
+        ode_atol=getattr(args, "ode_atol", 1e-4),
+        ode_step_size=getattr(args, "ode_step_size", None),
+        deterministic_z=getattr(args, "deterministic_z", False),
+    ).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    tvec = torch.from_numpy(tvec_np).to(device)
+
+    best_val = math.inf
+    mean_r = np.nan
+    ckpt = os.path.join(args.out_dir, "ode_vae_best.pt")
+    analysis_cache_path = os.path.join(args.out_dir, "analysis_cache_best.npz")
+    raw_vs_recon_window_path = os.path.join(args.out_dir, "raw_vs_recon_t0_15_n0_40.png")
+
+    # a global break safeguard, stops training if NaNs are detected
+    nan_flag = False
+
+    train_start_time = time.time()
+    for epoch in range(1, args.epochs+1):
+        #_____ train 
+        model.train()
+        tl, tr, tk, ts, tt, tll, tm = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        for xb in train_loader:
+            xb = xb.to(device) # [B, L, N]
+
+            # this is trial-wise baseline correction, getting rid of the first 5 sequence bins
+            # so the latent doesn't waste space capacity on slow drifs/offsets
+            if getattr(args, "baseline_correct", False):
+                # subtract per-trial baseline over first 5 sequence bins
+                baseline = xb[:, :5, :].mean(dim=1, keepdim=True)  # [B, 1, N]
+                xb = xb - baseline
+
+            opt.zero_grad()
+            xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+            # KL warmup!
+            if args.kl_warmup_epochs > 0:
+                beta = args.beta * min(1.0, epoch /args.kl_warmup_epochs)
+            else:
+                beta = args.beta
+            transition_loss = None
+            lambda_transition = getattr(args, "lambda_transition", 0.0)
+            if getattr(args, "lambda_transition_warmup_epochs", 0) > 0:
+                lambda_transition *= min(1.0, epoch / args.lambda_transition_warmup_epochs)
+            if lambda_transition > 0:
+                # match decoded transition dynamics without re-decoding z_pred
+                dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
+                dx_true = xb[:, 1:, :] - xb[:, :-1, :]
+                transition_loss = torch.mean((dx_hat - dx_true) ** 2)
+            lle_loss = None
+            lambda_lle = getattr(args, "lambda_lle", 0.0)
+            if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                lambda_lle *= min(1.0, epoch / args.geometry_warmup_epochs)
+            if lambda_lle > 0:
+                lle_loss = compute_observed_lle_loss(
+                    z_traj,
+                    xb,
+                    k=getattr(args, "lle_k", 8),
+                    max_points=getattr(args, "lle_max_points", 256),
+                    ridge=getattr(args, "lle_ridge", 1e-3),
+                    transition_weight=getattr(args, "lle_transition_weight", 1.0),
+                    standardize=getattr(args, "mind_geometry_standardize", True),
+                )
+            metric_loss = None
+            lambda_metric = getattr(args, "lambda_metric", 0.0)
+            if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                lambda_metric *= min(1.0, epoch / args.geometry_warmup_epochs)
+            if lambda_metric > 0:
+                metric_loss = compute_transition_metric_loss(
+                    z_traj,
+                    xb,
+                    k=getattr(args, "metric_k", getattr(args, "lle_k", 8)),
+                    max_points=getattr(args, "metric_max_points", getattr(args, "lle_max_points", 256)),
+                    transition_weight=getattr(args, "metric_transition_weight", getattr(args, "lle_transition_weight", 1.0)),
+                    standardize=getattr(args, "mind_geometry_standardize", True),
+                    temperature=getattr(args, "metric_temperature", 0.5),
+                )
+            loss, rec, kl, sm, trn, lle, metric = vae_loss(
+                xhat,
+                xb,
+                mu,
+                logvar,
+                zdiff,
+                beta=beta,
+                lambda_smooth=args.lambda_smooth,
+                transition_loss=transition_loss,
+                lambda_transition=lambda_transition,
+                lle_loss=lle_loss,
+                lambda_lle=lambda_lle,
+                metric_loss=metric_loss,
+                lambda_metric=lambda_metric,
+            )
+            
+            # ---- NaN check ----
+            if torch.isnan(loss):
+                print(f"[epoch {epoch}] NaN detected — stopping training early.")
+                nan_flag = True
+                break
+
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+            tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item(); tt += trn.item(); tll += lle.item(); tm += metric.item()
+        nb = len(train_loader)
+        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | trans {tt/nb:.5f} | lle {tll/nb:.5f} | metric {tm/nb:.5f} | beta {beta:.3f}")
+
+        if nan_flag:
+            break
+
+        # ______val
+        model.eval()
+        with torch.no_grad(): 
+            vl, vr, vk, vs, vt, vlle, vm, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            n_batches = 0
+            r_count = 0
+            val_preds = []
+            val_true_batches = []
+            val_trial_cache = {"x_true": None, "x_pred": None, "trial_ids": None, "metric_space": eval_metrics_space}
+            for xb in val_loader:
+                # this is trial-wise baseline correction, getting rid of the first 5 sequence bins
+                # so the latent doesn't waste space capacity on slow drifs/offsets
+                if getattr(args, "baseline_correct", False):
+                    # subtract per-trial baseline over first 5 sequence bins
+                    baseline = xb[:, :5, :].mean(dim=1, keepdim=True)  # [B, 1, N]
+                    xb = xb - baseline
+                xb = xb.to(device)
+                xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+                transition_loss = None
+                lambda_transition = getattr(args, "lambda_transition", 0.0)
+                if getattr(args, "lambda_transition_warmup_epochs", 0) > 0:
+                    lambda_transition *= min(1.0, epoch / args.lambda_transition_warmup_epochs)
+                if lambda_transition > 0:
+                    dx_hat = xhat[:, 1:, :] - xhat[:, :-1, :]
+                    dx_true = xb[:, 1:, :] - xb[:, :-1, :]
+                    transition_loss = torch.mean((dx_hat - dx_true) ** 2)
+                lle_loss = None
+                lambda_lle = getattr(args, "lambda_lle", 0.0)
+                if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                    lambda_lle *= min(1.0, epoch / args.geometry_warmup_epochs)
+                if lambda_lle > 0:
+                    lle_loss = compute_observed_lle_loss(
+                        z_traj,
+                        xb,
+                        k=getattr(args, "lle_k", 8),
+                        max_points=getattr(args, "lle_max_points", 256),
+                        ridge=getattr(args, "lle_ridge", 1e-3),
+                        transition_weight=getattr(args, "lle_transition_weight", 1.0),
+                        standardize=getattr(args, "mind_geometry_standardize", True),
+                    )
+                metric_loss = None
+                lambda_metric = getattr(args, "lambda_metric", 0.0)
+                if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                    lambda_metric *= min(1.0, epoch / args.geometry_warmup_epochs)
+                if lambda_metric > 0:
+                    metric_loss = compute_transition_metric_loss(
+                        z_traj,
+                        xb,
+                        k=getattr(args, "metric_k", getattr(args, "lle_k", 8)),
+                        max_points=getattr(args, "metric_max_points", getattr(args, "lle_max_points", 256)),
+                        transition_weight=getattr(args, "metric_transition_weight", getattr(args, "lle_transition_weight", 1.0)),
+                        standardize=getattr(args, "mind_geometry_standardize", True),
+                        temperature=getattr(args, "metric_temperature", 0.5),
+                    )
+                loss, rec, kl, sm, trn, lle, metric = vae_loss(
+                    xhat,
+                    xb,
+                    mu,
+                    logvar,
+                    zdiff,
+                    beta=args.beta,
+                    lambda_smooth=args.lambda_smooth,
+                    transition_loss=transition_loss,
+                    lambda_transition=lambda_transition,
+                    lle_loss=lle_loss,
+                    lambda_lle=lambda_lle,
+                    metric_loss=metric_loss,
+                    lambda_metric=lambda_metric,
+                )
+                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item(); vm += metric.item()
+                val_preds.append(xhat.cpu().numpy())
+                val_true_batches.append(xb.cpu().numpy())
+
+                if eval_metrics_space != "raw":
+                    # --- R² computation per batch ---
+                    r2_batch = compute_r2(xb.cpu(), xhat.cpu())
+                    if not np.isnan(r2_batch):
+                        r2_total += r2_batch
+                    r_batch = compute_r(xb.cpu(), xhat.cpu())
+                    if not np.isnan(r_batch):
+                        r_total += r_batch
+                        r_count += 1
+                n_batches += 1
+
+            nbv = len(val_loader)
+            if eval_metrics_space == "raw":
+                if X_val_eval is None:
+                    print("Raw metrics requested but X_val_eval is missing; falling back to PCA-space metrics.")
+                    mean_r2 = r2_total / max(1, n_batches)
+                    mean_r = r_total / max(1, r_count)
+                    val_trial_cache["x_true"] = np.concatenate(val_true_batches, axis=0)
+                    val_trial_cache["x_pred"] = np.concatenate(val_preds, axis=0)
+                else:
+                    xhat_pca = np.concatenate(val_preds, axis=0)
+                    if pca is not None:
+                        if pca_before_norm:
+                            if xhat_bias:
+                                xhat_pca_denorm = xhat_pca * norm_sd + norm_mu
+                            else:
+                                xhat_pca_denorm = xhat_pca * norm_sd
+                            xhat_raw = pca.inverse_transform(
+                                xhat_pca_denorm.reshape(-1, xhat_pca_denorm.shape[-1])
+                            ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+                        else:
+                            xhat_norm = pca.inverse_transform(
+                                xhat_pca.reshape(-1, xhat_pca.shape[-1])
+                            ).reshape(xhat_pca.shape[0], xhat_pca.shape[1], -1)
+                            if xhat_bias:
+                                xhat_raw = xhat_norm * norm_sd + norm_mu
+                            else:
+                                xhat_raw = xhat_norm * norm_sd
+                    else:
+                        if norm_mu is not None and norm_sd is not None:
+                            if xhat_bias:
+                                xhat_raw = xhat_pca * norm_sd + norm_mu
+                            else:
+                                xhat_raw = xhat_pca * norm_sd
+                        else:
+                            xhat_raw = xhat_pca
+                    mean_r2 = r2_var_explained(X_val_eval, xhat_raw)
+                    mean_r = compute_r(X_val_eval, xhat_raw)
+                    val_trial_cache["x_true"] = X_val_eval
+                    val_trial_cache["x_pred"] = xhat_raw
+                    val_trial_cache["trial_ids"] = val_trial_ids
+            else:
+                mean_r2 = r2_total / max(1, n_batches)
+                mean_r = r_total / max(1, r_count)
+                val_trial_cache["x_true"] = np.concatenate(val_true_batches, axis=0)
+                val_trial_cache["x_pred"] = np.concatenate(val_preds, axis=0)
+                val_trial_cache["trial_ids"] = val_trial_ids
+            elapsed = time.time() - train_start_time
+            avg_epoch = elapsed / max(1, epoch)
+            eta = avg_epoch * max(0, args.epochs - epoch)
+            eta_str = format_duration(eta)
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | metric {vm/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
+
+            current_val = vl / nbv
+            if current_val < best_val and not nan_flag:
+                best_val = current_val
+                meta["analysis_cache_path"] = analysis_cache_path
+                torch.save({
+                    "state_dict": model.state_dict(),
+                    "tvec": tvec_np,
+                    "meta": meta,
+                    "args": vars(args),
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+                    "data_hash": data_hash,
+                }, ckpt)
+                if val_trial_cache["x_true"] is not None and val_trial_cache["x_pred"] is not None:
+                    save_analysis_cache(
+                        analysis_cache_path,
+                        val_trial_cache["x_true"],
+                        val_trial_cache["x_pred"],
+                        tvec_np,
+                        val_trial_cache["metric_space"],
+                        trial_ids=val_trial_cache["trial_ids"],
+                    )
+                    try:
+                        save_raw_vs_recon_window_plot(
+                            raw_vs_recon_window_path,
+                            val_trial_cache["x_true"],
+                            val_trial_cache["x_pred"],
+                            t_start=0,
+                            t_end=15,
+                            neuron_start=0,
+                            neuron_end=40,
+                            trial_index=0,
+                            metric_space=val_trial_cache["metric_space"],
+                        )
+                    except Exception as e:
+                        print("      (raw-vs-recon window plot skipped:", e, ")")
+                print(f"      saved best checkpoint -> {ckpt}")
+
+        # print("  saved best model to", ckpt)
+
+        # quick preview image (first batch first trial)
+        try:
+            xb = next(iter(val_loader)).to(device)
+            xhat, *_ = model(xb, tvec)
+            xb_np   = xb[0].detach().cpu().numpy()      # [L, N]
+            xhat_np = xhat[0].detach().cpu().numpy()
+            # plot mean across neurons for a quick sanity check
+            plt.figure(figsize=(8,3))
+            plt.plot(xb_np.mean(axis=1), label="GT mean")
+            plt.plot(xhat_np.mean(axis=1), label="Recon mean", alpha=0.8)
+            plt.legend(); plt.title("Validation mean activity (GT vs Recon)")
+            out_png = os.path.join(args.out_dir, "preview.png")
+            plt.tight_layout(); plt.savefig(out_png, dpi=160); plt.close()
+            # print(f"      wrote {out_png}")
+        except Exception as e:
+            print("      (preview plot skipped:", e, ")")
+
+            # --- Reconstruction accuracy over time (R² and MSE per timestep) ---
+        '''
+        try:
+            xb = next(iter(val_loader)).to(device)
+            xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+            xb_np = xb[0].detach().cpu().numpy()      # [L, N]
+            xhat_np = xhat[0].detach().cpu().numpy()  # [L, N]
+
+            # Compute R² and MSE per time step
+            r2_t = []
+            mse_t = []
+            for t in range(xb_np.shape[0]):
+                r2_t.append(r2_score(xb_np[t], xhat_np[t]))
+                mse_t.append(np.mean((xb_np[t] - xhat_np[t])**2))
+
+            r2_t = np.array(r2_t)
+            mse_t = np.array(mse_t)
+
+            time_axis = np.arange(len(r2_t)) / args.fps  # convert frames → seconds
+
+            fig, ax1 = plt.subplots(figsize=(8, 4))
+            color_r2 = 'tab:blue'
+            color_mse = 'tab:red'
+
+            ax1.set_xlabel('Time (s)')
+            ax1.set_ylabel('R²', color=color_r2)
+            ax1.plot(time_axis, r2_t, color=color_r2, label='R²(t)')
+            ax1.tick_params(axis='y', labelcolor=color_r2)
+            ax1.set_ylim(-1, 1.1)
+
+            ax2 = ax1.twinx()
+            ax2.set_ylabel('MSE', color=color_mse)
+            ax2.plot(time_axis, mse_t, color=color_mse, linestyle='--', label='MSE(t)')
+            ax2.tick_params(axis='y', labelcolor=color_mse)
+
+            plt.title('Reconstruction Accuracy Over Time')
+            fig.tight_layout()
+            plt.legend(loc='upper right')
+            plt.savefig(os.path.join(PATHS["out_dir"], "recon_accuracy_over_time.png"), dpi=160)
+            plt.close()
+            print("      wrote reconstruction accuracy plot → recon_accuracy_over_time.png")
+
+        except Exception as e:
+            print("      (reconstruction accuracy plot skipped:", e, ")")
+        '''
+
+    # --- Step 3: Latent manifold embedding (MIND-style) ---
+    try:
+        xb = next(iter(val_loader)).to(device)
+        xhat, mu, logvar, z_traj, zdiff = model(xb, tvec)
+        z_flat = z_traj[0].detach().cpu().numpy()  # [L, D]
+
+        # Compute pairwise distance matrix and apply MDS
+        from sklearn.manifold import MDS
+        from sklearn.metrics import pairwise_distances
+
+        D = pairwise_distances(z_flat)
+        mds = MDS(n_components=3, dissimilarity='precomputed', random_state=0, n_init = 1)
+        embed = mds.fit_transform(D)
+
+        # Plot MDS embedding (color by time)
+        fig = plt.figure(figsize=(6,5))
+        ax = fig.add_subplot(111, projection="3d")
+        t = np.arange(len(embed))
+        p = ax.scatter(embed[:,0], embed[:,1], embed[:,2], c=t, cmap="viridis", s=8)
+        fig.colorbar(p, ax=ax, label="Time")
+        ax.set_title("Latent Manifold Embedding (MIND-style)")
+        plt.tight_layout()
+        out_path = os.path.join(args.out_dir, "latent_manifold_mds.png")
+        plt.savefig(out_path, dpi=160)
+        plt.close()
+        print(f"      wrote {out_path}")
+    except Exception as e:
+        print("      (MIND manifold plot skipped:", e, ")")
+
+    print("done.")
+    # Check out decoder bias terms
+
+    for name, param in model.dec.named_parameters():
+        if 'bias' in name:
+            print(name, param.data.mean().item())
+
+    final_metrics = {
+    "recon": vr / nbv,
+    "kl": vk / nbv,
+    "smooth": vs / nbv,
+    "r": mean_r,
+    "r2": mean_r2,
+    "lle": vlle / nbv,
+    "metric": vm / nbv,
+    }
+    # --- Log run metadata to JSON file --- #
+    run_metadata = {
+    "timestamp": datetime.datetime.now().isoformat(),
+    "git_commit": os.popen("git rev-parse HEAD").read().strip() or "unknown",
+    "hyperparameters": vars(args),
+    "final_metrics": {
+        "best_val_loss": best_val,
+        "final_r": mean_r,
+        "final_r2": mean_r2,
+        "recon": vr / nbv,
+        "kl": vk / nbv,
+        "smooth": vs / nbv,
+        "transition": vt / nbv,
+        "lle": vlle / nbv,
+        "metric": vm / nbv,
+        "data_hash": data_hash,
+    },
+    "artifacts": {
+        "best_checkpoint": ckpt,
+        "analysis_cache": analysis_cache_path if os.path.exists(analysis_cache_path) else None,
+        "raw_vs_recon_window": raw_vs_recon_window_path if os.path.exists(raw_vs_recon_window_path) else None,
+        "trained_pca": os.path.join(args.out_dir, "trained_pca.pkl") if pca is not None else None,
+        "preview": os.path.join(args.out_dir, "preview.png"),
+        "latent_manifold_mds": os.path.join(args.out_dir, "latent_manifold_mds.png"),
+    },
+    }
+
+    json_path = os.path.join(args.out_dir, "run_metadata.json")
+    with open(json_path, "w") as f:
+        json.dump(to_jsonable(run_metadata), f, indent=2)
+        print(f"Saved run metadata → {json_path}")
+
+    torch.save(final_metrics, os.path.join(args.out_dir, "final_metrics.pt"))
+    print(f"Final r: {mean_r:.4f}")
+    print(f"Final R²: {mean_r2:.4f}")
+    return best_val, mean_r2, mean_r
+
+
+
+#__________________main_____________#
+if __name__ == "__main__":
+    setup_run_logging(PATHS["run_output"])
+    print(f"Running script: {os.path.basename(__file__)}")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=os.path.join(SRC_DIR, "config.txt"), help="Path to config file")
+    args_cli = ap.parse_args()
+
+    # load defaults from file
+    if os.path.exists(args_cli.config):
+        print(f"Loading configuration from {args_cli.config}")
+        cfg = load_config_from_txt(args_cli.config)
+    else:
+        raise FileNotFoundError(f"Config file not found: {args_cli.config}")
+
+    # convert dict to namespace (so it can be called from train(args))
+    class Struct:
+        def __init__(self, **entries): self.__dict__.update(entries)
+    args = Struct(**cfg)
+
+    '''
+    #----------------OPTIONAL: Seed Sweep ----------------#
+    # What this does: sweeps across multiple random seeds to find the best performing model.
+
+    seed_list = [1, 42, 1337, 2025, 777]
+    results = []
+
+    for seed in seed_list:
+        print(f"\n===== Running seed {seed} =====")
+        set_seed(seed)
+        start_time = datetime.datetime.now()
+        best_val, mean_r2 = train(args)
+        end_time = datetime.datetime.now()
+        results.append((seed, best_val, mean_r2))
+
+    # ========== SUMMARY ==========
+    print("\n===== Seed Sweep Summary =====")
+    for seed, val, r2 in results:
+        print(f"Seed {seed:4d} → R²={r2:.4f} | best val loss={val:.5f}")
+
+    best_run = max(results, key=lambda x: x[2])
+    print(f"\nBest seed: {best_run[0]} → R²={best_run[2]:.4f}")
+    '''
+
+    if getattr(args, "r2_sweep_enabled", False):
+        run_r2_sweep(args)
+        raise SystemExit(0)
+
+    seed = 1  # using the best seed from the results from the sweep above 
+    results = []
+    set_seed(seed)
+    start_time = datetime.datetime.now()
+    best_val, mean_r2, mean_r = train(args)
+    end_time = datetime.datetime.now()
+    results.append((seed, best_val, mean_r2, mean_r))
+
+    # ========== LOG RESULTS ========== #
+    log_file = PATHS["training_log"]
+    result_lines = []
+
+    # read existing logs if any
+    if os.path.exists(log_file):
+        with open(log_file, "r", encoding="utf-8") as f:
+            result_lines = f.readlines()
+
+            # add new entry at the top
+            new_entry = (
+            f"=== Run at {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
+            f"Commit: {os.popen('git rev-parse HEAD').read().strip() or 'unknown'}\n"
+            f"Data: {PATHS['data']}\n"
+            f"Latent dim: {args.latent_dim} | Epochs: {args.epochs} | LR: {args.lr}\n"
+            f"Batch size: {args.batch_size} | Beta: {args.beta} | Smooth λ: {args.lambda_smooth}\n"
+            f"Holdout: {args.holdout_trials} | KL warmup: {args.kl_warmup_epochs}\n"
+            f"Final validation loss: {best_val:.5f}\n"
+            f"Final r value: {mean_r:.4f}\n"
+            f"Final R value: {mean_r:.4f}\n"
+            f"Final R² value: {mean_r2:.4f}\n"
+            f"Saved model: {os.path.join(args.out_dir, 'ode_vae_best.pt')}\n"
+            f"---------------------------------------------\n"
+            )
+            result_lines.insert(0, new_entry)
+
+            # write back to file
+            with open(log_file, "w", encoding="utf-8") as f:
+                f.writelines(result_lines)
+
+            print(f"Results logged to {log_file}")

@@ -2,11 +2,24 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 27th, 2:57pm:
+temporal-diff std ratio: pred is ~3.5% of true 
+
+```
+At a high level, MIND assumes:
+
+Neural activity lies near a lower-dimensional manifold.
+Local neighborhoods of the high-dimensional neural state space can be approximated by low-dimensional linear structure.
+Transitions between nearby neural states define a meaningful distance/geometry.
+Nonlinear embedding can recover a low-dimensional manifold from those transition-based distances.
+```
+
 ## May 26th, 11:23pm: 
 - Barebones AE model checkpoint: running at 0.157 for barebones transformer AE.
 - Next step is turning back on normalize inputs to see what happens with the z-scoring, and whether this improves the R2. 
 - The idea: "raw calcium activity is sparse and unevenly scaled across neurons, so raw MSE rewards predicting near-zero/mean activity. Z-scoring makes each neurpn contribute comparably. 
 - So let's test if that improves score on the bare bones model. 
+- Transformer AE is about 0.06 better than a first-frame (obviously). 
 
 ## May 26th, 8:57pm:
 - I'm thinking of ways to feed in the raw data as easily as possible. I think the model is over-complicated. I'm not sure about z-scoring. I'm glad we got rid of landmarks, but now everything is doing terribly. 

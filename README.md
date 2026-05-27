@@ -2,9 +2,15 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 26th, 11:23pm: 
+- Barebones AE model checkpoint: running at 0.157 for barebones transformer AE.
+- Next step is turning back on normalize inputs to see what happens with the z-scoring, and whether this improves the R2. 
+- The idea: "raw calcium activity is sparse and unevenly scaled across neurons, so raw MSE rewards predicting near-zero/mean activity. Z-scoring makes each neurpn contribute comparably. 
+- So let's test if that improves score on the bare bones model. 
+
 ## May 26th, 8:57pm:
 - I'm thinking of ways to feed in the raw data as easily as possible. I think the model is over-complicated. I'm not sure about z-scoring. I'm glad we got rid of landmarks, but now everything is doing terribly. 
-- Also, we're computing on the 
+
 ## May 25th, 8:01pm: 
 - *So basically--don't align trials by elapsed time, align them by maze position.* That's the change I'm making right now.
 - Also, landmarks are removed. 
@@ -47,7 +53,7 @@ Code is pushed. These are neural dynamics encoding a great circle. Geodesic dyna
     - *Example of a second-order system:* Mass on a spring. This is second-order because the equation directly describes acceleration, not just velocity. 
     - In a second-order system, the future is determine by the current position and velocity (first-derivative), and the equation tells you the acceleration. 
     - In a first-order system, you only need the current state/position, and the model computes the first derivative (i.e. the velocity or direction of change). 
-    
+
 ## May 25th, 7:12pm:
 - landmark i = one selected point in neural activity space. (it's a repreentative neural population state). 
 - Each entry means: P(i->j) = probability that neural activity moves from landmark i to landmark j

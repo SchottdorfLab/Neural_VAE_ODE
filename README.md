@@ -4,6 +4,8 @@
 
 ## May 27th, 7:48pm:
 - Next test it to see it with pca turned off.
+- PCA: No impact. 
+
 ## May 27th, 7:04pm: 
 - the very good news is that I know that R2 is being evaluated correctly. 
 - the bad news is without landmarks, it's not happy. But at least we know that, and it isn't being obscured by landmarks. 

@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 27th, 7:04pm: 
+- the very good news is that I know that R2 is being evaluated correctly. 
+- the bad news is without landmarks, it's not happy. But at least we know that, and it isn't being obscured by landmarks. 
 ## May 27th, 2:57pm:
 temporal-diff std ratio: pred is ~3.5% of true 
 

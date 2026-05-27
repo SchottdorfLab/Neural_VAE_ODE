@@ -74,6 +74,12 @@ lle_max_points = 256
 lle_ridge = 0.001
 lle_transition_weight = 1.0
 mind_geometry_standardize = true
+mind_geo_k = 8
+mind_geo_max_points = 256
+mind_geo_transition_weight = 1.0
+mind_geo_temperature = 1.0
+mind_geo_eps = 0.000001
+mind_geo_normalize = true
 metric_k = 8
 metric_max_points = 256
 metric_transition_weight = 1.0
@@ -90,7 +96,8 @@ r2_sweep_epochs = 100
 
 lambda_transition = 0.005
 lambda_lle = 0.01
-lambda_metric = 0.01
+lambda_geo = 0.01
+lambda_metric = 0
 lambda_smooth = 0
 
 ode_solver = rk4

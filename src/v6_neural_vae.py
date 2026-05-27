@@ -26,6 +26,9 @@ Loss / regularizers (in addition to recon + KL + smoothness):
 - MIND-style observed LLE constraint (lambda_lle):
   computes local neighborhoods and LLE reconstruction weights from observed neural states
   augmented with observed transitions, then enforces those same local relationships in latent space.
+- MIND/Sammon transition geometry constraint (lambda_geo):
+  converts observed transition-neighborhood probabilities into MIND-style distances
+  D ~= sqrt(-log P) and preserves those distances in latent space.
 - Transition-metric constraint (lambda_metric):
   preserves local transition-aware distances from observed neural state space in latent space.
 
@@ -748,6 +751,22 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
                     transition_weight=getattr(args, "lle_transition_weight", 1.0),
                     standardize=getattr(args, "mind_geometry_standardize", True),
                 )
+            geo_loss = None
+            lambda_geo = getattr(args, "lambda_geo", getattr(args, "lambda_mind_geometry", 0.0))
+            if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                lambda_geo *= min(1.0, epoch / args.geometry_warmup_epochs)
+            if lambda_geo > 0:
+                geo_loss = compute_mind_geometry_loss(
+                    z_traj,
+                    xb,
+                    k=getattr(args, "mind_geo_k", getattr(args, "lle_k", 8)),
+                    max_points=getattr(args, "mind_geo_max_points", getattr(args, "lle_max_points", 256)),
+                    transition_weight=getattr(args, "mind_geo_transition_weight", getattr(args, "lle_transition_weight", 1.0)),
+                    standardize=getattr(args, "mind_geometry_standardize", True),
+                    temperature=getattr(args, "mind_geo_temperature", 1.0),
+                    eps=getattr(args, "mind_geo_eps", 1e-6),
+                    normalize=getattr(args, "mind_geo_normalize", True),
+                )
             metric_loss = None
             lambda_metric = getattr(args, "lambda_metric", 0.0)
             if getattr(args, "geometry_warmup_epochs", 0) > 0:
@@ -774,6 +793,8 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
                 lambda_transition=lambda_transition,
                 lle_loss=lle_loss,
                 lambda_lle=lambda_lle,
+                geo_loss=geo_loss,
+                lambda_geo=lambda_geo,
                 metric_loss=metric_loss,
                 lambda_metric=lambda_metric,
             )
@@ -1681,7 +1702,73 @@ def compute_transition_metric_loss(
     return torch.mean(err)
 
 
-def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0, metric_loss=None, lambda_metric=0.0):
+def compute_mind_geometry_loss(
+    z_traj,
+    x,
+    k=8,
+    max_points=256,
+    transition_weight=1.0,
+    standardize=True,
+    temperature=1.0,
+    eps=1e-6,
+    normalize=True,
+):
+    """
+    Sammon/MIND-style transition-geometry loss.
+
+    MIND turns transition probabilities into local distances using
+    D_ij ~= sqrt(-log P(j | i)), then embeds those distances with MDS.
+    Here P(j | i) is a minibatch/local surrogate computed from observed
+    transition features [x_t, transition_weight * dx_t]. The latent states
+    are penalized if their local distances do not preserve those D_ij.
+    """
+    z_flat_all = z_traj.reshape(-1, z_traj.shape[-1])
+    feat_all = _observed_transition_features(
+        x,
+        transition_weight=transition_weight,
+        standardize=standardize,
+    ).detach()
+    n = z_flat_all.shape[0]
+    k = int(k)
+    if n <= k or k <= 0:
+        return z_traj.new_tensor(0.0)
+    if n > max_points:
+        idx = torch.randperm(n, device=z_traj.device)[:int(max_points)]
+        z_flat = z_flat_all[idx]
+        feat = feat_all[idx]
+    else:
+        z_flat = z_flat_all
+        feat = feat_all
+    n = z_flat.shape[0]
+    if n <= k:
+        return z_traj.new_tensor(0.0)
+
+    feat_dists = torch.cdist(feat, feat)
+    eye_mask = torch.eye(n, device=z_traj.device, dtype=torch.bool)
+    feat_dists = feat_dists.masked_fill(eye_mask, float("inf"))
+    knn_d, knn_idx = torch.topk(feat_dists, k=k, largest=False)
+
+    # Local conditional transition-probability surrogate. This is not the full
+    # PPCA forest from MIND, but it preserves the same probability-to-distance
+    # logic in a differentiable minibatch objective.
+    local_scale = knn_d.detach().median(dim=1, keepdim=True).values.clamp_min(float(eps))
+    temp = max(float(temperature), float(eps))
+    logits = -((knn_d / local_scale) ** 2) / temp
+    log_p = torch.log_softmax(logits, dim=-1)
+    mind_d = torch.sqrt((-log_p).clamp_min(float(eps))).detach()
+
+    z_neigh = z_flat[knn_idx]
+    latent_d = torch.linalg.norm(z_flat.unsqueeze(1) - z_neigh, dim=-1)
+    if normalize:
+        mind_d = mind_d / (mind_d.detach().mean() + float(eps))
+        latent_d = latent_d / (latent_d.detach().mean() + float(eps))
+
+    weights = 1.0 / (mind_d.detach() + float(eps))
+    err = (latent_d - mind_d) ** 2
+    return torch.sum(weights * err) / (torch.sum(weights) + float(eps))
+
+
+def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0, geo_loss=None, lambda_geo=0.0, metric_loss=None, lambda_metric=0.0):
     # --- Safety clamp to prevent numerical overflow ---
     logvar = torch.clamp(logvar, min=-10.0, max=10.0)
 
@@ -1696,12 +1783,16 @@ def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition
         lle = x.new_tensor(0.0)
     else:
         lle = lle_loss
+    if geo_loss is None or lambda_geo <= 0:
+        geo = x.new_tensor(0.0)
+    else:
+        geo = geo_loss
     if metric_loss is None or lambda_metric <= 0:
         metric = x.new_tensor(0.0)
     else:
         metric = metric_loss
-    total = recon + beta*kl + lambda_smooth*smooth + lambda_transition*transition + lambda_lle*lle + lambda_metric*metric
-    return total, recon, kl, smooth, transition, lle, metric
+    total = recon + beta*kl + lambda_smooth*smooth + lambda_transition*transition + lambda_lle*lle + lambda_geo*geo + lambda_metric*metric
+    return total, recon, kl, smooth, transition, lle, geo, metric
 
 
 #_________________training_______________#
@@ -2109,7 +2200,7 @@ def train(args):
     for epoch in range(1, args.epochs+1):
         #_____ train 
         model.train()
-        tl, tr, tk, ts, tt, tll, tm = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        tl, tr, tk, ts, tt, tll, tg, tm = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         for xb in train_loader:
             xb = xb.to(device) # [B, L, N]
 
@@ -2150,6 +2241,22 @@ def train(args):
                     transition_weight=getattr(args, "lle_transition_weight", 1.0),
                     standardize=getattr(args, "mind_geometry_standardize", True),
                 )
+            geo_loss = None
+            lambda_geo = getattr(args, "lambda_geo", getattr(args, "lambda_mind_geometry", 0.0))
+            if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                lambda_geo *= min(1.0, epoch / args.geometry_warmup_epochs)
+            if lambda_geo > 0:
+                geo_loss = compute_mind_geometry_loss(
+                    z_traj,
+                    xb,
+                    k=getattr(args, "mind_geo_k", getattr(args, "lle_k", 8)),
+                    max_points=getattr(args, "mind_geo_max_points", getattr(args, "lle_max_points", 256)),
+                    transition_weight=getattr(args, "mind_geo_transition_weight", getattr(args, "lle_transition_weight", 1.0)),
+                    standardize=getattr(args, "mind_geometry_standardize", True),
+                    temperature=getattr(args, "mind_geo_temperature", 1.0),
+                    eps=getattr(args, "mind_geo_eps", 1e-6),
+                    normalize=getattr(args, "mind_geo_normalize", True),
+                )
             metric_loss = None
             lambda_metric = getattr(args, "lambda_metric", 0.0)
             if getattr(args, "geometry_warmup_epochs", 0) > 0:
@@ -2164,7 +2271,7 @@ def train(args):
                     standardize=getattr(args, "mind_geometry_standardize", True),
                     temperature=getattr(args, "metric_temperature", 0.5),
                 )
-            loss, rec, kl, sm, trn, lle, metric = vae_loss(
+            loss, rec, kl, sm, trn, lle, geo, metric = vae_loss(
                 xhat,
                 xb,
                 mu,
@@ -2176,6 +2283,8 @@ def train(args):
                 lambda_transition=lambda_transition,
                 lle_loss=lle_loss,
                 lambda_lle=lambda_lle,
+                geo_loss=geo_loss,
+                lambda_geo=lambda_geo,
                 metric_loss=metric_loss,
                 lambda_metric=lambda_metric,
             )
@@ -2189,9 +2298,9 @@ def train(args):
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             opt.step()
-            tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item(); tt += trn.item(); tll += lle.item(); tm += metric.item()
+            tl += loss.item(); tr += rec.item(); tk+= kl.item(); ts += sm.item(); tt += trn.item(); tll += lle.item(); tg += geo.item(); tm += metric.item()
         nb = len(train_loader)
-        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | trans {tt/nb:.5f} | lle {tll/nb:.5f} | metric {tm/nb:.5f} | beta {beta:.3f}")
+        print(f"[{epoch:03d}] train loss {tl/nb:.5f} | recon { tr/nb:.5f} | kl {tk/nb:.5f} | smooth {ts/nb:.5f} | trans {tt/nb:.5f} | lle {tll/nb:.5f} | geo {tg/nb:.5f} | metric {tm/nb:.5f} | beta {beta:.3f}")
 
         if nan_flag:
             break
@@ -2199,7 +2308,7 @@ def train(args):
         # ______val
         model.eval()
         with torch.no_grad(): 
-            vl, vr, vk, vs, vt, vlle, vm, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            vl, vr, vk, vs, vt, vlle, vg, vm, r2_total, r_total = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             n_batches = 0
             r_count = 0
             val_preds = []
@@ -2236,6 +2345,22 @@ def train(args):
                         transition_weight=getattr(args, "lle_transition_weight", 1.0),
                         standardize=getattr(args, "mind_geometry_standardize", True),
                     )
+                geo_loss = None
+                lambda_geo = getattr(args, "lambda_geo", getattr(args, "lambda_mind_geometry", 0.0))
+                if getattr(args, "geometry_warmup_epochs", 0) > 0:
+                    lambda_geo *= min(1.0, epoch / args.geometry_warmup_epochs)
+                if lambda_geo > 0:
+                    geo_loss = compute_mind_geometry_loss(
+                        z_traj,
+                        xb,
+                        k=getattr(args, "mind_geo_k", getattr(args, "lle_k", 8)),
+                        max_points=getattr(args, "mind_geo_max_points", getattr(args, "lle_max_points", 256)),
+                        transition_weight=getattr(args, "mind_geo_transition_weight", getattr(args, "lle_transition_weight", 1.0)),
+                        standardize=getattr(args, "mind_geometry_standardize", True),
+                        temperature=getattr(args, "mind_geo_temperature", 1.0),
+                        eps=getattr(args, "mind_geo_eps", 1e-6),
+                        normalize=getattr(args, "mind_geo_normalize", True),
+                    )
                 metric_loss = None
                 lambda_metric = getattr(args, "lambda_metric", 0.0)
                 if getattr(args, "geometry_warmup_epochs", 0) > 0:
@@ -2250,7 +2375,7 @@ def train(args):
                         standardize=getattr(args, "mind_geometry_standardize", True),
                         temperature=getattr(args, "metric_temperature", 0.5),
                     )
-                loss, rec, kl, sm, trn, lle, metric = vae_loss(
+                loss, rec, kl, sm, trn, lle, geo, metric = vae_loss(
                     xhat,
                     xb,
                     mu,
@@ -2262,10 +2387,12 @@ def train(args):
                     lambda_transition=lambda_transition,
                     lle_loss=lle_loss,
                     lambda_lle=lambda_lle,
+                    geo_loss=geo_loss,
+                    lambda_geo=lambda_geo,
                     metric_loss=metric_loss,
                     lambda_metric=lambda_metric,
                 )
-                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item(); vm += metric.item()
+                vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item(); vg += geo.item(); vm += metric.item()
                 val_preds.append(xhat.cpu().numpy())
                 val_true_batches.append(xb.cpu().numpy())
 
@@ -2330,7 +2457,7 @@ def train(args):
             avg_epoch = elapsed / max(1, epoch)
             eta = avg_epoch * max(0, args.epochs - epoch)
             eta_str = format_duration(eta)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | metric {vm/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
+            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | geo {vg/nbv:.5f} | metric {vm/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
 
             current_val = vl / nbv
             if current_val < best_val and not nan_flag:
@@ -2478,6 +2605,7 @@ def train(args):
     "r": mean_r,
     "r2": mean_r2,
     "lle": vlle / nbv,
+    "geo": vg / nbv,
     "metric": vm / nbv,
     }
     # --- Log run metadata to JSON file --- #
@@ -2494,6 +2622,7 @@ def train(args):
         "smooth": vs / nbv,
         "transition": vt / nbv,
         "lle": vlle / nbv,
+        "geo": vg / nbv,
         "metric": vm / nbv,
         "data_hash": data_hash,
     },

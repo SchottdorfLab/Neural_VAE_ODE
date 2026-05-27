@@ -1,0 +1,107 @@
+data_path = ../npz_e65_data/E65_data.npz
+trial_len_s = 12
+fps = 10
+sequence_alignment = position
+position_key = Position
+position_min = 0
+position_max = 300
+position_clip = true
+position_monotonic_policy = cumulative_max
+drop_first_trials = 10
+
+latent_dim = 7
+model_type = manifold_ae
+
+batch_size = 8
+epochs = 150
+lr = 0.001
+weight_decay = 0.00001
+beta = 0
+deterministic_z = true
+kl_warmup_epochs = 0
+holdout_trials = 3
+use_pca = true
+normalize_inputs = false
+pca_variance = 0.95
+out_dir = ../runs/ode_vae_E65
+pca_dim = 0
+num_experts = 4
+hidden = 128
+gating_temperature = 1.0
+decoder_emb_dim = 16
+decoder_hidden = 256
+cv_folds = 4
+k_neighbors = 16 
+decoder_type = moe
+
+encoder_type = frame
+encoder_hidden = 256
+encoder_layers = 1
+encoder_heads = 2
+encoder_ffn_dim = 512
+encoder_dropout = 0.0
+encoder_pool = first
+
+
+encoder_bidirectional = false
+mind_split_enabled = true
+mind_test_frac = 0.1
+mind_split_seed = 42
+no_leakage_preproc = true
+random_split_enabled = false
+random_split_frac = 0.1
+random_split_seed = 42
+
+eval_metrics_pca = false
+
+baseline_correct = false
+filter_inactive_neurons = true
+filter_train_silent_neurons = true
+train_silent_std_threshold = 1e-7
+dec_num_experts = 8
+gating_entropy_coef = 0.01
+gating_entropy_warmup = 20
+seed = 1
+early_stopping_patience = 15
+early_stopping_min_delta = 0.0
+sweep_enabled = false
+sweep_latent_dim = 5, 8
+sweep_beta = 0.02
+sweep_lambda_smooth = 0.0005, 0.0002
+lambda_transition_warmup_epochs = 30
+geometry_warmup_epochs = 30
+lle_k = 8
+lle_max_points = 256
+lle_ridge = 0.001
+lle_transition_weight = 1.0
+mind_geometry_standardize = true
+mind_geo_k = 8
+mind_geo_max_points = 256
+mind_geo_transition_weight = 1.0
+mind_geo_temperature = 1.0
+mind_geo_eps = 0.000001
+mind_geo_normalize = true
+metric_k = 8
+metric_max_points = 256
+metric_transition_weight = 1.0
+metric_temperature = 0.5
+lambda_graph = 0.01
+graph_k = 8
+graph_max_points = 256
+graph_temperature = 0.1
+r2_sweep_enabled = false
+r2_sweep_dims = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+r2_sweep_repeats = 3
+r2_sweep_seed = 42
+r2_sweep_epochs = 100
+
+lambda_transition = 0.005
+lambda_lle = 0.01
+lambda_geo = 0.01
+lambda_metric = 0
+lambda_smooth = 0
+
+ode_solver = rk4
+ode_rtol = 1e-2
+ode_atol = 1e-3
+ode_step_size = 0.05

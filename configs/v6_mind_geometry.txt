@@ -21,7 +21,7 @@ deterministic_z = true
 kl_warmup_epochs = 0
 holdout_trials = 3
 use_pca = false
-normalize_inputs = false
+normalize_inputs = true
 pca_variance = 0.95
 out_dir = ../runs/ode_vae_E65
 pca_dim = 0
@@ -96,8 +96,8 @@ r2_sweep_seed = 42
 r2_sweep_epochs = 100
 
 lambda_transition = 0.005
-lambda_lle = 0.01
-lambda_geo = 0.01
+lambda_lle = 0
+lambda_geo = 0
 lambda_metric = 0
 lambda_smooth = 0
 

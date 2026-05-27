@@ -10,6 +10,7 @@ position_monotonic_policy = cumulative_max
 drop_first_trials = 10
 
 latent_dim = 7
+model_type = manifold_ae
 
 batch_size = 8
 epochs = 150
@@ -19,8 +20,8 @@ beta = 0
 deterministic_z = true
 kl_warmup_epochs = 0
 holdout_trials = 3
-use_pca = false
-normalize_inputs = true
+use_pca = true
+normalize_inputs = false
 pca_variance = 0.95
 out_dir = ../runs/ode_vae_E65
 pca_dim = 0
@@ -33,7 +34,7 @@ cv_folds = 4
 k_neighbors = 16 
 decoder_type = moe
 
-encoder_type = transformer
+encoder_type = frame
 encoder_hidden = 256
 encoder_layers = 1
 encoder_heads = 2

@@ -16,8 +16,9 @@ What it does today:
 - Optional per-trial baseline correction (subtract mean of first 5 sequence bins).
 
 Model architecture:
-- Encoder: MLP x(t0) -> (mu, logvar), optionally a sequence encoder over x(t1..L).
-- Latent dynamics: MoELatentODEFunc (mixture of expert ODE vector fields).
+- model_type=ode: encode a trial to z0, evolve z(t) with MoELatentODEFunc, decode xhat(t).
+- model_type=manifold_ae: encode each population state x(t) directly to z(t), decode xhat(t),
+  and use MIND-style local/transition geometry losses without latent ODE dynamics.
 - Decoder options (decoder_type): MLP / NeuronAware / LocalAttention / MoE decoder.
 
 Loss / regularizers (in addition to recon + KL + smoothness):
@@ -34,7 +35,7 @@ Loss / regularizers (in addition to recon + KL + smoothness):
 
 Compute/compatibility:
 - Device selection is CUDA-first, then CPU (no MPS path).
-- Uses torchdiffeq odeint (dopri5) for latent integration.
+- Uses torchdiffeq odeint only when model_type=ode.
 
 Outputs:
 - Saves metrics/plots/checkpoints under pt_files/ and logs training to training_results.txt.
@@ -711,6 +712,7 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
         ode_atol=getattr(args, "ode_atol", 1e-4),
         ode_step_size=getattr(args, "ode_step_size", None),
         deterministic_z=getattr(args, "deterministic_z", False),
+        model_type=getattr(args, "model_type", "ode"),
     ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec_t = torch.from_numpy(tvec).to(device)
@@ -1404,10 +1406,17 @@ class ODEVAE(nn.Module):
         ode_atol=1e-4,
         ode_step_size=None,
         deterministic_z=False,
+        model_type="ode",
     ):
         super().__init__()
+        self.model_type = str(model_type).lower()
+        self.is_manifold_ae = self.model_type in ("manifold_ae", "mind_ae", "frame_ae", "ae")
+
         enc_type = str(encoder_type).lower()
-        if enc_type in ("first", "frame", "mlp"):
+        if self.is_manifold_ae:
+            self.enc = Encoder(n_neurons, latent_dim)
+            self.enc_type = "framewise"
+        elif enc_type in ("first", "frame", "mlp"):
             self.enc = Encoder(n_neurons, latent_dim)
             self.enc_type = "first"
         elif enc_type == "gru":
@@ -1442,38 +1451,36 @@ class ODEVAE(nn.Module):
             self.enc_type = "sequence"
         else:
             raise ValueError(f"Unknown encoder_type: {encoder_type}")
-        self.odefunc = MoELatentODEFunc(
-            latent_dim,
-            num_experts=num_experts,
-            time_dependent=ode_time_dependent,
-            time_embed_dim=ode_time_embed_dim,
-        )
-        # add noise during training to prevent the ODE from overfitting tiny 
-        # geometric details
-        # self.latent_noise_std = 0.0
 
-        # select your decoder!
+        self.odefunc = None
+        if not self.is_manifold_ae:
+            self.odefunc = MoELatentODEFunc(
+                latent_dim,
+                num_experts=num_experts,
+                time_dependent=ode_time_dependent,
+                time_embed_dim=ode_time_embed_dim,
+            )
+
         if decoder_type.lower() == "mlp":
             self.dec = Decoder(latent_dim, n_neurons)
-
         elif decoder_type.lower() == "neuronaware":
             self.dec = NeuronAwareDecoder(latent_dim, n_neurons)
-
         elif decoder_type.lower() == "localattn":
             self.dec = LocalAttentionDecoder(
                 latent_dim=latent_dim,
                 n_neurons=n_neurons,
-                k_neighbors=k_neighbors
+                k_neighbors=k_neighbors,
             )
         elif decoder_type.lower() == "moe":
             self.dec = MoEDecoder(
                 latent_dim=latent_dim,
                 n_neurons=n_neurons,
                 num_experts=dec_num_experts,
-                hidden=256
+                hidden=256,
             )
         else:
             raise ValueError(f"Unknown decoder_type: {decoder_type}")
+
         self.ode_solver = str(ode_solver).lower()
         self.ode_rtol = float(ode_rtol)
         self.ode_atol = float(ode_atol)
@@ -1491,6 +1498,8 @@ class ODEVAE(nn.Module):
         Integrate latent dynamics.
         method: "rk4" (fixed step) or "dopri5" (adaptive).
         """
+        if self.odefunc is None:
+            raise RuntimeError("Latent ODE integration is disabled for model_type=manifold_ae.")
         if method is None:
             method = self.ode_solver
         if method == "rk4":
@@ -1504,8 +1513,8 @@ class ODEVAE(nn.Module):
                 self.odefunc,
                 z0,
                 tvec,
-                method ="rk4",
-                options={"step_size": safe_step}
+                method="rk4",
+                options={"step_size": safe_step},
             )
             return z_traj
         z_traj = odeint(
@@ -1514,7 +1523,7 @@ class ODEVAE(nn.Module):
             tvec,
             method=method,
             rtol=self.ode_rtol,
-            atol=self.ode_atol
+            atol=self.ode_atol,
         )
         return z_traj
 
@@ -1524,26 +1533,42 @@ class ODEVAE(nn.Module):
         tvec:  [L] strictly increasing (float tensor)
         """
         B, L, N = x_seq.shape
+        tvec = tvec.float()
+
+        if self.is_manifold_ae:
+            x_flat = x_seq.reshape(B * L, N)
+            mu, logvar = self.enc(x_flat)
+            if self.deterministic_z:
+                z_flat = mu.float()
+            else:
+                z_flat = self.reparam(mu, logvar).float()
+            z_traj = z_flat.reshape(B, L, -1)
+            if L > 1:
+                dt = (tvec[1:] - tvec[:-1]).view(1, -1, 1)
+                dt = torch.clamp(dt, min=torch.finfo(dt.dtype).eps)
+                zdiff = (z_traj[:, 1:, :] - z_traj[:, :-1, :]) / dt
+            else:
+                zdiff = z_traj.new_zeros(B, 0, z_traj.shape[-1])
+            xhat = self.dec(z_traj)
+            return xhat, mu, logvar, z_traj, zdiff
+
         if self.enc_type == "first":
-            x0 = x_seq[:, 0, :]                # [B, N]
-            mu, logvar = self.enc(x0)          # [B, D], [B, D]
+            x0 = x_seq[:, 0, :]
+            mu, logvar = self.enc(x0)
         else:
-            mu, logvar = self.enc(x_seq)       # [B, D], [B, D]
+            mu, logvar = self.enc(x_seq)
         if self.deterministic_z:
             z0 = mu.float()
         else:
             z0 = self.reparam(mu, logvar).float()
-        tvec = tvec.float()
 
         z_traj = self._integrate_latent(z0, tvec, method=self.ode_solver)
+        z_traj = z_traj.permute(1, 0, 2).contiguous()
 
-        z_traj = z_traj.permute(1, 0, 2).contiguous()                 # [B, L, D]
-
-        # finite-difference for smoothness penalty
-        dt = (tvec[1:] - tvec[:-1]).view(1, -1, 1)                    # [1, L-1, 1]
+        dt = (tvec[1:] - tvec[:-1]).view(1, -1, 1)
         zdiff = (z_traj[:, 1:, :] - z_traj[:, :-1, :]) / dt
 
-        xhat = self.dec(z_traj)                                       # [B, L, N]
+        xhat = self.dec(z_traj)
         return xhat, mu, logvar, z_traj, zdiff
     
 #___________________loss_________________#
@@ -2144,6 +2169,7 @@ def train(args):
         "normalize_inputs": bool(enable_input_normalization),
         "baseline_correct": bool(getattr(args, "baseline_correct", False)),
         "deterministic_z": bool(getattr(args, "deterministic_z", False)),
+        "model_type": str(getattr(args, "model_type", "ode")),
         "sequence_alignment": str(meta.get("sequence_alignment", sequence_alignment)),
         "sequence_axis_key": str(meta.get("sequence_axis_key", position_key if str(sequence_alignment).lower() == "position" else "Time")),
         "position_min": position_min,
@@ -2160,7 +2186,6 @@ def train(args):
         "train_trial_ids": None if train_trial_ids is None else np.asarray(train_trial_ids),
         "val_trial_ids": None if val_trial_ids is None else np.asarray(val_trial_ids),
     })
-
     model = ODEVAE(
         n_neurons=N,
         latent_dim=args.latent_dim,
@@ -2183,7 +2208,9 @@ def train(args):
         ode_atol=getattr(args, "ode_atol", 1e-4),
         ode_step_size=getattr(args, "ode_step_size", None),
         deterministic_z=getattr(args, "deterministic_z", False),
+        model_type=getattr(args, "model_type", "ode"),
     ).to(device)
+    print(f"Model type: {getattr(args, 'model_type', 'ode')}")
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     tvec = torch.from_numpy(tvec_np).to(device)
 

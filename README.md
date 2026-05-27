@@ -5,6 +5,9 @@
 ## May 27th, 7:04pm: 
 - the very good news is that I know that R2 is being evaluated correctly. 
 - the bad news is without landmarks, it's not happy. But at least we know that, and it isn't being obscured by landmarks. 
+- all along, I've been going---why is it being so smooth?? I've added in all these things, like MoE, to get it to work! Why is it so smooth?
+- Well, perhaps it's the fundamental structure of the ODE that's problematic. It may be constraining the model from being able to learn the data fully. The ODE assumption might just be wrong, to be honest. And the landmark system subsampled to easier-to-learn trials that the system could perform well on. On neurons that talked a lot (the 80 ish neurons that weren't modeled on) I think (and this is a hypothesis I haven't tested yet) that the reconstruction was terrible. I already tried switching from a VAE to an AE. Changes did happen, but I changed a lot of other stuff with it, so I don't exactly know what the red flag was. So it may be with the ODE, period. I don't know. I will have to test. 
+- Btw, with the geometric structure in v6, it sucks, but it sucks less. 
 ## May 27th, 2:57pm:
 temporal-diff std ratio: pred is ~3.5% of true 
 

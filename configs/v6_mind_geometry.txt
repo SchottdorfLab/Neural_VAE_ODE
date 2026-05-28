@@ -7,7 +7,7 @@ position_min = 0
 position_max = 300
 position_clip = true
 position_monotonic_policy = cumulative_max
-drop_first_trials = 10
+drop_first_trials = 0
 
 latent_dim = 7
 model_type = manifold_ae
@@ -18,8 +18,12 @@ lr = 0.001
 weight_decay = 0.00001
 beta = 0
 deterministic_z = true
-recon_loss = r2
+recon_loss = event_weighted_r2
 recon_loss_eps = 0.00000001
+event_weight_alpha = 10.0
+event_weight_mode = activity_or_dx
+event_weight_percentile = 95.0
+event_metric_percentile = 99.0
 kl_warmup_epochs = 0
 holdout_trials = 3
 use_pca = false
@@ -34,7 +38,7 @@ decoder_emb_dim = 16
 decoder_hidden = 256
 cv_folds = 4
 k_neighbors = 16 
-decoder_type = moe
+decoder_type = event_moe
 
 encoder_type = frame
 encoder_hidden = 256
@@ -56,7 +60,7 @@ random_split_seed = 42
 
 eval_metrics_pca = false
 
-baseline_correct = true
+baseline_correct = false
 filter_inactive_neurons = true
 filter_train_silent_neurons = true
 train_silent_std_threshold = 1e-7

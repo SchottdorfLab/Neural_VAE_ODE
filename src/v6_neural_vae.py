@@ -52,6 +52,7 @@ import atexit
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.utils.data as td
 from torchdiffeq import odeint
 import datetime
@@ -82,7 +83,7 @@ def compute_file_sha(path):
     return hashlib.sha256(data).hexdigest()
 
 
-def save_analysis_cache(path, x_true, x_pred, tvec, metric_space, trial_ids=None):
+def save_analysis_cache(path, x_true, x_pred, tvec, metric_space, trial_ids=None, event_metrics=None):
     np.savez(
         path,
         x_true=np.asarray(x_true, dtype=np.float32),
@@ -90,6 +91,7 @@ def save_analysis_cache(path, x_true, x_pred, tvec, metric_space, trial_ids=None
         tvec=np.asarray(tvec, dtype=np.float32),
         metric_space=np.asarray(metric_space),
         trial_ids=np.asarray([] if trial_ids is None else trial_ids),
+        event_metrics_json=np.asarray(json.dumps(to_jsonable(event_metrics or {}))),
     )
 
 def save_raw_vs_recon_window_plot(
@@ -212,6 +214,83 @@ def compute_r(y_true, y_pred):
     if denom == 0:
         return np.nan
     return np.sum(x * y) / denom
+
+
+def _safe_sse_r2_np(y_true, y_pred):
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_pred = np.asarray(y_pred, dtype=np.float64)
+    denom = np.sum((y_true - np.mean(y_true)) ** 2)
+    if denom <= 0:
+        return np.nan
+    return 1.0 - (np.sum((y_true - y_pred) ** 2) / denom)
+
+
+def compute_event_metrics(y_true, y_pred, event_percentile=99.0):
+    """
+    Event-focused validation metrics for sparse calcium activity.
+
+    These are diagnostic metrics, not training losses. They make visible when a
+    model gets reasonable global correlation by predicting low-amplitude averages
+    while missing high-activity transients.
+    """
+    x = np.asarray(y_true, dtype=np.float64)
+    y = np.asarray(y_pred, dtype=np.float64)
+    if x.shape != y.shape or x.size == 0:
+        return {}
+
+    eps = 1e-12
+    metrics = {
+        "pred_std_over_true_std": float(np.std(y) / (np.std(x) + eps)),
+    }
+
+    if x.ndim >= 2 and x.shape[1] > 1:
+        dx = np.diff(x, axis=1)
+        dy = np.diff(y, axis=1)
+        metrics["pred_dynamics_std_over_true_dynamics_std"] = float(
+            np.std(dy) / (np.std(dx) + eps)
+        )
+    else:
+        metrics["pred_dynamics_std_over_true_dynamics_std"] = np.nan
+
+    p1 = float(event_percentile)
+    p05 = 100.0 - ((100.0 - p1) / 2.0)
+    for label, percentile in (("top_1_percent", p1), ("top_0_5_percent", p05)):
+        threshold = np.percentile(x, percentile)
+        mask = x >= threshold
+        if np.any(mask) and abs(np.mean(x[mask])) > eps:
+            metrics[f"{label}_event_capture"] = float(np.mean(y[mask]) / (np.mean(x[mask]) + eps))
+        else:
+            metrics[f"{label}_event_capture"] = np.nan
+
+    if x.ndim == 3:
+        x_flat = x.reshape(-1, x.shape[-1])
+        y_flat = y.reshape(-1, y.shape[-1])
+        denom = np.sum((x_flat - np.mean(x_flat, axis=0, keepdims=True)) ** 2, axis=0)
+        numer = np.sum((x_flat - y_flat) ** 2, axis=0)
+        per_neuron = np.full(x.shape[-1], np.nan, dtype=np.float64)
+        valid = denom > eps
+        per_neuron[valid] = 1.0 - (numer[valid] / denom[valid])
+        metrics["per_neuron_R2"] = float(np.nanmean(per_neuron))
+        metrics["per_neuron_R2_median"] = float(np.nanmedian(per_neuron))
+        metrics["per_neuron_R2_fraction_positive"] = float(np.nanmean(per_neuron > 0))
+
+        event_threshold = np.percentile(x, p1)
+        event_frame_mask = np.any(x >= event_threshold, axis=-1)
+        metrics["event_frame_count"] = int(np.sum(event_frame_mask))
+        metrics["event_frame_fraction"] = float(np.mean(event_frame_mask))
+        if np.any(event_frame_mask):
+            metrics["event_frame_R2"] = float(_safe_sse_r2_np(x[event_frame_mask], y[event_frame_mask]))
+        else:
+            metrics["event_frame_R2"] = np.nan
+    else:
+        metrics["per_neuron_R2"] = np.nan
+        metrics["per_neuron_R2_median"] = np.nan
+        metrics["per_neuron_R2_fraction_positive"] = np.nan
+        metrics["event_frame_count"] = 0
+        metrics["event_frame_fraction"] = 0.0
+        metrics["event_frame_R2"] = np.nan
+
+    return metrics
 
 def format_duration(seconds):
     seconds = max(0, int(seconds))
@@ -801,6 +880,9 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
                 lambda_metric=lambda_metric,
                 recon_loss_type=getattr(args, "recon_loss", getattr(args, "reconstruction_loss", "mse")),
                 recon_loss_eps=getattr(args, "recon_loss_eps", 1e-8),
+                event_weight_alpha=getattr(args, "event_weight_alpha", 0.0),
+                event_weight_mode=getattr(args, "event_weight_mode", "activity"),
+                event_weight_percentile=getattr(args, "event_weight_percentile", 95.0),
             )
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -1369,6 +1451,52 @@ class MoEDecoder(nn.Module):
         y = (expert_outs * w).sum(dim=0)                    # [B, L, N]
         return y
 
+
+class EventMoEDecoder(nn.Module):
+    """
+    Event-factorized MoE decoder for nonnegative calcium activity.
+
+    Each expert predicts event logits and amplitudes. The final reconstruction is
+    p_event * amplitude, where p_event = sigmoid(logits) and amplitude =
+    softplus(raw_amplitude). This makes sparse transient events an explicit
+    output factor rather than asking a single Gaussian-mean head to average them.
+    """
+    def __init__(self, latent_dim, n_neurons, num_experts=4, hidden=256):
+        super().__init__()
+        self.num_experts = num_experts
+        self.n_neurons = n_neurons
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(latent_dim, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, 2 * n_neurons),
+            )
+            for _ in range(num_experts)
+        ])
+        for expert in self.experts:
+            final = expert[-1]
+            with torch.no_grad():
+                final.bias.view(n_neurons, 2)[:, 0].fill_(-2.0)
+                final.bias.view(n_neurons, 2)[:, 1].fill_(-3.0)
+        self.neuron_logits = nn.Parameter(torch.zeros(n_neurons, num_experts))
+
+    def forward(self, z_traj):
+        B, L, D = z_traj.shape
+        z_flat = z_traj.reshape(B * L, D)
+        expert_outs = []
+        for expert in self.experts:
+            expert_outs.append(expert(z_flat).view(B, L, self.n_neurons, 2))
+        expert_outs = torch.stack(expert_outs, dim=0)  # [E, B, L, N, 2]
+
+        weights = torch.softmax(self.neuron_logits, dim=-1)
+        weights = weights.permute(1, 0).view(self.num_experts, 1, 1, self.n_neurons, 1)
+        raw = (expert_outs * weights).sum(dim=0)
+        event_logits = raw[..., 0]
+        amplitude_raw = raw[..., 1]
+        return torch.sigmoid(event_logits) * F.softplus(amplitude_raw)
+
 class Decoder(nn.Module):
     def __init__(self, latent_dim, n_out):
         super().__init__()
@@ -1383,6 +1511,34 @@ class Decoder(nn.Module):
         B, L, D = z_traj.shape
         x = self.net(z_traj.reshape(B*L, D)) # [B*L, N]
         return x.reshape(B, L, -1)
+
+
+class EventDecoder(nn.Module):
+    """
+    Simple event-factorized decoder: xhat = sigmoid(logit_event) * softplus(amplitude).
+    Use with raw/nonnegative targets, not z-scored or baseline-centered targets.
+    """
+    def __init__(self, latent_dim, n_out):
+        super().__init__()
+        self.n_out = n_out
+        self.net = nn.Sequential(
+            nn.Linear(latent_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, 2 * n_out),
+        )
+        with torch.no_grad():
+            final = self.net[-1]
+            final.bias.view(n_out, 2)[:, 0].fill_(-2.0)
+            final.bias.view(n_out, 2)[:, 1].fill_(-3.0)
+
+    def forward(self, z_traj):
+        B, L, D = z_traj.shape
+        raw = self.net(z_traj.reshape(B * L, D)).reshape(B, L, self.n_out, 2)
+        event_logits = raw[..., 0]
+        amplitude_raw = raw[..., 1]
+        return torch.sigmoid(event_logits) * F.softplus(amplitude_raw)
     
 class ODEVAE(nn.Module):
     def __init__(
@@ -1463,18 +1619,28 @@ class ODEVAE(nn.Module):
                 time_embed_dim=ode_time_embed_dim,
             )
 
-        if decoder_type.lower() == "mlp":
+        decoder_type_l = decoder_type.lower()
+        if decoder_type_l == "mlp":
             self.dec = Decoder(latent_dim, n_neurons)
-        elif decoder_type.lower() == "neuronaware":
+        elif decoder_type_l in ("event", "event_mlp", "spike", "spike_mlp"):
+            self.dec = EventDecoder(latent_dim, n_neurons)
+        elif decoder_type_l == "neuronaware":
             self.dec = NeuronAwareDecoder(latent_dim, n_neurons)
-        elif decoder_type.lower() == "localattn":
+        elif decoder_type_l == "localattn":
             self.dec = LocalAttentionDecoder(
                 latent_dim=latent_dim,
                 n_neurons=n_neurons,
                 k_neighbors=k_neighbors,
             )
-        elif decoder_type.lower() == "moe":
+        elif decoder_type_l == "moe":
             self.dec = MoEDecoder(
+                latent_dim=latent_dim,
+                n_neurons=n_neurons,
+                num_experts=dec_num_experts,
+                hidden=256,
+            )
+        elif decoder_type_l in ("event_moe", "spike_moe"):
+            self.dec = EventMoEDecoder(
                 latent_dim=latent_dim,
                 n_neurons=n_neurons,
                 num_experts=dec_num_experts,
@@ -1795,19 +1961,93 @@ def compute_mind_geometry_loss(
     return torch.sum(weights * err) / (torch.sum(weights) + float(eps))
 
 
-def reconstruction_loss(xhat, x, loss_type="mse", eps=1e-8):
+def _event_signal_tensor(x, mode="activity"):
+    mode = str(mode).strip().lower()
+    if mode in ("none", "off", "false"):
+        return torch.zeros_like(x)
+    if mode in ("activity", "positive", "relu"):
+        return torch.clamp(x, min=0.0)
+    if mode in ("abs", "abs_activity", "magnitude"):
+        return torch.abs(x)
+    if mode in ("dx", "diff", "derivative", "transition"):
+        signal = torch.zeros_like(x)
+        if x.shape[1] > 1:
+            signal[:, 1:, :] = torch.abs(x[:, 1:, :] - x[:, :-1, :])
+        return signal
+    if mode in ("activity_or_dx", "activity_dx", "max_activity_dx"):
+        activity = torch.clamp(x, min=0.0)
+        dx = torch.zeros_like(x)
+        if x.shape[1] > 1:
+            dx[:, 1:, :] = torch.abs(x[:, 1:, :] - x[:, :-1, :])
+        return torch.maximum(activity, dx)
+    raise ValueError(f"Unknown event_weight_mode: {mode}")
+
+
+def _event_weight_tensor(x, mode="activity", percentile=95.0, eps=1e-8):
+    signal = _event_signal_tensor(x, mode=mode).detach()
+    if signal.numel() == 0:
+        return signal
+    percentile = float(percentile)
+    percentile = min(100.0, max(0.0, percentile))
+    threshold = torch.quantile(signal.reshape(-1), percentile / 100.0)
+    above = torch.relu(signal - threshold)
+    scale = torch.clamp(signal.max() - threshold, min=float(eps))
+    return above / scale
+
+
+def reconstruction_loss(
+    xhat,
+    x,
+    loss_type="mse",
+    eps=1e-8,
+    event_weight_alpha=0.0,
+    event_weight_mode="activity",
+    event_weight_percentile=95.0,
+):
     """
     Reconstruction objective.
 
     mse: ordinary mean squared error.
-    r2: minimize Var(residual) / Var(target), i.e. maximize variance explained.
-    per_neuron_r2: same ratio averaged per neuron so high-variance neurons do not dominate.
+    r2: minimize mean squared residual normalized by target variance.
+    per_neuron_r2: same normalized squared error averaged per neuron so high-variance
+        neurons do not dominate.
+    event_weighted_mse / event_weighted_r2: upweight high-activity or high-transition
+        target values with (1 + alpha * event_weight).
+    variance_r2 / per_neuron_variance_r2: legacy variance-of-residual objectives.
+        These match the older logged variance-explained metric but ignore mean/bias error.
     """
     loss_type = str(loss_type).strip().lower()
+    if loss_type in ("event_weighted_mse", "event_mse", "weighted_mse", "spike_mse"):
+        event_weight = _event_weight_tensor(
+            x,
+            mode=event_weight_mode,
+            percentile=event_weight_percentile,
+            eps=eps,
+        )
+        weights = 1.0 + float(event_weight_alpha) * event_weight
+        return torch.mean(weights * ((xhat - x) ** 2))
+
+    if loss_type in ("event_weighted_r2", "event_r2", "weighted_r2", "spike_r2"):
+        event_weight = _event_weight_tensor(
+            x,
+            mode=event_weight_mode,
+            percentile=event_weight_percentile,
+            eps=eps,
+        )
+        weights = 1.0 + float(event_weight_alpha) * event_weight
+        residual_mse = torch.mean(weights * ((xhat - x) ** 2))
+        target_var = torch.var(x.reshape(-1), unbiased=False)
+        return residual_mse / (target_var + float(eps))
+
     if loss_type in ("mse", "l2"):
         return torch.mean((xhat - x) ** 2)
 
-    if loss_type in ("r2", "variance_r2", "var_explained", "variance_explained"):
+    if loss_type in ("r2", "normalized_mse", "sse_r2"):
+        residual_mse = torch.mean((xhat - x) ** 2)
+        target_var = torch.var(x.reshape(-1), unbiased=False)
+        return residual_mse / (target_var + float(eps))
+
+    if loss_type in ("variance_r2", "var_error_r2", "var_explained", "variance_explained"):
         residual_var = torch.var((xhat - x).reshape(-1), unbiased=False)
         target_var = torch.var(x.reshape(-1), unbiased=False)
         return residual_var / (target_var + float(eps))
@@ -1815,21 +2055,54 @@ def reconstruction_loss(xhat, x, loss_type="mse", eps=1e-8):
     if loss_type in ("per_neuron_r2", "neuron_r2", "feature_r2"):
         x_flat = x.reshape(-1, x.shape[-1])
         xhat_flat = xhat.reshape(-1, xhat.shape[-1])
+        residual_mse = torch.mean((xhat_flat - x_flat) ** 2, dim=0)
+        target_var = torch.var(x_flat, dim=0, unbiased=False)
+        return torch.mean(residual_mse / torch.clamp(target_var, min=float(eps)))
+
+    if loss_type in ("per_neuron_variance_r2", "neuron_variance_r2", "feature_variance_r2"):
+        x_flat = x.reshape(-1, x.shape[-1])
+        xhat_flat = xhat.reshape(-1, xhat.shape[-1])
         residual_var = torch.var(xhat_flat - x_flat, dim=0, unbiased=False)
         target_var = torch.var(x_flat, dim=0, unbiased=False)
-        valid = target_var > float(eps)
-        if not torch.any(valid):
-            return x.new_tensor(0.0)
-        return torch.mean(residual_var[valid] / (target_var[valid] + float(eps)))
+        return torch.mean(residual_var / torch.clamp(target_var, min=float(eps)))
 
     raise ValueError(f"Unknown recon_loss type: {loss_type}")
 
 
-def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0, geo_loss=None, lambda_geo=0.0, metric_loss=None, lambda_metric=0.0, recon_loss_type="mse", recon_loss_eps=1e-8):
+def vae_loss(
+    xhat,
+    x,
+    mu,
+    logvar,
+    zdiff,
+    beta=1.0,
+    lambda_smooth=0.0,
+    transition_loss=None,
+    lambda_transition=0.0,
+    lle_loss=None,
+    lambda_lle=0.0,
+    geo_loss=None,
+    lambda_geo=0.0,
+    metric_loss=None,
+    lambda_metric=0.0,
+    recon_loss_type="mse",
+    recon_loss_eps=1e-8,
+    event_weight_alpha=0.0,
+    event_weight_mode="activity",
+    event_weight_percentile=95.0,
+):
     # --- Safety clamp to prevent numerical overflow ---
     logvar = torch.clamp(logvar, min=-10.0, max=10.0)
 
-    recon = reconstruction_loss(xhat, x, loss_type=recon_loss_type, eps=recon_loss_eps)
+    recon = reconstruction_loss(
+        xhat,
+        x,
+        loss_type=recon_loss_type,
+        eps=recon_loss_eps,
+        event_weight_alpha=event_weight_alpha,
+        event_weight_mode=event_weight_mode,
+        event_weight_percentile=event_weight_percentile,
+    )
     kl = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     smooth = torch.mean(zdiff**2) if lambda_smooth > 0 else x.new_tensor(0.0)
     if transition_loss is None or lambda_transition <= 0:
@@ -2248,6 +2521,8 @@ def train(args):
 
     best_val = math.inf
     mean_r = np.nan
+    last_event_metrics = {}
+    best_event_metrics = {}
     ckpt = os.path.join(args.out_dir, "ode_vae_best.pt")
     analysis_cache_path = os.path.join(args.out_dir, "analysis_cache_best.npz")
     raw_vs_recon_window_path = os.path.join(args.out_dir, "raw_vs_recon_t0_15_n0_40.png")
@@ -2348,6 +2623,9 @@ def train(args):
                 lambda_metric=lambda_metric,
                 recon_loss_type=getattr(args, "recon_loss", getattr(args, "reconstruction_loss", "mse")),
                 recon_loss_eps=getattr(args, "recon_loss_eps", 1e-8),
+                event_weight_alpha=getattr(args, "event_weight_alpha", 0.0),
+                event_weight_mode=getattr(args, "event_weight_mode", "activity"),
+                event_weight_percentile=getattr(args, "event_weight_percentile", 95.0),
             )
             
             # ---- NaN check ----
@@ -2454,6 +2732,9 @@ def train(args):
                     lambda_metric=lambda_metric,
                     recon_loss_type=getattr(args, "recon_loss", getattr(args, "reconstruction_loss", "mse")),
                     recon_loss_eps=getattr(args, "recon_loss_eps", 1e-8),
+                    event_weight_alpha=getattr(args, "event_weight_alpha", 0.0),
+                    event_weight_mode=getattr(args, "event_weight_mode", "activity"),
+                    event_weight_percentile=getattr(args, "event_weight_percentile", 95.0),
                 )
                 vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item(); vg += geo.item(); vm += metric.item()
                 val_preds.append(xhat.cpu().numpy())
@@ -2516,16 +2797,31 @@ def train(args):
                 val_trial_cache["x_true"] = np.concatenate(val_true_batches, axis=0)
                 val_trial_cache["x_pred"] = np.concatenate(val_preds, axis=0)
                 val_trial_cache["trial_ids"] = val_trial_ids
+            if val_trial_cache["x_true"] is not None and val_trial_cache["x_pred"] is not None:
+                last_event_metrics = compute_event_metrics(
+                    val_trial_cache["x_true"],
+                    val_trial_cache["x_pred"],
+                    event_percentile=getattr(args, "event_metric_percentile", 99.0),
+                )
             elapsed = time.time() - train_start_time
             avg_epoch = elapsed / max(1, epoch)
             eta = avg_epoch * max(0, args.epochs - epoch)
             eta_str = format_duration(eta)
-            print(f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} | smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} | geo {vg/nbv:.5f} | metric {vm/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} | eta {eta_str}")
+            print(
+                f"      valid loss {vl/nbv:.5f} | recon {vr/nbv:.5f} | kl {vk/nbv:.5f} "
+                f"| smooth {vs/nbv:.5f} | trans {vt/nbv:.5f} | lle {vlle/nbv:.5f} "
+                f"| geo {vg/nbv:.5f} | metric {vm/nbv:.5f} | r {mean_r:.4f} | R² {mean_r2:.4f} "
+                f"| event cap1 {last_event_metrics.get('top_1_percent_event_capture', np.nan):.4f} "
+                f"| dyn ratio {last_event_metrics.get('pred_dynamics_std_over_true_dynamics_std', np.nan):.4f} "
+                f"| eta {eta_str}"
+            )
 
             current_val = vl / nbv
             if current_val < best_val and not nan_flag:
                 best_val = current_val
+                best_event_metrics = dict(last_event_metrics)
                 meta["analysis_cache_path"] = analysis_cache_path
+                meta["best_event_metrics"] = best_event_metrics
                 torch.save({
                     "state_dict": model.state_dict(),
                     "tvec": tvec_np,
@@ -2543,6 +2839,7 @@ def train(args):
                         tvec_np,
                         val_trial_cache["metric_space"],
                         trial_ids=val_trial_cache["trial_ids"],
+                        event_metrics=last_event_metrics,
                     )
                     try:
                         save_raw_vs_recon_window_plot(
@@ -2670,6 +2967,8 @@ def train(args):
     "lle": vlle / nbv,
     "geo": vg / nbv,
     "metric": vm / nbv,
+    "event_metrics": last_event_metrics,
+    "best_event_metrics": best_event_metrics,
     }
     # --- Log run metadata to JSON file --- #
     run_metadata = {
@@ -2687,6 +2986,8 @@ def train(args):
         "lle": vlle / nbv,
         "geo": vg / nbv,
         "metric": vm / nbv,
+        "event_metrics": last_event_metrics,
+        "best_event_metrics": best_event_metrics,
         "data_hash": data_hash,
     },
     "artifacts": {

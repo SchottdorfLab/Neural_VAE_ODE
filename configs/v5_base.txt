@@ -7,7 +7,7 @@ position_min = 0
 position_max = 300
 position_clip = true
 position_monotonic_policy = cumulative_max
-drop_first_trials = 10
+drop_first_trials = 0
 
 latent_dim = 7
 

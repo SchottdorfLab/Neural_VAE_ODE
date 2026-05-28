@@ -1,0 +1,38 @@
+{
+  "train": {
+    "r": 0.8922615228079233,
+    "R2": 0.7945933559817706,
+    "variance_explained": 0.7948731678856855
+  },
+  "heldout": {
+    "r": 0.6816875130674996,
+    "R2": 0.46314101533105845,
+    "variance_explained": 0.46346212485051597
+  },
+  "events": {
+    "top_1_percent_event_capture": 0.4449243528971969,
+    "top_0_5_percent_event_capture": 0.49638615441269285,
+    "pred_std_over_true_std": 0.7168406156480062,
+    "pred_dynamics_std_over_true_dynamics_std": 1.115311574601519,
+    "per_neuron_R2_mean": -0.2172690221203839,
+    "per_neuron_R2_median": -0.0077740878576939565,
+    "per_neuron_R2_fraction_positive": 0.13725490196078433,
+    "event_frame_r": 0.7748731811655934,
+    "event_frame_R2": 0.5794445336232538,
+    "event_frame_variance_explained": 0.5795679397001379,
+    "event_frame_count": 21,
+    "event_frame_fraction": 0.010294117647058823
+  },
+  "teacher_train": {
+    "r": 0.8813840572894553,
+    "R2": 0.7678620404662139,
+    "variance_explained": 0.7682785633853877
+  },
+  "teacher_heldout": {
+    "r": 0.6793277025782332,
+    "R2": 0.45871846521613757,
+    "variance_explained": 0.4597253717821652
+  },
+  "R2": 0.46314101533105845,
+  "r": 0.6816875130674996
+}

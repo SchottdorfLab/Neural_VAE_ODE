@@ -1,0 +1,28 @@
+Device: cuda
+Loading data: /home/4429/projects/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=161, heldout=17 (0.096)
+PCA feature space: dim=50, explained_variance=0.7892
+Selected train landmarks: 750 of 19320 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=7.0960, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.81108 | val 0.36525 | feature 0.03736 | z 0.76559 | teacher 0.02921 | raw 0.01642
+[025] train 0.04429 | val 0.04533 | feature 0.00417 | z 0.03929 | teacher 0.00241 | raw 0.00475
+[050] train 0.02609 | val 0.02778 | feature 0.00271 | z 0.02272 | teacher 0.00179 | raw 0.00429
+[075] train 0.01928 | val 0.02091 | feature 0.00215 | z 0.01651 | teacher 0.00165 | raw 0.00412
+[100] train 0.01537 | val 0.01724 | feature 0.00175 | z 0.01303 | teacher 0.00153 | raw 0.00400
+[125] train 0.01314 | val 0.01481 | feature 0.00155 | z 0.01103 | teacher 0.00149 | raw 0.00394
+[150] train 0.01155 | val 0.01319 | feature 0.00139 | z 0.00960 | teacher 0.00146 | raw 0.00389
+[175] train 0.01041 | val 0.01233 | feature 0.00128 | z 0.00857 | teacher 0.00144 | raw 0.00386
+[200] train 0.00955 | val 0.01126 | feature 0.00119 | z 0.00782 | teacher 0.00142 | raw 0.00383
+[225] train 0.00896 | val 0.01074 | feature 0.00113 | z 0.00728 | teacher 0.00142 | raw 0.00381
+[250] train 0.00826 | val 0.01010 | feature 0.00105 | z 0.00667 | teacher 0.00140 | raw 0.00379
+[275] train 0.00783 | val 0.00978 | feature 0.00101 | z 0.00628 | teacher 0.00140 | raw 0.00377
+[300] train 0.00733 | val 0.00930 | feature 0.00095 | z 0.00584 | teacher 0.00138 | raw 0.00376
+Neural AE train r 0.8923 | R2 0.7946
+Neural AE heldout r 0.6817 | R2 0.4631
+Teacher MIND heldout r 0.6793 | R2 0.4587
+Event capture top1 0.4449 | dyn ratio 1.1153
+Saved outputs to /home/4429/projects/Neural_VAE_ODE/runs/2026-05-28_004601_db080eb

@@ -10,7 +10,7 @@ seed = 42
 trial_len_s = 12
 fps = 10
 min_frames = 10
-drop_first_trials = 10
+drop_first_trials = 0
 sequence_alignment = position
 position_normalize = true
 position_cumulative_max = true
@@ -36,7 +36,7 @@ pca_max_dim = 64
 
 # MIND-style manifold construction
 latent_dim = 7
-landmark_count = 750
+landmark_count = 1500
 transition_k = 16
 transition_weight = 1.0
 transition_temperature = 1.0

@@ -2,6 +2,12 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 28th, 10:43am:
+- Setting lambda_teacher_z to 0 gives best results.
+    - Meaning: let the AE learn its own latent coordinate system. 
+    - Teacher measn the non-neural MIND LLE pipeline that provides structure/targets. We call it a teacher because it is computed first, using train data only, then the neural AE can optionally learn from it.
+    - The teacher does: raw x > PCA features > MIND-style distances > Sammon/MDS landmark embedding > LLE mapping > kernel/LLE reconstruction target 
+    
 ## May 28th, 8:57am: 
 - PCA maximizes the original variance present in the transformed dataset, but will not (in general) preserve complex structures---like a regular pattern over a curved manifold. So a non-linear projection would be nice. 
 

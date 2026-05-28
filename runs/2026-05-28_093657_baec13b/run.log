@@ -1,0 +1,28 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=161, heldout=17 (0.096)
+PCA feature space: dim=50, explained_variance=0.7892
+Selected train landmarks: 750 of 19320 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=7.0960, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.04572 | val 0.03820 | feature 0.03636 | z 0.98243 | teacher 0.02846 | raw 0.02244
+[025] train 0.00456 | val 0.00470 | feature 0.00313 | z 5.24562 | teacher 0.00278 | raw 0.00737
+[050] train 0.00317 | val 0.00334 | feature 0.00195 | z 7.83533 | teacher 0.00212 | raw 0.00682
+[075] train 0.00264 | val 0.00280 | feature 0.00150 | z 9.43643 | teacher 0.00189 | raw 0.00660
+[100] train 0.00234 | val 0.00250 | feature 0.00125 | z 10.52205 | teacher 0.00177 | raw 0.00648
+[125] train 0.00214 | val 0.00230 | feature 0.00107 | z 11.14668 | teacher 0.00169 | raw 0.00640
+[150] train 0.00201 | val 0.00217 | feature 0.00096 | z 11.56970 | teacher 0.00165 | raw 0.00634
+[175] train 0.00189 | val 0.00203 | feature 0.00086 | z 11.87928 | teacher 0.00161 | raw 0.00630
+[200] train 0.00180 | val 0.00193 | feature 0.00078 | z 11.99673 | teacher 0.00158 | raw 0.00626
+[225] train 0.00173 | val 0.00188 | feature 0.00072 | z 12.07315 | teacher 0.00155 | raw 0.00622
+[250] train 0.00168 | val 0.00181 | feature 0.00067 | z 12.07174 | teacher 0.00154 | raw 0.00620
+[275] train 0.00163 | val 0.00176 | feature 0.00064 | z 12.10844 | teacher 0.00153 | raw 0.00618
+[300] train 0.00160 | val 0.00173 | feature 0.00060 | z 12.07093 | teacher 0.00151 | raw 0.00617
+Neural AE train r 0.8950 | R2 0.7996
+Neural AE heldout r 0.7609 | R2 0.5780
+Teacher MIND heldout r 0.6793 | R2 0.4587
+Event capture top1 0.5120 | dyn ratio 0.9280
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-28_093657_baec13b

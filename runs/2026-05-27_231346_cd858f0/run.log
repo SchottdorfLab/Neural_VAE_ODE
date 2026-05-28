@@ -1,0 +1,14 @@
+Loading data: /home/4429/projects/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=188, L=120, N=357
+Trial split: train=170, heldout=18 (0.096)
+PCA feature space: dim=50, explained_variance=0.7927
+Selected train landmarks: 1500 of 20400 states
+Built transition/geodesic distances: max=6.9243, disconnected_replaced=0
+Embedded landmarks: Z=(1500, 7), mode=sammon
+Mapping held-out states with LLE...
+Train r 0.7577 | R2 0.5712
+Heldout r 0.2212 | R2 -1.6710
+Event capture top1 0.4544 | dyn ratio 12.7124
+Saved outputs to /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_231346_cd858f0

@@ -1,0 +1,28 @@
+{
+  "train": {
+    "r": 0.8813840014721219,
+    "R2": 0.7678619678716764,
+    "variance_explained": 0.7682784845762547
+  },
+  "heldout": {
+    "r": 0.6793278372928829,
+    "R2": 0.4587187438095708,
+    "variance_explained": 0.4597256416757992
+  },
+  "events": {
+    "top_1_percent_event_capture": 0.3871017368621177,
+    "top_0_5_percent_event_capture": 0.4353092931181495,
+    "pred_std_over_true_std": 0.6373675126243996,
+    "pred_dynamics_std_over_true_dynamics_std": 1.6498136428404317,
+    "per_neuron_R2_mean": -0.16945977621332053,
+    "per_neuron_R2_median": -0.007657504776853896,
+    "per_neuron_R2_fraction_positive": 0.14285714285714285,
+    "event_frame_r": 0.806819167001122,
+    "event_frame_R2": 0.5884076305739103,
+    "event_frame_variance_explained": 0.5891651747162887,
+    "event_frame_count": 21,
+    "event_frame_fraction": 0.010294117647058823
+  },
+  "R2": 0.4587187438095708,
+  "r": 0.6793278372928829
+}

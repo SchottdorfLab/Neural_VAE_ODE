@@ -1,0 +1,19 @@
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=188, L=120, N=357
+Trial split: train=170, heldout=18 (0.096)
+PCA feature space: dim=50, explained_variance=0.7927
+Selected train landmarks: 1 of 20400 states
+Traceback (most recent call last):
+  File "/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py", line 749, in <module>
+    main()
+  File "/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py", line 636, in main
+    d_mind, dist_meta = transition_geodesic_distances(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py", line 296, in transition_geodesic_distances
+    distances, indices = nn.kneighbors(phi, return_distance=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kathleenhiggins/miniforge3/lib/python3.12/site-packages/sklearn/neighbors/_base.py", line 854, in kneighbors
+    raise ValueError(
+ValueError: Expected n_neighbors <= n_samples_fit, but n_neighbors = 3, n_samples_fit = 1, n_samples = 1

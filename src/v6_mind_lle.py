@@ -255,21 +255,152 @@ def sequence_deltas(features: np.ndarray) -> np.ndarray:
     return deltas
 
 
-def farthest_point_landmarks(x: np.ndarray, count: int, rng: np.random.Generator) -> np.ndarray:
+def farthest_point_landmarks(
+    x: np.ndarray,
+    count: int,
+    rng: np.random.Generator,
+    initial_indices: np.ndarray | None = None,
+) -> np.ndarray:
     n = x.shape[0]
     count = min(max(int(count), 1), n)
-    first = int(rng.integers(0, n))
-    selected = np.empty(count, dtype=np.int64)
-    selected[0] = first
-    diff = x - x[first]
-    min_dist = np.einsum("ij,ij->i", diff, diff)
-    for i in range(1, count):
+    if initial_indices is None or len(initial_indices) == 0:
+        selected = np.empty(count, dtype=np.int64)
+        selected[0] = int(rng.integers(0, n))
+        start = 1
+    else:
+        unique_initial = np.unique(np.asarray(initial_indices, dtype=np.int64))
+        unique_initial = unique_initial[(unique_initial >= 0) & (unique_initial < n)]
+        selected = np.empty(count, dtype=np.int64)
+        selected[: min(count, unique_initial.size)] = unique_initial[:count]
+        start = min(count, unique_initial.size)
+        if start == 0:
+            selected[0] = int(rng.integers(0, n))
+            start = 1
+    min_dist = np.full(n, np.inf, dtype=np.float32)
+    for idx in selected[:start]:
+        diff = x - x[int(idx)]
+        dist = np.einsum("ij,ij->i", diff, diff)
+        min_dist = np.minimum(min_dist, dist)
+    min_dist[selected[:start]] = -np.inf
+    for i in range(start, count):
         idx = int(np.argmax(min_dist))
         selected[i] = idx
         diff = x - x[idx]
         dist = np.einsum("ij,ij->i", diff, diff)
         min_dist = np.minimum(min_dist, dist)
+        min_dist[idx] = -np.inf
     return selected
+
+
+def score_activity(x: np.ndarray, mode: str) -> np.ndarray:
+    mode = mode.lower()
+    if mode in {"max", "peak"}:
+        return np.max(x, axis=1)
+    if mode in {"sum", "population"}:
+        return np.sum(x, axis=1)
+    if mode in {"l2", "norm"}:
+        return np.linalg.norm(x, axis=1)
+    if mode in {"mean"}:
+        return np.mean(x, axis=1)
+    raise ValueError(f"Unknown landmark_activity_score={mode!r}")
+
+
+def score_transition(dx: np.ndarray, mode: str) -> np.ndarray:
+    mode = mode.lower()
+    abs_dx = np.abs(dx)
+    if mode in {"max", "max_abs", "peak"}:
+        return np.max(abs_dx, axis=1)
+    if mode in {"sum", "population"}:
+        return np.sum(abs_dx, axis=1)
+    if mode in {"l2", "norm"}:
+        return np.linalg.norm(dx, axis=1)
+    if mode in {"mean"}:
+        return np.mean(abs_dx, axis=1)
+    raise ValueError(f"Unknown landmark_transition_score={mode!r}")
+
+
+def take_top_diverse(
+    score: np.ndarray,
+    features: np.ndarray,
+    count: int,
+    used: set[int],
+    rng: np.random.Generator,
+    pool_multiplier: float,
+) -> list[int]:
+    if count <= 0:
+        return []
+    pool_size = min(score.size, max(count, int(math.ceil(count * pool_multiplier))))
+    pool: list[int] = []
+    for idx in np.argsort(score)[::-1]:
+        i = int(idx)
+        if i in used:
+            continue
+        pool.append(i)
+        if len(pool) >= pool_size:
+            break
+    if len(pool) <= count:
+        chosen = pool
+    else:
+        pool_arr = np.asarray(pool, dtype=np.int64)
+        local = farthest_point_landmarks(features[pool_arr], count, rng, initial_indices=np.array([0]))
+        chosen = [int(pool_arr[i]) for i in local]
+    for i in chosen:
+        used.add(int(i))
+    return chosen
+
+
+def select_landmarks(
+    features: np.ndarray,
+    raw_states: np.ndarray,
+    raw_deltas: np.ndarray,
+    count: int,
+    rng: np.random.Generator,
+    cfg: Dict[str, Any],
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    count = min(max(int(count), 1), features.shape[0])
+    if not bool(cfg.get("event_aware_landmarks", False)):
+        idx = farthest_point_landmarks(features, count, rng)
+        return idx, {
+            "mode": "coverage_only",
+            "requested": int(count),
+            "activity_count": 0,
+            "transition_count": 0,
+            "coverage_count": int(idx.size),
+        }
+
+    activity_fraction = float(cfg.get("landmark_activity_fraction", 0.15))
+    transition_fraction = float(cfg.get("landmark_transition_fraction", 0.15))
+    pool_multiplier = float(cfg.get("landmark_event_pool_multiplier", 5.0))
+    activity_count = int(round(count * activity_fraction))
+    transition_count = int(round(count * transition_fraction))
+    activity_count = min(max(activity_count, 0), count)
+    transition_count = min(max(transition_count, 0), count - activity_count)
+
+    used: set[int] = set()
+    activity = score_activity(raw_states, str(cfg.get("landmark_activity_score", "max")))
+    transition = score_transition(raw_deltas, str(cfg.get("landmark_transition_score", "max_abs")))
+    activity_idx = take_top_diverse(activity, features, activity_count, used, rng, pool_multiplier)
+    transition_idx = take_top_diverse(transition, features, transition_count, used, rng, pool_multiplier)
+    seeded = np.asarray(activity_idx + transition_idx, dtype=np.int64)
+    idx = farthest_point_landmarks(features, count, rng, initial_indices=seeded)
+    seeded_set = set(int(i) for i in seeded)
+    meta = {
+        "mode": "event_aware",
+        "requested": int(count),
+        "activity_count": int(len(activity_idx)),
+        "transition_count": int(len(transition_idx)),
+        "coverage_count": int(count - len(seeded_set)),
+        "activity_fraction": float(activity_fraction),
+        "transition_fraction": float(transition_fraction),
+        "event_pool_multiplier": float(pool_multiplier),
+        "activity_score": str(cfg.get("landmark_activity_score", "max")),
+        "transition_score": str(cfg.get("landmark_transition_score", "max_abs")),
+        "activity_score_min_selected": float(np.min(activity[activity_idx])) if activity_idx else 0.0,
+        "transition_score_min_selected": float(np.min(transition[transition_idx])) if transition_idx else 0.0,
+        "activity_score_max": float(np.max(activity)) if activity.size else 0.0,
+        "transition_score_max": float(np.max(transition)) if transition.size else 0.0,
+    }
+    return idx, meta
 
 
 def standardize_features(x: np.ndarray, eps: float = 1e-8) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -286,16 +417,45 @@ def transition_geodesic_distances(
     transition_weight: float,
     temperature: float,
     sym: str = "min",
+    probability_mode: str = "next_state",
+    exclude_self: bool = True,
+    use_graph_geodesics: bool = True,
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
     n = features.shape[0]
     k = min(max(int(k), 2), max(2, n - 1))
-    phi = np.concatenate([features, float(transition_weight) * deltas], axis=1)
-    phi, _, _ = standardize_features(phi)
+    raw_phi = np.concatenate([features, float(transition_weight) * deltas], axis=1)
+    phi, phi_mu, phi_sd = standardize_features(raw_phi)
+    probability_mode = probability_mode.lower()
+    if probability_mode in {"next", "next_state", "transition"}:
+        raw_query = np.concatenate([features + deltas, float(transition_weight) * deltas], axis=1)
+        query = ((raw_query - phi_mu) / phi_sd).astype(np.float32)
+    elif probability_mode in {"local", "phi", "state_delta"}:
+        query = phi
+    else:
+        raise ValueError(f"Unknown transition_probability_mode={probability_mode!r}")
     nn = NearestNeighbors(n_neighbors=k + 1, metric="euclidean")
     nn.fit(phi)
-    distances, indices = nn.kneighbors(phi, return_distance=True)
-    distances = distances[:, 1:]
-    indices = indices[:, 1:]
+    distances_full, indices_full = nn.kneighbors(query, return_distance=True)
+    distances = np.empty((n, k), dtype=np.float32)
+    indices = np.empty((n, k), dtype=np.int64)
+    for i in range(n):
+        row_d = []
+        row_i = []
+        for dist, idx in zip(distances_full[i], indices_full[i]):
+            if exclude_self and int(idx) == i:
+                continue
+            row_d.append(float(dist))
+            row_i.append(int(idx))
+            if len(row_i) >= k:
+                break
+        if len(row_i) < k:
+            for dist, idx in zip(distances_full[i], indices_full[i]):
+                row_d.append(float(dist))
+                row_i.append(int(idx))
+                if len(row_i) >= k:
+                    break
+        distances[i] = np.asarray(row_d[:k], dtype=np.float32)
+        indices[i] = np.asarray(row_i[:k], dtype=np.int64)
 
     scales = np.median(distances, axis=1, keepdims=True)
     scales = np.where(scales <= 1e-8, np.mean(distances, axis=1, keepdims=True) + 1e-8, scales)
@@ -305,6 +465,24 @@ def transition_geodesic_distances(
     probs = np.exp(logits)
     probs = probs / np.maximum(probs.sum(axis=1, keepdims=True), 1e-12)
     edge_weights = np.sqrt(-np.log(np.clip(probs, 1e-12, 1.0))).astype(np.float32)
+
+    if not use_graph_geodesics:
+        diff = phi[:, None, :] - phi[None, :, :]
+        d_global = np.sqrt(np.einsum("ijk,ijk->ij", diff, diff)).astype(np.float32)
+        np.fill_diagonal(d_global, 0.0)
+        meta = {
+            "transition_k": int(k),
+            "transition_weight": float(transition_weight),
+            "transition_temperature": float(temperature),
+            "transition_probability_mode": probability_mode,
+            "transition_feature": "phi_t=[x_t, alpha * (x_t+1 - x_t)]",
+            "transition_query": "phi_next=[x_t + dx_t, alpha * dx_t]",
+            "use_graph_geodesics": False,
+            "disconnected_pairs_replaced": 0,
+            "distance_min_positive": float(np.min(d_global[d_global > 0])) if np.any(d_global > 0) else 0.0,
+            "distance_max": float(np.max(d_global)),
+        }
+        return d_global, meta
 
     rows = np.repeat(np.arange(n), k)
     cols = indices.reshape(-1)
@@ -336,6 +514,10 @@ def transition_geodesic_distances(
         "transition_k": int(k),
         "transition_weight": float(transition_weight),
         "transition_temperature": float(temperature),
+        "transition_probability_mode": probability_mode,
+        "transition_feature": "phi_t=[x_t, alpha * (x_t+1 - x_t)]",
+        "transition_query": "phi_next=[x_t + dx_t, alpha * dx_t]",
+        "use_graph_geodesics": True,
         "disconnected_pairs_replaced": disconnected,
         "distance_min_positive": float(np.min(d_geo[d_geo > 0])) if np.any(d_geo > 0) else 0.0,
         "distance_max": float(np.max(d_geo)),
@@ -445,6 +627,52 @@ class LLEMapper:
         return out
 
 
+class KernelRegressor:
+    """Nonnegative local weighted-average map.
+
+    This is safer than inverse LLE for held-out points because it interpolates
+    among nearby train states instead of solving unconstrained affine weights.
+    """
+
+    def __init__(self, n_neighbors: int = 32, bandwidth: float = 1.0, eps: float = 1e-8):
+        self.n_neighbors = int(n_neighbors)
+        self.bandwidth = float(bandwidth)
+        self.eps = float(eps)
+        self.x_train: np.ndarray | None = None
+        self.y_train: np.ndarray | None = None
+        self.nn: NearestNeighbors | None = None
+
+    def fit(self, x: np.ndarray, y: np.ndarray) -> "KernelRegressor":
+        if x.shape[0] != y.shape[0]:
+            raise ValueError("Kernel fit arrays must have the same number of rows")
+        self.x_train = np.asarray(x, dtype=np.float32)
+        self.y_train = np.asarray(y, dtype=np.float32)
+        k = min(max(self.n_neighbors, 1), self.x_train.shape[0])
+        self.nn = NearestNeighbors(n_neighbors=k, metric="euclidean")
+        self.nn.fit(self.x_train)
+        return self
+
+    def transform(self, x: np.ndarray, batch_size: int = 4096) -> np.ndarray:
+        if self.x_train is None or self.y_train is None or self.nn is None:
+            raise RuntimeError("KernelRegressor must be fit before transform")
+        x = np.asarray(x, dtype=np.float32)
+        out = np.empty((x.shape[0], self.y_train.shape[1]), dtype=np.float32)
+        for start in range(0, x.shape[0], batch_size):
+            end = min(start + batch_size, x.shape[0])
+            dists, inds = self.nn.kneighbors(x[start:end], return_distance=True)
+            scale = np.median(dists, axis=1, keepdims=True)
+            fallback = np.maximum(dists[:, -1:], self.eps)
+            scale = np.where(scale > self.eps, scale, fallback)
+            denom = np.maximum(scale * max(self.bandwidth, self.eps), self.eps)
+            logits = -0.5 * (dists / denom) ** 2
+            logits = logits - logits.max(axis=1, keepdims=True)
+            weights = np.exp(logits).astype(np.float32)
+            weights = weights / np.maximum(weights.sum(axis=1, keepdims=True), self.eps)
+            for r, row in enumerate(inds):
+                out[start + r] = weights[r] @ self.y_train[row]
+        return out
+
+
 def corr_and_r2(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     a = y_true.reshape(-1).astype(np.float64)
     b = y_pred.reshape(-1).astype(np.float64)
@@ -459,6 +687,78 @@ def corr_and_r2(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     r2 = 1.0 - sse / sst if sst > 0 else float("nan")
     var_exp = 1.0 - float(np.var(a - b)) / float(np.var(a)) if np.var(a) > 0 else float("nan")
     return {"r": r, "R2": float(r2), "variance_explained": float(var_exp)}
+
+
+def r2_value(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    a = y_true.reshape(-1).astype(np.float64)
+    b = y_pred.reshape(-1).astype(np.float64)
+    sst = float(np.sum((a - np.mean(a)) ** 2))
+    if sst <= 0:
+        return float("nan")
+    return float(1.0 - np.sum((a - b) ** 2) / sst)
+
+
+def apply_reconstruction_postprocess(
+    train_pred: np.ndarray,
+    test_pred: np.ndarray,
+    train_target: np.ndarray,
+    cfg: Dict[str, Any],
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+    meta: Dict[str, Any] = {"enabled": bool(cfg.get("postprocess_reconstruction", False))}
+    if not meta["enabled"]:
+        return train_pred, test_pred, meta
+
+    train_out = train_pred.astype(np.float32, copy=True)
+    test_out = test_pred.astype(np.float32, copy=True)
+    train_before = r2_value(train_target, train_out)
+    meta["train_R2_before_postprocess"] = train_before
+
+    clip_min = cfg.get("recon_clip_min", None)
+    if clip_min is not None:
+        clip_min = float(clip_min)
+        train_out = np.maximum(train_out, clip_min)
+        test_out = np.maximum(test_out, clip_min)
+        meta["clip_min"] = clip_min
+
+    clip_max = cfg.get("recon_clip_max", None)
+    if clip_max is not None:
+        clip_max = float(clip_max)
+        train_out = np.minimum(train_out, clip_max)
+        test_out = np.minimum(test_out, clip_max)
+        meta["clip_max"] = clip_max
+
+    floor_mode = str(cfg.get("recon_floor_mode", "none")).lower()
+    floor = 0.0
+    if floor_mode in {"fixed", "hard", "threshold"}:
+        floor = float(cfg.get("recon_activity_floor", 0.0))
+    elif floor_mode in {"train_opt", "opt", "optimize", "train"}:
+        max_floor_cfg = cfg.get("recon_floor_max", None)
+        if max_floor_cfg is None:
+            max_floor = float(np.nanpercentile(train_out, 99.0))
+        else:
+            max_floor = float(max_floor_cfg)
+        steps = max(int(cfg.get("recon_floor_steps", 61)), 2)
+        candidates = np.linspace(0.0, max_floor, steps, dtype=np.float32)
+        best_floor = 0.0
+        best_r2 = -np.inf
+        for cand in candidates:
+            candidate_pred = np.where(train_out >= cand, train_out, 0.0)
+            score = r2_value(train_target, candidate_pred)
+            if np.isfinite(score) and score > best_r2:
+                best_r2 = score
+                best_floor = float(cand)
+        floor = best_floor
+        meta["train_optimized_floor_R2"] = float(best_r2)
+    elif floor_mode not in {"none", "off", "false"}:
+        raise ValueError(f"Unknown recon_floor_mode={floor_mode!r}")
+
+    if floor > 0:
+        train_out = np.where(train_out >= floor, train_out, 0.0).astype(np.float32)
+        test_out = np.where(test_out >= floor, test_out, 0.0).astype(np.float32)
+    meta["recon_floor_mode"] = floor_mode
+    meta["recon_activity_floor"] = float(floor)
+    meta["train_R2_after_postprocess"] = r2_value(train_target, train_out)
+    return train_out, test_out, meta
 
 
 def compute_event_metrics(y_true: np.ndarray, y_pred: np.ndarray, percentile: float = 99.0) -> Dict[str, float]:
@@ -626,12 +926,58 @@ def main() -> None:
     b_train, seq_len, feat_dim = x_train.shape[0], x_train.shape[1], f_train_flat.shape[1]
     f_train_seq = f_train_flat.reshape(b_train, seq_len, feat_dim)
     delta_train_flat = flatten_trials(sequence_deltas(f_train_seq))
+    raw_delta_train_flat = flatten_trials(sequence_deltas(x_train_proc))
+
+    manifold_mask = np.ones(f_train_flat.shape[0], dtype=bool)
+    manifold_meta: Dict[str, Any] = {
+        "filter_silent_frames_for_manifold": bool(cfg.get("filter_silent_frames_for_manifold", False)),
+        "total_train_states": int(f_train_flat.shape[0]),
+    }
+    if bool(cfg.get("filter_silent_frames_for_manifold", False)):
+        score_mode = str(cfg.get("silent_frame_score", "sum"))
+        frame_score = score_activity(x_train_flat, score_mode)
+        threshold = float(cfg.get("silent_frame_threshold", 0.0))
+        manifold_mask = frame_score > threshold
+        if manifold_mask.sum() < max(2, int(cfg.get("transition_k", 16)) + 1):
+            raise ValueError(
+                "Silent-frame manifold filter removed too many train states: "
+                f"kept {int(manifold_mask.sum())} of {manifold_mask.size}"
+            )
+        manifold_meta.update({
+            "silent_frame_score": score_mode,
+            "silent_frame_threshold": threshold,
+            "active_train_states": int(manifold_mask.sum()),
+            "removed_silent_train_states": int((~manifold_mask).sum()),
+            "active_fraction": float(manifold_mask.mean()),
+        })
+        print(
+            "Manifold active-frame filter: "
+            f"kept {manifold_meta['active_train_states']} / {manifold_meta['total_train_states']} "
+            f"train states ({manifold_meta['active_fraction']:.3f})"
+        )
 
     landmark_count = int(cfg.get("landmark_count", min(750, f_train_flat.shape[0])))
-    lm_idx = farthest_point_landmarks(f_train_flat, landmark_count, rng)
+    manifold_indices = np.flatnonzero(manifold_mask)
+    f_manifold = f_train_flat[manifold_mask]
+    x_manifold = x_train_flat[manifold_mask]
+    delta_manifold = delta_train_flat[manifold_mask]
+    raw_delta_manifold = raw_delta_train_flat[manifold_mask]
+    lm_idx, landmark_meta = select_landmarks(
+        f_manifold,
+        x_manifold,
+        raw_delta_manifold,
+        landmark_count,
+        rng,
+        cfg,
+    )
+    lm_idx = manifold_indices[lm_idx]
     f_lm = f_train_flat[lm_idx]
     df_lm = delta_train_flat[lm_idx]
-    print(f"Selected train landmarks: {f_lm.shape[0]} of {f_train_flat.shape[0]} states")
+    print(
+        f"Selected train landmarks: {f_lm.shape[0]} of {f_train_flat.shape[0]} states "
+        f"({landmark_meta['mode']}: activity={landmark_meta['activity_count']}, "
+        f"transition={landmark_meta['transition_count']}, coverage={landmark_meta['coverage_count']})"
+    )
 
     d_mind, dist_meta = transition_geodesic_distances(
         f_lm,
@@ -640,6 +986,9 @@ def main() -> None:
         transition_weight=float(cfg.get("transition_weight", 1.0)),
         temperature=float(cfg.get("transition_temperature", 1.0)),
         sym=str(cfg.get("graph_sym", "min")),
+        probability_mode=str(cfg.get("transition_probability_mode", "next_state")),
+        exclude_self=bool(cfg.get("transition_exclude_self", True)),
+        use_graph_geodesics=bool(cfg.get("use_graph_geodesics", True)),
     )
     print(f"Built transition/geodesic distances: max={dist_meta['distance_max']:.4f}, disconnected_replaced={dist_meta['disconnected_pairs_replaced']}")
 
@@ -650,13 +999,37 @@ def main() -> None:
     lle_k = int(cfg.get("lle_k", cfg.get("lle_neighbors", 16)))
     lle_ridge = float(cfg.get("lle_ridge", 1e-3))
     f2z = LLEMapper(lle_k, lle_ridge).fit(f_lm, z_lm)
-    z2f = LLEMapper(lle_k, lle_ridge).fit(z_lm, f_lm)
 
-    print("Mapping held-out states with LLE...")
+    print("Mapping train and held-out states into the landmark manifold with LLE...")
     z_train = f2z.transform(f_train_flat)
     z_test = f2z.transform(f_test_flat)
-    fhat_train = z2f.transform(z_train)
-    fhat_test = z2f.transform(z_test)
+
+    # Landmarks define the MIND/Sammon geometry, but reconstruction should not be
+    # bottlenecked through landmarks. Fit the inverse decoder on every mapped
+    # training state so held-out reconstruction uses the full training manifold.
+    inverse_decoder = str(cfg.get("inverse_decoder", "kernel")).lower()
+    inverse_k = int(cfg.get("inverse_k", cfg.get("kernel_k", lle_k)))
+    kernel_bandwidth = float(cfg.get("kernel_bandwidth", 1.0))
+    decoder_target = str(cfg.get("decoder_target", "raw")).lower()
+    if decoder_target in {"raw", "neural", "activity"}:
+        decoder_train_target = x_train_flat
+    elif decoder_target in {"feature", "pca", "geometry"}:
+        decoder_train_target = f_train_flat
+    else:
+        raise ValueError(f"Unknown decoder_target={decoder_target!r}")
+    if inverse_decoder in {"kernel", "rbf", "weighted", "weighted_average"}:
+        z2f = KernelRegressor(inverse_k, kernel_bandwidth).fit(z_train, decoder_train_target)
+        print(
+            f"Fitted inverse kernel decoder on all train states: {z_train.shape[0]} states, "
+            f"k={inverse_k}, bandwidth={kernel_bandwidth:g}, target={decoder_target}"
+        )
+    elif inverse_decoder in {"lle", "local_linear"}:
+        z2f = LLEMapper(inverse_k, lle_ridge).fit(z_train, decoder_train_target)
+        print(f"Fitted inverse LLE decoder on all train states: {z_train.shape[0]} states, k={inverse_k}, target={decoder_target}")
+    else:
+        raise ValueError(f"Unknown inverse_decoder={inverse_decoder!r}")
+    decoded_train = z2f.transform(z_train)
+    decoded_test = z2f.transform(z_test)
 
     def inverse_features(fhat: np.ndarray) -> np.ndarray:
         xhat = pca.inverse_transform(fhat).astype(np.float32) if pca is not None else fhat.astype(np.float32)
@@ -664,8 +1037,25 @@ def main() -> None:
             xhat = (xhat * norm_sd + norm_mu).astype(np.float32)
         return xhat
 
-    xhat_train_flat = inverse_features(fhat_train)
-    xhat_test_flat = inverse_features(fhat_test)
+    if decoder_target in {"raw", "neural", "activity"}:
+        xhat_train_flat = decoded_train.astype(np.float32)
+        xhat_test_flat = decoded_test.astype(np.float32)
+    else:
+        xhat_train_flat = inverse_features(decoded_train)
+        xhat_test_flat = inverse_features(decoded_test)
+    xhat_train_flat, xhat_test_flat, postprocess_meta = apply_reconstruction_postprocess(
+        xhat_train_flat,
+        xhat_test_flat,
+        x_train_flat,
+        cfg,
+    )
+    if postprocess_meta.get("enabled"):
+        print(
+            "Reconstruction postprocess: "
+            f"floor={postprocess_meta.get('recon_activity_floor', 0.0):.4g}, "
+            f"train R2 {postprocess_meta.get('train_R2_before_postprocess', float('nan')):.4f}"
+            f" -> {postprocess_meta.get('train_R2_after_postprocess', float('nan')):.4f}"
+        )
     xhat_train = xhat_train_flat.reshape(x_train_proc.shape)
     xhat_test = xhat_test_flat.reshape(x_test_proc.shape)
 
@@ -692,6 +1082,9 @@ def main() -> None:
         neuron_mask=mask,
         axis=axis,
         metrics_json=json.dumps({"train": train_metrics, "heldout": test_metrics, "events": event_metrics}),
+        postprocess_json=json.dumps(postprocess_meta),
+        landmark_selection_json=json.dumps(landmark_meta),
+        manifold_filter_json=json.dumps(manifold_meta),
     )
     save_recon_heatmap(x_test_proc, xhat_test, out_dir / "raw_vs_recon_t0_15_n0_40.png", "MIND-LLE held-out reconstruction")
     save_embedding_plot(z_lm, out_dir / "latent_manifold_mds.png")
@@ -720,6 +1113,8 @@ def main() -> None:
         "use_pca": bool(use_pca),
         "pca_explained_variance": pca_var,
         "landmark_count": int(f_lm.shape[0]),
+        "landmark_selection": landmark_meta,
+        "manifold_filter": manifold_meta,
         "latent_dim": int(latent_dim),
         "split_seed": int(cfg.get("mind_split_seed", seed)),
         "train_trial_ids": [int(x) if float(x).is_integer() else float(x) for x in np.asarray(trial_ids[train_idx], dtype=float)],
@@ -728,8 +1123,14 @@ def main() -> None:
         "embedding_meta": embed_meta,
         "lle_k": int(lle_k),
         "lle_ridge": float(lle_ridge),
+        "inverse_decoder": inverse_decoder,
+        "inverse_k": int(inverse_k),
+        "kernel_bandwidth": float(kernel_bandwidth),
+        "decoder_target": decoder_target,
+        "inverse_fit_states": int(z_train.shape[0]),
+        "postprocess_meta": postprocess_meta,
         "metrics": final_metrics,
-        "method_note": "Train-only MIND-style transition/geodesic distances on landmarks, Sammon/MDS embedding, LLE f->z and z->f out-of-sample reconstruction for held-out trials.",
+        "method_note": "Train-only MIND-style local population geometry: PCA features, event-aware landmarks, graph geodesic distances, Sammon/MDS embedding, LLE f->z mapping from landmarks, and inverse z->PCA-feature decoder fit on all mapped train states for held-out trial reconstruction.",
     }
     with open(out_dir / "run_metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)

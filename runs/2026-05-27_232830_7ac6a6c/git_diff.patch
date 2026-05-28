@@ -1,0 +1,159 @@
+diff --git a/configs/v6_mind_lle.txt b/configs/v6_mind_lle.txt
+index b6266f1..e875ba4 100644
+--- a/configs/v6_mind_lle.txt
++++ b/configs/v6_mind_lle.txt
+@@ -10,7 +10,7 @@ seed = 42
+ trial_len_s = 12
+ fps = 10
+ min_frames = 10
+-drop_first_trials = 0
++drop_first_trials = 10
+ sequence_alignment = position
+ position_normalize = true
+ position_cumulative_max = true
+@@ -36,7 +36,7 @@ pca_max_dim = 64
+ 
+ # MIND-style manifold construction
+ latent_dim = 7
+-landmark_count = 1500
++landmark_count = 750
+ transition_k = 16
+ transition_weight = 1.0
+ transition_temperature = 1.0
+@@ -47,9 +47,16 @@ embedding_mode = sammon
+ sammon_iters = 500
+ sammon_lr = 0.01
+ 
+-# LLE out-of-sample maps: feature -> manifold and manifold -> feature
++# LLE out-of-sample map. Landmarks fit feature -> manifold. The inverse
++# manifold -> feature decoder is fit on all mapped train states, not landmarks.
+ lle_k = 16
+ lle_ridge = 0.001
+ 
++# Safer inverse decoder for z -> PCA feature reconstruction. Kernel uses
++# nonnegative normalized weights, avoiding unconstrained LLE extrapolation.
++inverse_decoder = kernel
++inverse_k = 32
++kernel_bandwidth = 1.0
++
+ # Diagnostics
+ event_metric_percentile = 99.0
+diff --git a/runs/index.csv b/runs/index.csv
+index 452f356..6346adc 100644
+--- a/runs/index.csv
++++ b/runs/index.csv
+@@ -67,3 +67,12 @@ run_id,timestamp,script,config,commit,dirty,exit_code,r,r2,note
+ 2026-05-27_201400_f2c5475,2026-05-27_201400,/home/4429/projects/Neural_VAE_ODE/src/v6_neural_vae.py,/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_201400_f2c5475/config.txt,f2c54757f884cf290e3a291037fb8d99077430f2,False,120,,,testing with R2 recon loss NOT per neuron
+ 2026-05-27_230619_4198199,2026-05-27_230619,/home/4429/projects/Neural_VAE_ODE/src/v6_mind_lle.py,/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_230619_4198199/config.txt,4198199777af61d3e672a1d855c7f65c71b8784a,False,0,,,MIND-style LLE heldout trial baseline
+ 2026-05-27_231346_cd858f0,2026-05-27_231346,/home/4429/projects/Neural_VAE_ODE/src/v6_mind_lle.py,/home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_231346_cd858f0/config.txt,cd858f07960862f3e7bc0a714884a555be195a1a,False,0,,,MIND-style LLE heldout trial baseline with 1500 landmarks and not dropping first 10 trials
++2026-05-27_231900_7ac6a6c,2026-05-27_231900,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231900_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
++2026-05-27_231927_7ac6a6c,2026-05-27_231927,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231927_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
++2026-05-27_231944_7ac6a6c,2026-05-27_231944,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231944_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,1,,,MIND-LLE all-train inverse decoder
++2026-05-27_231954_7ac6a6c,2026-05-27_231954,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231954_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,1,,,MIND-LLE all-train inverse decoder
++2026-05-27_232002_7ac6a6c,2026-05-27_232002,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_232002_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
++2026-05-27_232013_7ac6a6c,2026-05-27_232013,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_232013_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
++2026-05-27_232033_7ac6a6c,2026-05-27_232033,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_232033_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
++2026-05-27_232148_7ac6a6c,2026-05-27_232148,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_232148_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
++2026-05-27_232215_7ac6a6c,2026-05-27_232215,/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py,/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_232215_7ac6a6c/config.txt,7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682,True,0,,,MIND-LLE all-train inverse decoder
+diff --git a/src/v6_mind_lle.py b/src/v6_mind_lle.py
+index 09d526d..3270c8c 100644
+--- a/src/v6_mind_lle.py
++++ b/src/v6_mind_lle.py
+@@ -445,6 +445,52 @@ class LLEMapper:
+         return out
+ 
+ 
++class KernelRegressor:
++    """Nonnegative local weighted-average map.
++
++    This is safer than inverse LLE for held-out points because it interpolates
++    among nearby train states instead of solving unconstrained affine weights.
++    """
++
++    def __init__(self, n_neighbors: int = 32, bandwidth: float = 1.0, eps: float = 1e-8):
++        self.n_neighbors = int(n_neighbors)
++        self.bandwidth = float(bandwidth)
++        self.eps = float(eps)
++        self.x_train: np.ndarray | None = None
++        self.y_train: np.ndarray | None = None
++        self.nn: NearestNeighbors | None = None
++
++    def fit(self, x: np.ndarray, y: np.ndarray) -> "KernelRegressor":
++        if x.shape[0] != y.shape[0]:
++            raise ValueError("Kernel fit arrays must have the same number of rows")
++        self.x_train = np.asarray(x, dtype=np.float32)
++        self.y_train = np.asarray(y, dtype=np.float32)
++        k = min(max(self.n_neighbors, 1), self.x_train.shape[0])
++        self.nn = NearestNeighbors(n_neighbors=k, metric="euclidean")
++        self.nn.fit(self.x_train)
++        return self
++
++    def transform(self, x: np.ndarray, batch_size: int = 4096) -> np.ndarray:
++        if self.x_train is None or self.y_train is None or self.nn is None:
++            raise RuntimeError("KernelRegressor must be fit before transform")
++        x = np.asarray(x, dtype=np.float32)
++        out = np.empty((x.shape[0], self.y_train.shape[1]), dtype=np.float32)
++        for start in range(0, x.shape[0], batch_size):
++            end = min(start + batch_size, x.shape[0])
++            dists, inds = self.nn.kneighbors(x[start:end], return_distance=True)
++            scale = np.median(dists, axis=1, keepdims=True)
++            fallback = np.maximum(dists[:, -1:], self.eps)
++            scale = np.where(scale > self.eps, scale, fallback)
++            denom = np.maximum(scale * max(self.bandwidth, self.eps), self.eps)
++            logits = -0.5 * (dists / denom) ** 2
++            logits = logits - logits.max(axis=1, keepdims=True)
++            weights = np.exp(logits).astype(np.float32)
++            weights = weights / np.maximum(weights.sum(axis=1, keepdims=True), self.eps)
++            for r, row in enumerate(inds):
++                out[start + r] = weights[r] @ self.y_train[row]
++        return out
++
++
+ def corr_and_r2(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+     a = y_true.reshape(-1).astype(np.float64)
+     b = y_pred.reshape(-1).astype(np.float64)
+@@ -650,11 +696,28 @@ def main() -> None:
+     lle_k = int(cfg.get("lle_k", cfg.get("lle_neighbors", 16)))
+     lle_ridge = float(cfg.get("lle_ridge", 1e-3))
+     f2z = LLEMapper(lle_k, lle_ridge).fit(f_lm, z_lm)
+-    z2f = LLEMapper(lle_k, lle_ridge).fit(z_lm, f_lm)
+ 
+-    print("Mapping held-out states with LLE...")
++    print("Mapping train and held-out states into the landmark manifold with LLE...")
+     z_train = f2z.transform(f_train_flat)
+     z_test = f2z.transform(f_test_flat)
++
++    # Landmarks define the MIND/Sammon geometry, but reconstruction should not be
++    # bottlenecked through landmarks. Fit the inverse decoder on every mapped
++    # training state so held-out reconstruction uses the full training manifold.
++    inverse_decoder = str(cfg.get("inverse_decoder", "kernel")).lower()
++    inverse_k = int(cfg.get("inverse_k", cfg.get("kernel_k", lle_k)))
++    kernel_bandwidth = float(cfg.get("kernel_bandwidth", 1.0))
++    if inverse_decoder in {"kernel", "rbf", "weighted", "weighted_average"}:
++        z2f = KernelRegressor(inverse_k, kernel_bandwidth).fit(z_train, f_train_flat)
++        print(
++            f"Fitted inverse kernel decoder on all train states: {z_train.shape[0]} states, "
++            f"k={inverse_k}, bandwidth={kernel_bandwidth:g}"
++        )
++    elif inverse_decoder in {"lle", "local_linear"}:
++        z2f = LLEMapper(inverse_k, lle_ridge).fit(z_train, f_train_flat)
++        print(f"Fitted inverse LLE decoder on all train states: {z_train.shape[0]} states, k={inverse_k}")
++    else:
++        raise ValueError(f"Unknown inverse_decoder={inverse_decoder!r}")
+     fhat_train = z2f.transform(z_train)
+     fhat_test = z2f.transform(z_test)
+ 
+@@ -728,8 +791,12 @@ def main() -> None:
+         "embedding_meta": embed_meta,
+         "lle_k": int(lle_k),
+         "lle_ridge": float(lle_ridge),
++        "inverse_decoder": inverse_decoder,
++        "inverse_k": int(inverse_k),
++        "kernel_bandwidth": float(kernel_bandwidth),
++        "inverse_fit_states": int(z_train.shape[0]),
+         "metrics": final_metrics,
+-        "method_note": "Train-only MIND-style transition/geodesic distances on landmarks, Sammon/MDS embedding, LLE f->z and z->f out-of-sample reconstruction for held-out trials.",
++        "method_note": "Train-only MIND-style transition/geodesic distances on landmarks, Sammon/MDS embedding, LLE f->z mapping from landmarks, inverse z->f decoder fit on all mapped train states for held-out trial reconstruction.",
+     }
+     with open(out_dir / "run_metadata.json", "w", encoding="utf-8") as f:
+         json.dump(metadata, f, indent=2)

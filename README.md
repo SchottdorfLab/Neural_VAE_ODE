@@ -2,6 +2,27 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 28t, 12:14am: 
+- the current best-performing v6 is closer to Isomap/Sammon/LLE than full MIND dynamics. It preserves local population geometry, but it is not strongly transition-aware.
+- Currently transition_weight = 0.0, so dx = x_{t+1} - x_t is not contributing
+- Unlike MIND, we do not learn next-state likelihoods explicitly 
+- Using my evaluation method (v6 holds out 10% of trials completely):
+```
+Heldout R² = 0.4587
+Heldout r  = 0.6793
+Event-frame R² = 0.5884
+```
+- Using Dr. Schottdorf's MIND mechanism to evaluate (MIND often maps/reconstructs all points after fitting landmarks, with optional mapping CV) 
+:
+```
+All-points R²: 0.7623
+All-points r:  0.8785
+Event-frame R²: 0.8522
+Top 1% event capture: 0.6615
+Top 0.5% event capture: 0.7016
+Pred std / true std: 0.7837
+Pred dynamics std / true dynamics std: 0.8841
+```
 ## May 27th, 7:48pm:
 - Next test it to see it with pca turned off.
 - PCA: No impact. v6
@@ -335,6 +356,7 @@ Peak utiliage when I was watching was ~47%, average was about 40% utilization.
 ## February 22nd, 4:18pm:
 Quick note now that the original dimensional run of code from Matlab is done. If I'm not dreaming, I've finally beaten the MIND algorithm. Only took me four months, haha. But I'm sure as I submit this to Dr. Schottdorf, something will be off with my data eval and it'll all be blown up, but in the moment this is good. 
 From the run of the MIND algo:
+**Dr. Schottdorf's MIND algorithm dimension results per dimension, ex. 5-dimensions**
 ***For pearson r:***
 ```
 d=1: 0.2461

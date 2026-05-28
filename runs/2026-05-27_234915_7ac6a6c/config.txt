@@ -1,0 +1,78 @@
+# MIND-style manifold/LLE baseline.
+# This is not a neural ODE/VAE. It learns a train-only population manifold and
+# evaluates held-out trials through LLE out-of-sample mapping.
+
+data_path = src/npz_e65_data/E65_data.npz
+out_dir = /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_234915_7ac6a6c
+seed = 42
+
+# Trial construction
+trial_len_s = 12
+fps = 10
+min_frames = 10
+drop_first_trials = 10
+sequence_alignment = position
+position_normalize = true
+position_cumulative_max = true
+
+# Train/test split. Held-out trials are never used to build distances, embedding,
+# landmarks, PCA, normalization, or LLE maps.
+mind_test_frac = 0.10
+mind_split_seed = 42
+
+# Neuron/data preprocessing
+filter_inactive_neurons = true
+inactive_neuron_threshold = 0.0
+filter_train_silent_neurons = false
+train_silent_threshold = 1e-7
+baseline_correct = false
+normalize_inputs = false
+normalize_eps = 1e-6
+# MIND first builds population states, then usually works in a PCA feature space.
+# Reconstructions are mapped back to neuron space for metrics/plots.
+use_pca = true
+pca_dim = 50
+pca_max_dim = 64
+
+# MIND-style manifold construction
+latent_dim = 7
+landmark_count = 750
+event_aware_landmarks = true
+landmark_activity_fraction = 0.15
+landmark_transition_fraction = 0.15
+landmark_event_pool_multiplier = 5.0
+landmark_activity_score = max
+landmark_transition_score = max_abs
+transition_k = 16
+transition_weight = 1.0
+transition_temperature = 1.0
+graph_sym = min
+
+# MDS/Sammon embedding
+embedding_mode = sammon
+sammon_iters = 500
+sammon_lr = 0.01
+
+# LLE out-of-sample map. Landmarks fit feature -> manifold. The inverse
+# manifold -> feature decoder is fit on all mapped train states, not landmarks.
+lle_k = 16
+lle_ridge = 0.001
+
+# Safer inverse decoder for z -> PCA feature reconstruction. Kernel uses
+# nonnegative normalized weights, avoiding unconstrained LLE extrapolation.
+inverse_decoder = kernel
+inverse_k = 128
+kernel_bandwidth = 0.35
+
+# Sparse calcium activity is nonnegative and mostly silent. This postprocess is
+# fit using train reconstruction only, then applied unchanged to held-out trials.
+postprocess_reconstruction = true
+recon_clip_min = 0.0
+recon_clip_max = none
+recon_floor_mode = train_opt
+recon_activity_floor = 0.0
+recon_floor_max = 0.3
+recon_floor_steps = 61
+
+# Diagnostics
+event_metric_percentile = 99.0

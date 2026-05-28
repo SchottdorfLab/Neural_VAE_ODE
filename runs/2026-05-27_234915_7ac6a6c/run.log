@@ -1,0 +1,16 @@
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=161, heldout=17 (0.096)
+PCA feature space: dim=50, explained_variance=0.7892
+Selected train landmarks: 750 of 19320 states (event_aware: activity=112, transition=112, coverage=526)
+Built transition/geodesic distances: max=6.6905, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+Mapping train and held-out states into the landmark manifold with LLE...
+Fitted inverse kernel decoder on all train states: 19320 states, k=128, bandwidth=0.35
+Reconstruction postprocess: floor=0.045, train R2 0.7425 -> 0.7484
+Train r 0.8735 | R2 0.7484
+Heldout r 0.6364 | R2 0.3997
+Event capture top1 0.3326 | dyn ratio 1.9630
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_234915_7ac6a6c

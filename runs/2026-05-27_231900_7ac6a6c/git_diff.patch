@@ -1,0 +1,57 @@
+diff --git a/configs/v6_mind_lle.txt b/configs/v6_mind_lle.txt
+index b6266f1..9ae2200 100644
+--- a/configs/v6_mind_lle.txt
++++ b/configs/v6_mind_lle.txt
+@@ -36,7 +36,7 @@ pca_max_dim = 64
+ 
+ # MIND-style manifold construction
+ latent_dim = 7
+-landmark_count = 1500
++landmark_count = 750
+ transition_k = 16
+ transition_weight = 1.0
+ transition_temperature = 1.0
+@@ -47,7 +47,8 @@ embedding_mode = sammon
+ sammon_iters = 500
+ sammon_lr = 0.01
+ 
+-# LLE out-of-sample maps: feature -> manifold and manifold -> feature
++# LLE out-of-sample maps. Landmarks fit feature -> manifold. The inverse
++# manifold -> feature decoder is fit on all mapped train states, not landmarks.
+ lle_k = 16
+ lle_ridge = 0.001
+ 
+diff --git a/src/v6_mind_lle.py b/src/v6_mind_lle.py
+index 09d526d..9adc627 100644
+--- a/src/v6_mind_lle.py
++++ b/src/v6_mind_lle.py
+@@ -650,11 +650,16 @@ def main() -> None:
+     lle_k = int(cfg.get("lle_k", cfg.get("lle_neighbors", 16)))
+     lle_ridge = float(cfg.get("lle_ridge", 1e-3))
+     f2z = LLEMapper(lle_k, lle_ridge).fit(f_lm, z_lm)
+-    z2f = LLEMapper(lle_k, lle_ridge).fit(z_lm, f_lm)
+ 
+-    print("Mapping held-out states with LLE...")
++    print("Mapping train and held-out states into the landmark manifold with LLE...")
+     z_train = f2z.transform(f_train_flat)
+     z_test = f2z.transform(f_test_flat)
++
++    # Landmarks define the MIND/Sammon geometry, but reconstruction should not be
++    # bottlenecked through landmarks. Fit the inverse LLE map on every mapped
++    # training state so held-out reconstruction uses the full training manifold.
++    z2f = LLEMapper(lle_k, lle_ridge).fit(z_train, f_train_flat)
++    print(f"Fitted inverse LLE decoder on all train states: {z_train.shape[0]} states")
+     fhat_train = z2f.transform(z_train)
+     fhat_test = z2f.transform(z_test)
+ 
+@@ -728,8 +733,9 @@ def main() -> None:
+         "embedding_meta": embed_meta,
+         "lle_k": int(lle_k),
+         "lle_ridge": float(lle_ridge),
++        "inverse_lle_fit_states": int(z_train.shape[0]),
+         "metrics": final_metrics,
+-        "method_note": "Train-only MIND-style transition/geodesic distances on landmarks, Sammon/MDS embedding, LLE f->z and z->f out-of-sample reconstruction for held-out trials.",
++        "method_note": "Train-only MIND-style transition/geodesic distances on landmarks, Sammon/MDS embedding, LLE f->z mapping from landmarks, inverse LLE z->f decoder fit on all mapped train states for held-out trial reconstruction.",
+     }
+     with open(out_dir / "run_metadata.json", "w", encoding="utf-8") as f:
+         json.dump(metadata, f, indent=2)

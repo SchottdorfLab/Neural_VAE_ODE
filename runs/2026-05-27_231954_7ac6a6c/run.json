@@ -1,0 +1,17 @@
+{
+  "run_id": "2026-05-27_231954_7ac6a6c",
+  "timestamp": "2026-05-27_231954",
+  "script": "/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py",
+  "config": "/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231954_7ac6a6c/config.txt",
+  "config_original": "/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231954_7ac6a6c/config_original.txt",
+  "note": "MIND-LLE all-train inverse decoder",
+  "git_commit": "7ac6a6c958e94f7b6f5087482c4b9fb1f6ddc682",
+  "git_short": "7ac6a6c",
+  "git_dirty": true,
+  "git_status": "M configs/v6_mind_lle.txt\n M runs/index.csv\n M src/v6_mind_lle.py\n?? runs/2026-05-27_231900_7ac6a6c/\n?? runs/2026-05-27_231927_7ac6a6c/\n?? runs/2026-05-27_231944_7ac6a6c/",
+  "git_diff_patch": "/Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-05-27_231954_7ac6a6c/git_diff.patch",
+  "code_change_summary": "Changed 3 files: configs/v6_mind_lle.txt (5 lines), runs/index.csv (3 lines), src/v6_mind_lle.py (12 lines).",
+  "exit_code": 1,
+  "artifacts": [],
+  "metrics": {}
+}

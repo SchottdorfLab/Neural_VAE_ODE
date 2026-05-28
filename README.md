@@ -2,6 +2,15 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## May 28th, 8:57am: 
+- PCA maximizes the original variance present in the transformed dataset, but will not (in general) preserve complex structures---like a regular pattern over a curved manifold. So a non-linear projection would be nice. 
+
+## May 28th, 12:50am:
+- What does sammon mean?
+    - It's the specific multidimensional scaling objective used to place MIND landmark points into a low-dimensional manifold. 
+    - We first compute MIND-style distances between landmarks: D_ij = graph/geodesic distance between neural state i and neural state j. 
+    - Then Sammon embedding finds the low-dimensional coordinates: z_i in R^7, so that: || z_i - z_j | | = Dij
+    
 ## May 28t, 12:14am: 
 - the current best-performing v6 is closer to Isomap/Sammon/LLE than full MIND dynamics. It preserves local population geometry, but it is not strongly transition-aware.
 - Currently transition_weight = 0.0, so dx = x_{t+1} - x_t is not contributing

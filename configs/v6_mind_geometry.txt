@@ -65,13 +65,14 @@ inverse_k = 128
 kernel_bandwidth = 0.35
 decoder_target = feature
 
-# Neural deterministic AE.
+# Neural deterministic AE. Sweep on 2026-05-28 found the best heldout R2
+# by making the AE shallower and not forcing exact teacher z coordinates.
 batch_size = 512
 epochs = 300
 lr = 0.001
 weight_decay = 0.00001
 hidden = 256
-layers = 3
+layers = 2
 dropout = 0.0
 grad_clip = 5.0
 state_val_frac = 0.10
@@ -79,14 +80,15 @@ early_stopping_patience = 50
 early_stopping_min_delta = 0.00001
 log_every = 25
 
-# Loss weights. Main objective is feature reconstruction plus MIND latent
-# distillation. Raw event-weighted loss is optional and kept modest.
+# Loss weights. Feature reconstruction remains primary. The MIND geometry is
+# used to build the teacher reconstruction, but exact z-coordinate distillation
+# hurt heldout R2 in sweeps, so lambda_teacher_z is off.
 lambda_feature_recon = 1.0
-lambda_teacher_z = 1.0
+lambda_teacher_z = 0.0
 lambda_teacher_recon = 0.25
-lambda_raw_recon = 0.05
-event_weight_alpha = 2.0
-event_weight_mode = activity_or_dx
+lambda_raw_recon = 0.1
+event_weight_alpha = 5.0
+event_weight_mode = dx
 event_weight_percentile = 95.0
 
 # Same reconstruction postprocess used by v6_mind_lle.

@@ -1,0 +1,409 @@
+diff --git a/src/script_output.txt b/src/script_output.txt
+index 20f0022..a2d444f 100644
+--- a/src/script_output.txt
++++ b/src/script_output.txt
+@@ -1,5 +1,5 @@
+ Running script: v6_neural_vae.py
+-Loading configuration from /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/config.txt
++Loading configuration from /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/config.txt
+ Device: cuda
+ Train-std neuron filter: removed 4 train-silent neurons; kept 353 neurons (threshold=1e-07).
+ MIND split: train trials=163 | test trials=17
+@@ -7,369 +7,42 @@ MIND neuron filter: removed 18 silent neurons; kept 357 active neurons.
+ Sequence alignment: position (Position); coordinate range 0.000-1.000
+ Model type: manifold_ae
+ [001] train loss 3.02627 | recon 3.02625 | kl 0.40940 | smooth 0.00000 | trans 0.08824 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.31845 | recon 8.31844 | kl 1.80106 | smooth 0.00000 | trans 0.07314 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1961 | R² 0.0334 | eta 01:14
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 8.31845 | recon 8.31844 | kl 1.80106 | smooth 0.00000 | trans 0.07314 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1961 | R² 0.0334 | eta 01:38
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [002] train loss 2.94347 | recon 2.94344 | kl 0.78797 | smooth 0.00000 | trans 0.08659 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.33753 | recon 8.33751 | kl 0.50554 | smooth 0.00000 | trans 0.07299 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1876 | R² 0.0332 | eta 01:39
++      valid loss 8.33753 | recon 8.33751 | kl 0.50554 | smooth 0.00000 | trans 0.07299 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1876 | R² 0.0332 | eta 01:40
+ [003] train loss 2.86254 | recon 2.86249 | kl 0.65739 | smooth 0.00000 | trans 0.08622 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.26615 | recon 8.26611 | kl 2.04950 | smooth 0.00000 | trans 0.07292 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1884 | R² 0.0346 | eta 01:28
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 8.26615 | recon 8.26611 | kl 2.04950 | smooth 0.00000 | trans 0.07292 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1884 | R² 0.0346 | eta 01:22
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [004] train loss 2.87394 | recon 2.87388 | kl 1.17909 | smooth 0.00000 | trans 0.08850 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.31439 | recon 8.31434 | kl 3.48681 | smooth 0.00000 | trans 0.07283 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2010 | R² 0.0343 | eta 01:33
++      valid loss 8.31439 | recon 8.31434 | kl 3.48681 | smooth 0.00000 | trans 0.07283 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2010 | R² 0.0343 | eta 01:24
+ [005] train loss 2.79078 | recon 2.79071 | kl 2.83087 | smooth 0.00000 | trans 0.08645 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.21434 | recon 8.21428 | kl 4.30612 | smooth 0.00000 | trans 0.07287 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2044 | R² 0.0414 | eta 01:23
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 8.21434 | recon 8.21428 | kl 4.30612 | smooth 0.00000 | trans 0.07287 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2044 | R² 0.0414 | eta 01:16
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [006] train loss 2.79862 | recon 2.79853 | kl 4.12115 | smooth 0.00000 | trans 0.08955 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.36663 | recon 8.36656 | kl 6.36579 | smooth 0.00000 | trans 0.07293 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1524 | R² 0.0139 | eta 01:24
++      valid loss 8.36663 | recon 8.36656 | kl 6.36579 | smooth 0.00000 | trans 0.07293 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1524 | R² 0.0139 | eta 01:25
+ [007] train loss 2.72188 | recon 2.72177 | kl 4.10135 | smooth 0.00000 | trans 0.09006 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.24144 | recon 8.24136 | kl 7.95533 | smooth 0.00000 | trans 0.07292 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1749 | R² -0.0136 | eta 01:18
++      valid loss 8.24144 | recon 8.24136 | kl 7.95533 | smooth 0.00000 | trans 0.07292 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1749 | R² -0.0136 | eta 01:20
+ [008] train loss 2.62845 | recon 2.62833 | kl 6.69572 | smooth 0.00000 | trans 0.08686 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 8.06038 | recon 8.06028 | kl 6.91659 | smooth 0.00000 | trans 0.07279 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2042 | R² 0.0388 | eta 01:13
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 8.06038 | recon 8.06028 | kl 6.91659 | smooth 0.00000 | trans 0.07279 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2042 | R² 0.0388 | eta 01:17
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [009] train loss 2.65842 | recon 2.65828 | kl 9.08314 | smooth 0.00000 | trans 0.09046 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.93220 | recon 7.93209 | kl 13.90860 | smooth 0.00000 | trans 0.07280 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1994 | R² 0.0295 | eta 01:14
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 7.93220 | recon 7.93209 | kl 13.90860 | smooth 0.00000 | trans 0.07280 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1994 | R² 0.0295 | eta 01:18
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [010] train loss 2.58297 | recon 2.58283 | kl 13.57557 | smooth 0.00000 | trans 0.08623 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.92443 | recon 7.92431 | kl 19.00842 | smooth 0.00000 | trans 0.07271 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1960 | R² 0.0092 | eta 01:17
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 7.92443 | recon 7.92431 | kl 19.00842 | smooth 0.00000 | trans 0.07271 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.1960 | R² 0.0092 | eta 01:19
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [011] train loss 2.48344 | recon 2.48327 | kl 15.54978 | smooth 0.00000 | trans 0.09172 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.82409 | recon 7.82396 | kl 25.31462 | smooth 0.00000 | trans 0.07318 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2224 | R² 0.0134 | eta 01:18
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
++      valid loss 7.82409 | recon 7.82396 | kl 25.31462 | smooth 0.00000 | trans 0.07318 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2224 | R² 0.0134 | eta 01:19
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
+ [012] train loss 2.41050 | recon 2.41033 | kl 20.83302 | smooth 0.00000 | trans 0.08598 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.67020 | recon 7.67006 | kl 29.97491 | smooth 0.00000 | trans 0.07261 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2258 | R² 0.0171 | eta 01:18
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[013] train loss 2.35372 | recon 2.35354 | kl 26.00604 | smooth 0.00000 | trans 0.08607 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.64136 | recon 7.64120 | kl 31.95224 | smooth 0.00000 | trans 0.07284 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2449 | R² 0.0488 | eta 01:19
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[014] train loss 2.35676 | recon 2.35655 | kl 33.36655 | smooth 0.00000 | trans 0.08805 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.41779 | recon 7.41762 | kl 51.93018 | smooth 0.00000 | trans 0.07261 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2238 | R² 0.0212 | eta 01:20
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[015] train loss 2.19960 | recon 2.19938 | kl 31.93758 | smooth 0.00000 | trans 0.08719 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.39968 | recon 7.39950 | kl 60.54005 | smooth 0.00000 | trans 0.07255 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2097 | R² 0.0113 | eta 01:20
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[016] train loss 2.17257 | recon 2.17234 | kl 40.48066 | smooth 0.00000 | trans 0.08534 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.95335 | recon 6.95316 | kl 80.99608 | smooth 0.00000 | trans 0.07238 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2401 | R² 0.0256 | eta 01:19
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[017] train loss 2.11973 | recon 2.11947 | kl 40.71626 | smooth 0.00000 | trans 0.09108 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.11429 | recon 7.11409 | kl 111.08584 | smooth 0.00000 | trans 0.07265 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2139 | R² -0.0703 | eta 01:21
+-[018] train loss 2.08195 | recon 2.08169 | kl 52.82082 | smooth 0.00000 | trans 0.08575 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.18884 | recon 7.18862 | kl 113.42771 | smooth 0.00000 | trans 0.07288 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2435 | R² -0.0097 | eta 01:18
+-[019] train loss 1.98922 | recon 1.98894 | kl 56.05023 | smooth 0.00000 | trans 0.08603 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.75297 | recon 6.75274 | kl 112.77116 | smooth 0.00000 | trans 0.07284 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2404 | R² -0.0055 | eta 01:15
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[020] train loss 1.92285 | recon 1.92256 | kl 58.31635 | smooth 0.00000 | trans 0.08780 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.63203 | recon 6.63179 | kl 144.27540 | smooth 0.00000 | trans 0.07219 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2432 | R² -0.0105 | eta 01:15
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[021] train loss 1.92119 | recon 1.92089 | kl 70.06442 | smooth 0.00000 | trans 0.08613 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.89905 | recon 6.89879 | kl 123.09688 | smooth 0.00000 | trans 0.07236 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2221 | R² -0.0346 | eta 01:14
+-[022] train loss 1.87715 | recon 1.87683 | kl 77.57990 | smooth 0.00000 | trans 0.08871 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.68768 | recon 6.68741 | kl 172.97271 | smooth 0.00000 | trans 0.07288 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2406 | R² -0.0223 | eta 01:13
+-[023] train loss 1.77707 | recon 1.77673 | kl 82.30885 | smooth 0.00000 | trans 0.08909 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.70240 | recon 6.70212 | kl 160.18594 | smooth 0.00000 | trans 0.07279 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2583 | R² -0.0170 | eta 01:11
+-[024] train loss 1.80628 | recon 1.80594 | kl 90.64843 | smooth 0.00000 | trans 0.08607 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.02271 | recon 7.02241 | kl 214.88613 | smooth 0.00000 | trans 0.07315 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2500 | R² -0.0243 | eta 01:09
+-[025] train loss 1.76243 | recon 1.76207 | kl 96.31732 | smooth 0.00000 | trans 0.08553 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.62676 | recon 6.62646 | kl 191.42000 | smooth 0.00000 | trans 0.07297 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2641 | R² 0.0080 | eta 01:07
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[026] train loss 1.67890 | recon 1.67854 | kl 97.62695 | smooth 0.00000 | trans 0.08441 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.85162 | recon 6.85130 | kl 231.15985 | smooth 0.00000 | trans 0.07320 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2630 | R² -0.0298 | eta 01:07
+-[027] train loss 1.62234 | recon 1.62196 | kl 106.77432 | smooth 0.00000 | trans 0.08528 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.77689 | recon 6.77657 | kl 208.76261 | smooth 0.00000 | trans 0.07281 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2720 | R² 0.0087 | eta 01:05
+-[028] train loss 1.62564 | recon 1.62523 | kl 104.27419 | smooth 0.00000 | trans 0.08769 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.74033 | recon 6.73999 | kl 213.79309 | smooth 0.00000 | trans 0.07290 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2336 | R² -0.0529 | eta 01:04
+-[029] train loss 1.61787 | recon 1.61746 | kl 120.05955 | smooth 0.00000 | trans 0.08473 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 7.01476 | recon 7.01441 | kl 222.85219 | smooth 0.00000 | trans 0.07317 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2546 | R² -0.0255 | eta 01:02
+-[030] train loss 1.59000 | recon 1.58958 | kl 109.30640 | smooth 0.00000 | trans 0.08449 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.68942 | recon 6.68906 | kl 223.47610 | smooth 0.00000 | trans 0.07280 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2773 | R² 0.0075 | eta 01:01
+-[031] train loss 1.52646 | recon 1.52603 | kl 122.67069 | smooth 0.00000 | trans 0.08438 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.69801 | recon 6.69764 | kl 230.36377 | smooth 0.00000 | trans 0.07275 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2689 | R² 0.0011 | eta 01:00
+-[032] train loss 1.50534 | recon 1.50493 | kl 120.11776 | smooth 0.00000 | trans 0.08377 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.80568 | recon 6.80532 | kl 274.75181 | smooth 0.00000 | trans 0.07278 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2667 | R² -0.0528 | eta 00:59
+-[033] train loss 1.46984 | recon 1.46940 | kl 126.98354 | smooth 0.00000 | trans 0.08913 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.52557 | recon 6.52521 | kl 256.22506 | smooth 0.00000 | trans 0.07267 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2811 | R² 0.0154 | eta 00:57
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[034] train loss 1.45452 | recon 1.45409 | kl 135.89809 | smooth 0.00000 | trans 0.08559 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.58915 | recon 6.58879 | kl 244.90158 | smooth 0.00000 | trans 0.07276 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2901 | R² -0.0265 | eta 00:58
+-[035] train loss 1.41214 | recon 1.41172 | kl 134.41438 | smooth 0.00000 | trans 0.08432 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.64093 | recon 6.64057 | kl 243.33231 | smooth 0.00000 | trans 0.07317 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2855 | R² -0.0178 | eta 00:57
+-[036] train loss 1.40264 | recon 1.40217 | kl 144.97860 | smooth 0.00000 | trans 0.09426 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.19849 | recon 6.19813 | kl 246.71455 | smooth 0.00000 | trans 0.07265 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2785 | R² -0.0353 | eta 00:56
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[037] train loss 1.39332 | recon 1.39290 | kl 144.44973 | smooth 0.00000 | trans 0.08379 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.33203 | recon 6.33167 | kl 267.91077 | smooth 0.00000 | trans 0.07261 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2990 | R² -0.0087 | eta 00:56
+-[038] train loss 1.34720 | recon 1.34678 | kl 158.67081 | smooth 0.00000 | trans 0.08402 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.26537 | recon 6.26500 | kl 319.46719 | smooth 0.00000 | trans 0.07259 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2689 | R² -0.0706 | eta 00:55
+-[039] train loss 1.32233 | recon 1.32191 | kl 151.45901 | smooth 0.00000 | trans 0.08362 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.55325 | recon 6.55289 | kl 286.40486 | smooth 0.00000 | trans 0.07315 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2915 | R² -0.0404 | eta 00:54
+-[040] train loss 1.30368 | recon 1.30326 | kl 168.76979 | smooth 0.00000 | trans 0.08499 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.03933 | recon 6.03897 | kl 242.56881 | smooth 0.00000 | trans 0.07262 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3205 | R² 0.0392 | eta 00:53
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[041] train loss 1.31726 | recon 1.31682 | kl 164.17628 | smooth 0.00000 | trans 0.08721 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.30286 | recon 6.30250 | kl 307.47610 | smooth 0.00000 | trans 0.07288 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3134 | R² 0.0035 | eta 00:52
+-[042] train loss 1.28877 | recon 1.28835 | kl 181.78352 | smooth 0.00000 | trans 0.08356 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.24697 | recon 6.24661 | kl 307.26942 | smooth 0.00000 | trans 0.07284 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2977 | R² 0.0063 | eta 00:52
+-[043] train loss 1.24540 | recon 1.24498 | kl 175.60261 | smooth 0.00000 | trans 0.08428 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.98360 | recon 5.98323 | kl 307.79393 | smooth 0.00000 | trans 0.07259 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3073 | R² 0.0287 | eta 00:51
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[044] train loss 1.23671 | recon 1.23623 | kl 178.15940 | smooth 0.00000 | trans 0.09695 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.26317 | recon 6.26281 | kl 300.99511 | smooth 0.00000 | trans 0.07290 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3101 | R² -0.0213 | eta 00:50
+-[045] train loss 1.19497 | recon 1.19455 | kl 186.11508 | smooth 0.00000 | trans 0.08342 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.59644 | recon 6.59608 | kl 316.17492 | smooth 0.00000 | trans 0.07297 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2967 | R² -0.0102 | eta 00:50
+-[046] train loss 1.18257 | recon 1.18215 | kl 184.36657 | smooth 0.00000 | trans 0.08312 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.01247 | recon 6.01211 | kl 311.79610 | smooth 0.00000 | trans 0.07278 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3037 | R² 0.0045 | eta 00:49
+-[047] train loss 1.14423 | recon 1.14381 | kl 193.63931 | smooth 0.00000 | trans 0.08278 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.38572 | recon 6.38535 | kl 316.27909 | smooth 0.00000 | trans 0.07298 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2892 | R² -0.0038 | eta 00:48
+-[048] train loss 1.13490 | recon 1.13444 | kl 201.21993 | smooth 0.00000 | trans 0.09225 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.86259 | recon 5.86223 | kl 334.89280 | smooth 0.00000 | trans 0.07280 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3171 | R² 0.0109 | eta 00:47
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[049] train loss 1.12084 | recon 1.12038 | kl 207.00192 | smooth 0.00000 | trans 0.09149 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.92903 | recon 5.92866 | kl 315.45171 | smooth 0.00000 | trans 0.07309 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3053 | R² 0.0125 | eta 00:47
+-[050] train loss 1.10158 | recon 1.10117 | kl 201.94645 | smooth 0.00000 | trans 0.08140 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.99535 | recon 5.99498 | kl 305.20099 | smooth 0.00000 | trans 0.07291 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3094 | R² 0.0178 | eta 00:46
+-[051] train loss 1.08553 | recon 1.08511 | kl 199.45060 | smooth 0.00000 | trans 0.08285 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.12367 | recon 6.12330 | kl 354.18819 | smooth 0.00000 | trans 0.07314 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2947 | R² -0.0014 | eta 00:45
+-[052] train loss 1.06616 | recon 1.06576 | kl 205.81437 | smooth 0.00000 | trans 0.08123 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.98730 | recon 5.98693 | kl 342.14254 | smooth 0.00000 | trans 0.07299 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3111 | R² -0.0045 | eta 00:45
+-[053] train loss 1.08486 | recon 1.08444 | kl 206.49134 | smooth 0.00000 | trans 0.08357 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.01708 | recon 6.01672 | kl 329.06976 | smooth 0.00000 | trans 0.07315 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3019 | R² 0.0111 | eta 00:44
+-[054] train loss 1.06308 | recon 1.06265 | kl 208.33348 | smooth 0.00000 | trans 0.08425 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.04480 | recon 6.04444 | kl 320.58190 | smooth 0.00000 | trans 0.07268 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3265 | R² 0.0308 | eta 00:43
+-[055] train loss 1.01977 | recon 1.01937 | kl 212.16806 | smooth 0.00000 | trans 0.08067 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.98052 | recon 5.98015 | kl 336.67383 | smooth 0.00000 | trans 0.07298 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3243 | R² 0.0173 | eta 00:43
+-[056] train loss 0.96211 | recon 0.96171 | kl 223.67928 | smooth 0.00000 | trans 0.07999 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.95970 | recon 5.95933 | kl 301.41564 | smooth 0.00000 | trans 0.07283 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3097 | R² 0.0211 | eta 00:42
+-[057] train loss 0.96999 | recon 0.96959 | kl 221.91774 | smooth 0.00000 | trans 0.08031 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.78335 | recon 5.78299 | kl 339.34069 | smooth 0.00000 | trans 0.07285 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3286 | R² 0.0262 | eta 00:42
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[058] train loss 0.96444 | recon 0.96402 | kl 230.37214 | smooth 0.00000 | trans 0.08375 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.89009 | recon 5.88972 | kl 349.05021 | smooth 0.00000 | trans 0.07256 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3056 | R² 0.0099 | eta 00:41
+-[059] train loss 0.94405 | recon 0.94365 | kl 229.89817 | smooth 0.00000 | trans 0.07930 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.89214 | recon 5.89177 | kl 361.12702 | smooth 0.00000 | trans 0.07300 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3207 | R² 0.0223 | eta 00:41
+-[060] train loss 0.92763 | recon 0.92722 | kl 235.56283 | smooth 0.00000 | trans 0.08044 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.85545 | recon 5.85508 | kl 335.76181 | smooth 0.00000 | trans 0.07288 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3143 | R² 0.0071 | eta 00:40
+-[061] train loss 0.93436 | recon 0.93397 | kl 235.88631 | smooth 0.00000 | trans 0.07908 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.70583 | recon 5.70547 | kl 364.63020 | smooth 0.00000 | trans 0.07290 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3081 | R² 0.0061 | eta 00:39
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[062] train loss 0.92236 | recon 0.92194 | kl 234.65867 | smooth 0.00000 | trans 0.08350 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.20027 | recon 6.19990 | kl 329.34446 | smooth 0.00000 | trans 0.07398 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3252 | R² 0.0171 | eta 00:39
+-[063] train loss 0.91915 | recon 0.91876 | kl 238.84611 | smooth 0.00000 | trans 0.07866 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.74748 | recon 5.74712 | kl 327.58118 | smooth 0.00000 | trans 0.07367 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2989 | R² 0.0021 | eta 00:39
+-[064] train loss 0.93412 | recon 0.93373 | kl 252.09322 | smooth 0.00000 | trans 0.07955 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.71969 | recon 5.71932 | kl 370.54780 | smooth 0.00000 | trans 0.07338 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3191 | R² 0.0181 | eta 00:38
+-[065] train loss 0.85838 | recon 0.85799 | kl 240.09397 | smooth 0.00000 | trans 0.07799 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.65134 | recon 5.65098 | kl 373.52751 | smooth 0.00000 | trans 0.07316 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3307 | R² 0.0321 | eta 00:37
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[066] train loss 0.86300 | recon 0.86261 | kl 247.94376 | smooth 0.00000 | trans 0.07909 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.78046 | recon 5.78010 | kl 338.78209 | smooth 0.00000 | trans 0.07336 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3136 | R² 0.0233 | eta 00:37
+-[067] train loss 0.85827 | recon 0.85788 | kl 252.45399 | smooth 0.00000 | trans 0.07718 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.75194 | recon 5.75157 | kl 335.69543 | smooth 0.00000 | trans 0.07302 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3219 | R² 0.0261 | eta 00:36
+-[068] train loss 0.85402 | recon 0.85363 | kl 255.17957 | smooth 0.00000 | trans 0.07805 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.65249 | recon 5.65212 | kl 353.27366 | smooth 0.00000 | trans 0.07380 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3191 | R² 0.0300 | eta 00:36
+-[069] train loss 0.82054 | recon 0.82016 | kl 251.00292 | smooth 0.00000 | trans 0.07657 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.70675 | recon 5.70638 | kl 372.47491 | smooth 0.00000 | trans 0.07353 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3139 | R² -0.0081 | eta 00:35
+-[070] train loss 0.83970 | recon 0.83932 | kl 257.29586 | smooth 0.00000 | trans 0.07659 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.60147 | recon 5.60110 | kl 384.50864 | smooth 0.00000 | trans 0.07413 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3212 | R² 0.0230 | eta 00:35
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[071] train loss 0.81863 | recon 0.81823 | kl 261.39438 | smooth 0.00000 | trans 0.07928 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.80452 | recon 5.80415 | kl 406.73446 | smooth 0.00000 | trans 0.07397 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3168 | R² 0.0169 | eta 00:34
+-[072] train loss 0.84013 | recon 0.83971 | kl 259.65959 | smooth 0.00000 | trans 0.08432 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.59915 | recon 5.59878 | kl 381.19904 | smooth 0.00000 | trans 0.07368 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3208 | R² 0.0258 | eta 00:34
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[073] train loss 0.79333 | recon 0.79295 | kl 269.07426 | smooth 0.00000 | trans 0.07604 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.68561 | recon 5.68523 | kl 377.52008 | smooth 0.00000 | trans 0.07434 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3241 | R² 0.0350 | eta 00:34
+-[074] train loss 0.84887 | recon 0.84847 | kl 269.84097 | smooth 0.00000 | trans 0.07991 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.71213 | recon 5.71177 | kl 342.66116 | smooth 0.00000 | trans 0.07324 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2984 | R² 0.0298 | eta 00:33
+-[075] train loss 0.80928 | recon 0.80891 | kl 266.74420 | smooth 0.00000 | trans 0.07412 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 6.12473 | recon 6.12435 | kl 359.04882 | smooth 0.00000 | trans 0.07429 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3221 | R² 0.0175 | eta 00:33
+-[076] train loss 0.80108 | recon 0.80071 | kl 267.75679 | smooth 0.00000 | trans 0.07571 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.66786 | recon 5.66749 | kl 319.13708 | smooth 0.00000 | trans 0.07329 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3201 | R² 0.0364 | eta 00:32
+-[077] train loss 0.82488 | recon 0.82449 | kl 266.07050 | smooth 0.00000 | trans 0.07695 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.57454 | recon 5.57417 | kl 354.62632 | smooth 0.00000 | trans 0.07358 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3368 | R² 0.0543 | eta 00:32
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[078] train loss 0.76482 | recon 0.76446 | kl 280.06985 | smooth 0.00000 | trans 0.07340 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.64943 | recon 5.64906 | kl 339.84571 | smooth 0.00000 | trans 0.07436 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3289 | R² 0.0441 | eta 00:31
+-[079] train loss 0.76917 | recon 0.76881 | kl 272.90981 | smooth 0.00000 | trans 0.07289 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.59847 | recon 5.59809 | kl 346.14914 | smooth 0.00000 | trans 0.07456 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3172 | R² 0.0278 | eta 00:31
+-[080] train loss 0.75928 | recon 0.75891 | kl 272.91988 | smooth 0.00000 | trans 0.07371 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.50205 | recon 5.50168 | kl 383.65474 | smooth 0.00000 | trans 0.07425 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3156 | R² 0.0104 | eta 00:30
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[081] train loss 0.75419 | recon 0.75383 | kl 283.38297 | smooth 0.00000 | trans 0.07204 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.66558 | recon 5.66521 | kl 349.46314 | smooth 0.00000 | trans 0.07432 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3254 | R² 0.0446 | eta 00:30
+-[082] train loss 0.76081 | recon 0.76045 | kl 278.30741 | smooth 0.00000 | trans 0.07226 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.52488 | recon 5.52450 | kl 366.92049 | smooth 0.00000 | trans 0.07426 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3217 | R² 0.0335 | eta 00:29
+-[083] train loss 0.73562 | recon 0.73526 | kl 284.22060 | smooth 0.00000 | trans 0.07138 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.59322 | recon 5.59285 | kl 375.97740 | smooth 0.00000 | trans 0.07477 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3250 | R² 0.0389 | eta 00:29
+-[084] train loss 0.72882 | recon 0.72845 | kl 291.59737 | smooth 0.00000 | trans 0.07559 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.63353 | recon 5.63316 | kl 334.87454 | smooth 0.00000 | trans 0.07418 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3106 | R² 0.0242 | eta 00:28
+-[085] train loss 0.74237 | recon 0.74197 | kl 306.15127 | smooth 0.00000 | trans 0.07976 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.53738 | recon 5.53701 | kl 350.15505 | smooth 0.00000 | trans 0.07389 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3218 | R² 0.0336 | eta 00:28
+-[086] train loss 0.74130 | recon 0.74094 | kl 301.06703 | smooth 0.00000 | trans 0.07105 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.62196 | recon 5.62160 | kl 372.27424 | smooth 0.00000 | trans 0.07380 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3244 | R² 0.0201 | eta 00:27
+-[087] train loss 0.74063 | recon 0.74027 | kl 286.00967 | smooth 0.00000 | trans 0.07141 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.54512 | recon 5.54475 | kl 375.81417 | smooth 0.00000 | trans 0.07493 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3158 | R² 0.0091 | eta 00:27
+-[088] train loss 0.70543 | recon 0.70508 | kl 288.94572 | smooth 0.00000 | trans 0.06968 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.65995 | recon 5.65957 | kl 377.99599 | smooth 0.00000 | trans 0.07451 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3077 | R² 0.0081 | eta 00:26
+-[089] train loss 0.71001 | recon 0.70966 | kl 288.04053 | smooth 0.00000 | trans 0.06951 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.73820 | recon 5.73782 | kl 355.99349 | smooth 0.00000 | trans 0.07491 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3216 | R² 0.0199 | eta 00:26
+-[090] train loss 0.70589 | recon 0.70555 | kl 283.70636 | smooth 0.00000 | trans 0.06919 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.58064 | recon 5.58026 | kl 362.55178 | smooth 0.00000 | trans 0.07579 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3228 | R² 0.0204 | eta 00:25
+-[091] train loss 0.70256 | recon 0.70222 | kl 292.23090 | smooth 0.00000 | trans 0.06933 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.60258 | recon 5.60221 | kl 377.05470 | smooth 0.00000 | trans 0.07547 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3208 | R² 0.0080 | eta 00:25
+-[092] train loss 0.68669 | recon 0.68635 | kl 298.72640 | smooth 0.00000 | trans 0.06786 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.62712 | recon 5.62675 | kl 361.48506 | smooth 0.00000 | trans 0.07457 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3223 | R² 0.0315 | eta 00:24
+-[093] train loss 0.68202 | recon 0.68169 | kl 297.67552 | smooth 0.00000 | trans 0.06702 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.48753 | recon 5.48715 | kl 364.11911 | smooth 0.00000 | trans 0.07420 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3080 | R² 0.0280 | eta 00:24
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[094] train loss 0.66309 | recon 0.66276 | kl 294.27397 | smooth 0.00000 | trans 0.06644 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.66539 | recon 5.66502 | kl 384.33045 | smooth 0.00000 | trans 0.07474 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2992 | R² -0.0209 | eta 00:23
+-[095] train loss 0.65146 | recon 0.65113 | kl 304.56400 | smooth 0.00000 | trans 0.06686 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.48694 | recon 5.48656 | kl 368.58046 | smooth 0.00000 | trans 0.07491 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3093 | R² 0.0101 | eta 00:23
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[096] train loss 0.66800 | recon 0.66767 | kl 304.62997 | smooth 0.00000 | trans 0.06624 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.63240 | recon 5.63203 | kl 384.25204 | smooth 0.00000 | trans 0.07481 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3194 | R² 0.0054 | eta 00:23
+-[097] train loss 0.67563 | recon 0.67529 | kl 315.63471 | smooth 0.00000 | trans 0.06716 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.52848 | recon 5.52811 | kl 366.03451 | smooth 0.00000 | trans 0.07340 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2967 | R² -0.0091 | eta 00:22
+-[098] train loss 0.65851 | recon 0.65818 | kl 311.19056 | smooth 0.00000 | trans 0.06581 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.61456 | recon 5.61419 | kl 398.53303 | smooth 0.00000 | trans 0.07539 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3178 | R² -0.0100 | eta 00:22
+-[099] train loss 0.62759 | recon 0.62726 | kl 321.84976 | smooth 0.00000 | trans 0.06587 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.56682 | recon 5.56645 | kl 373.68412 | smooth 0.00000 | trans 0.07541 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3077 | R² 0.0136 | eta 00:21
+-[100] train loss 0.64117 | recon 0.64084 | kl 320.60315 | smooth 0.00000 | trans 0.06654 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.50082 | recon 5.50045 | kl 405.30401 | smooth 0.00000 | trans 0.07429 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2987 | R² -0.0360 | eta 00:21
+-[101] train loss 0.64485 | recon 0.64453 | kl 312.34910 | smooth 0.00000 | trans 0.06470 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.59594 | recon 5.59556 | kl 369.82913 | smooth 0.00000 | trans 0.07624 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3099 | R² 0.0115 | eta 00:20
+-[102] train loss 0.63722 | recon 0.63689 | kl 321.19898 | smooth 0.00000 | trans 0.06522 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.58741 | recon 5.58704 | kl 403.19713 | smooth 0.00000 | trans 0.07424 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3058 | R² -0.0050 | eta 00:20
+-[103] train loss 0.61673 | recon 0.61641 | kl 324.66405 | smooth 0.00000 | trans 0.06414 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.49464 | recon 5.49427 | kl 393.99749 | smooth 0.00000 | trans 0.07502 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3045 | R² 0.0010 | eta 00:19
+-[104] train loss 0.61596 | recon 0.61564 | kl 329.22906 | smooth 0.00000 | trans 0.06401 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.50001 | recon 5.49964 | kl 400.92871 | smooth 0.00000 | trans 0.07506 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2973 | R² -0.0071 | eta 00:19
+-[105] train loss 0.62986 | recon 0.62955 | kl 319.77440 | smooth 0.00000 | trans 0.06323 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.68585 | recon 5.68547 | kl 387.92534 | smooth 0.00000 | trans 0.07475 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2931 | R² -0.0209 | eta 00:18
+-[106] train loss 0.60540 | recon 0.60509 | kl 325.74610 | smooth 0.00000 | trans 0.06241 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.44281 | recon 5.44245 | kl 384.25965 | smooth 0.00000 | trans 0.07308 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3121 | R² 0.0023 | eta 00:18
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[107] train loss 0.61533 | recon 0.61502 | kl 320.97075 | smooth 0.00000 | trans 0.06239 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.58455 | recon 5.58418 | kl 400.36946 | smooth 0.00000 | trans 0.07488 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3033 | R² 0.0086 | eta 00:18
+-[108] train loss 0.57989 | recon 0.57958 | kl 327.89751 | smooth 0.00000 | trans 0.06222 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.64385 | recon 5.64347 | kl 384.13435 | smooth 0.00000 | trans 0.07591 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2980 | R² -0.0124 | eta 00:17
+-[109] train loss 0.59496 | recon 0.59466 | kl 331.48481 | smooth 0.00000 | trans 0.06157 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.58418 | recon 5.58380 | kl 413.96268 | smooth 0.00000 | trans 0.07697 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2950 | R² -0.0079 | eta 00:17
+-[110] train loss 0.59395 | recon 0.59364 | kl 331.26296 | smooth 0.00000 | trans 0.06085 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.62903 | recon 5.62866 | kl 424.48303 | smooth 0.00000 | trans 0.07397 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3067 | R² -0.0223 | eta 00:16
+-[111] train loss 0.61230 | recon 0.61200 | kl 343.27775 | smooth 0.00000 | trans 0.06064 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.50015 | recon 5.49979 | kl 411.60364 | smooth 0.00000 | trans 0.07337 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3051 | R² -0.0029 | eta 00:16
+-[112] train loss 0.58282 | recon 0.58252 | kl 341.22765 | smooth 0.00000 | trans 0.06051 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.40805 | recon 5.40768 | kl 416.71104 | smooth 0.00000 | trans 0.07443 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3101 | R² -0.0124 | eta 00:15
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[113] train loss 0.58049 | recon 0.58018 | kl 345.80932 | smooth 0.00000 | trans 0.06216 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.61651 | recon 5.61615 | kl 422.50311 | smooth 0.00000 | trans 0.07297 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3047 | R² 0.0056 | eta 00:15
+-[114] train loss 0.58045 | recon 0.58015 | kl 343.23044 | smooth 0.00000 | trans 0.06090 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.53601 | recon 5.53564 | kl 433.49721 | smooth 0.00000 | trans 0.07328 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2879 | R² -0.0400 | eta 00:14
+-[115] train loss 0.57520 | recon 0.57491 | kl 346.28135 | smooth 0.00000 | trans 0.05931 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.76367 | recon 5.76329 | kl 423.86728 | smooth 0.00000 | trans 0.07600 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3108 | R² -0.0078 | eta 00:14
+-[116] train loss 0.57883 | recon 0.57852 | kl 346.95262 | smooth 0.00000 | trans 0.06188 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.58018 | recon 5.57981 | kl 446.87439 | smooth 0.00000 | trans 0.07319 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2892 | R² -0.0340 | eta 00:14
+-[117] train loss 0.57654 | recon 0.57624 | kl 348.68979 | smooth 0.00000 | trans 0.05878 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.87526 | recon 5.87488 | kl 425.69679 | smooth 0.00000 | trans 0.07498 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3011 | R² -0.0202 | eta 00:13
+-[118] train loss 0.56630 | recon 0.56601 | kl 357.15835 | smooth 0.00000 | trans 0.05882 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.51108 | recon 5.51071 | kl 399.48870 | smooth 0.00000 | trans 0.07364 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3018 | R² 0.0038 | eta 00:13
+-[119] train loss 0.57271 | recon 0.57241 | kl 359.48018 | smooth 0.00000 | trans 0.05919 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.50608 | recon 5.50569 | kl 438.42251 | smooth 0.00000 | trans 0.07639 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2948 | R² -0.0295 | eta 00:12
+-[120] train loss 0.57543 | recon 0.57514 | kl 352.51714 | smooth 0.00000 | trans 0.05739 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.54801 | recon 5.54763 | kl 441.82429 | smooth 0.00000 | trans 0.07476 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3047 | R² -0.0143 | eta 00:12
+-[121] train loss 0.56421 | recon 0.56392 | kl 355.74487 | smooth 0.00000 | trans 0.05894 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.62367 | recon 5.62330 | kl 404.21160 | smooth 0.00000 | trans 0.07430 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3211 | R² 0.0095 | eta 00:11
+-[122] train loss 0.55791 | recon 0.55761 | kl 357.81263 | smooth 0.00000 | trans 0.05925 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.61475 | recon 5.61438 | kl 425.73412 | smooth 0.00000 | trans 0.07463 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2900 | R² -0.0288 | eta 00:11
+-[123] train loss 0.54313 | recon 0.54285 | kl 360.64815 | smooth 0.00000 | trans 0.05643 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.44007 | recon 5.43970 | kl 452.60366 | smooth 0.00000 | trans 0.07262 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3055 | R² -0.0040 | eta 00:11
+-[124] train loss 0.54398 | recon 0.54370 | kl 367.38006 | smooth 0.00000 | trans 0.05618 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.52308 | recon 5.52269 | kl 431.74415 | smooth 0.00000 | trans 0.07807 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3007 | R² 0.0097 | eta 00:10
+-[125] train loss 0.56116 | recon 0.56088 | kl 357.28674 | smooth 0.00000 | trans 0.05551 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.65336 | recon 5.65298 | kl 452.56704 | smooth 0.00000 | trans 0.07553 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2871 | R² -0.0236 | eta 00:10
+-[126] train loss 0.54687 | recon 0.54659 | kl 366.69016 | smooth 0.00000 | trans 0.05553 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.72097 | recon 5.72057 | kl 438.62567 | smooth 0.00000 | trans 0.07983 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3115 | R² -0.0113 | eta 00:09
+-[127] train loss 0.53874 | recon 0.53847 | kl 359.62163 | smooth 0.00000 | trans 0.05516 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.39559 | recon 5.39523 | kl 439.32226 | smooth 0.00000 | trans 0.07235 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2878 | R² -0.0235 | eta 00:09
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[128] train loss 0.55390 | recon 0.55362 | kl 367.85008 | smooth 0.00000 | trans 0.05727 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.54759 | recon 5.54722 | kl 413.04407 | smooth 0.00000 | trans 0.07232 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2898 | R² -0.0143 | eta 00:08
+-[129] train loss 0.54354 | recon 0.54327 | kl 354.20014 | smooth 0.00000 | trans 0.05451 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.39741 | recon 5.39704 | kl 482.65266 | smooth 0.00000 | trans 0.07450 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2895 | R² -0.0357 | eta 00:08
+-[130] train loss 0.52133 | recon 0.52107 | kl 365.26882 | smooth 0.00000 | trans 0.05318 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.64644 | recon 5.64605 | kl 454.74850 | smooth 0.00000 | trans 0.07734 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3053 | R² -0.0678 | eta 00:08
+-[131] train loss 0.55572 | recon 0.55545 | kl 369.82797 | smooth 0.00000 | trans 0.05350 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.52178 | recon 5.52141 | kl 413.63182 | smooth 0.00000 | trans 0.07215 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2925 | R² -0.0183 | eta 00:07
+-[132] train loss 0.53041 | recon 0.53014 | kl 377.88569 | smooth 0.00000 | trans 0.05522 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.61220 | recon 5.61182 | kl 457.28040 | smooth 0.00000 | trans 0.07555 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3013 | R² -0.0147 | eta 00:07
+-[133] train loss 0.50825 | recon 0.50798 | kl 373.13924 | smooth 0.00000 | trans 0.05343 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.53867 | recon 5.53830 | kl 444.96107 | smooth 0.00000 | trans 0.07242 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2931 | R² -0.0419 | eta 00:06
+-[134] train loss 0.48983 | recon 0.48957 | kl 380.95202 | smooth 0.00000 | trans 0.05189 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.56728 | recon 5.56692 | kl 456.87985 | smooth 0.00000 | trans 0.07299 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2957 | R² -0.0472 | eta 00:06
+-[135] train loss 0.50386 | recon 0.50360 | kl 379.80147 | smooth 0.00000 | trans 0.05283 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.57007 | recon 5.56970 | kl 439.76574 | smooth 0.00000 | trans 0.07378 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3147 | R² 0.0240 | eta 00:06
+-[136] train loss 0.50549 | recon 0.50523 | kl 371.92241 | smooth 0.00000 | trans 0.05167 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.75126 | recon 5.75090 | kl 473.67856 | smooth 0.00000 | trans 0.07368 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2848 | R² -0.0500 | eta 00:05
+-[137] train loss 0.51590 | recon 0.51564 | kl 385.15404 | smooth 0.00000 | trans 0.05152 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.63354 | recon 5.63317 | kl 447.64594 | smooth 0.00000 | trans 0.07354 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2971 | R² -0.0164 | eta 00:05
+-[138] train loss 0.50779 | recon 0.50753 | kl 391.63028 | smooth 0.00000 | trans 0.05271 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.40402 | recon 5.40367 | kl 440.21335 | smooth 0.00000 | trans 0.07116 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3101 | R² 0.0017 | eta 00:04
+-[139] train loss 0.50404 | recon 0.50377 | kl 391.06427 | smooth 0.00000 | trans 0.05269 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.57397 | recon 5.57361 | kl 462.26532 | smooth 0.00000 | trans 0.07336 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2878 | R² -0.0372 | eta 00:04
+-[140] train loss 0.51393 | recon 0.51366 | kl 394.08237 | smooth 0.00000 | trans 0.05233 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.56474 | recon 5.56437 | kl 453.18128 | smooth 0.00000 | trans 0.07391 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2846 | R² -0.0404 | eta 00:04
+-[141] train loss 0.49902 | recon 0.49876 | kl 388.69732 | smooth 0.00000 | trans 0.05095 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.52226 | recon 5.52190 | kl 477.48861 | smooth 0.00000 | trans 0.07141 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2904 | R² -0.0420 | eta 00:03
+-[142] train loss 0.50448 | recon 0.50423 | kl 394.37190 | smooth 0.00000 | trans 0.05111 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.53285 | recon 5.53249 | kl 451.20830 | smooth 0.00000 | trans 0.07257 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2872 | R² -0.0647 | eta 00:03
+-[143] train loss 0.48331 | recon 0.48307 | kl 396.63664 | smooth 0.00000 | trans 0.04906 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.57159 | recon 5.57123 | kl 438.74109 | smooth 0.00000 | trans 0.07209 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3052 | R² 0.0004 | eta 00:02
+-[144] train loss 0.48481 | recon 0.48457 | kl 400.57466 | smooth 0.00000 | trans 0.04974 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.68306 | recon 5.68270 | kl 438.98358 | smooth 0.00000 | trans 0.07101 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2835 | R² -0.0414 | eta 00:02
+-[145] train loss 0.49206 | recon 0.49181 | kl 394.70120 | smooth 0.00000 | trans 0.05047 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.97118 | recon 5.97082 | kl 414.82936 | smooth 0.00000 | trans 0.07262 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2969 | R² -0.0116 | eta 00:01
+-[146] train loss 0.50689 | recon 0.50664 | kl 394.92057 | smooth 0.00000 | trans 0.05000 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.43540 | recon 5.43504 | kl 503.47602 | smooth 0.00000 | trans 0.07216 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2905 | R² -0.0558 | eta 00:01
+-[147] train loss 0.47540 | recon 0.47516 | kl 394.94686 | smooth 0.00000 | trans 0.04878 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.63620 | recon 5.63583 | kl 448.99788 | smooth 0.00000 | trans 0.07288 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3028 | R² -0.0130 | eta 00:01
+-[148] train loss 0.48150 | recon 0.48126 | kl 398.97719 | smooth 0.00000 | trans 0.04742 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.35774 | recon 5.35740 | kl 472.16378 | smooth 0.00000 | trans 0.06857 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3025 | R² -0.0138 | eta 00:00
+-      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/ode_vae_best.pt
+-[149] train loss 0.47308 | recon 0.47284 | kl 397.44984 | smooth 0.00000 | trans 0.04801 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.59491 | recon 5.59454 | kl 499.58536 | smooth 0.00000 | trans 0.07441 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2624 | R² -0.1050 | eta 00:00
+-[150] train loss 0.47230 | recon 0.47206 | kl 399.07987 | smooth 0.00000 | trans 0.04728 | lle 0.00000 | geo 0.00000 | metric 0.00000 | beta 0.000
+-      valid loss 5.63152 | recon 5.63117 | kl 433.39776 | smooth 0.00000 | trans 0.07005 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.3040 | R² -0.0135 | eta 00:00
+-/home/4429/envs/odevae/lib/python3.11/site-packages/sklearn/manifold/_mds.py:754: FutureWarning: The default value of `init` will change from 'random' to 'classical_mds' in 1.10. To suppress this warning, provide some value of `init`.
+-  warnings.warn(
+-/home/4429/envs/odevae/lib/python3.11/site-packages/sklearn/manifold/_mds.py:771: FutureWarning: The `dissimilarity` parameter is deprecated and will be removed in 1.10. Use `metric` instead.
+-  warnings.warn(
+-      wrote /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/latent_manifold_mds.png
+-done.
+-experts.0.0.bias -0.08341001719236374
+-experts.0.2.bias 0.00911680143326521
+-experts.0.4.bias 0.00013686758757103235
+-experts.1.0.bias -0.08644136786460876
+-experts.1.2.bias -0.006000950001180172
+-experts.1.4.bias -0.004511197097599506
+-experts.2.0.bias -0.08665505051612854
+-experts.2.2.bias 0.0040488215163350105
+-experts.2.4.bias -0.003992149606347084
+-experts.3.0.bias -0.09219977259635925
+-experts.3.2.bias 0.005661712493747473
+-experts.3.4.bias -0.00042399426456540823
+-experts.4.0.bias -0.07475864887237549
+-experts.4.2.bias 0.010114545933902264
+-experts.4.4.bias -0.0004923375090584159
+-experts.5.0.bias -0.0868455097079277
+-experts.5.2.bias 0.009917137213051319
+-experts.5.4.bias -0.001703601679764688
+-experts.6.0.bias -0.08026395738124847
+-experts.6.2.bias 0.006770114880055189
+-experts.6.4.bias -0.003570914501324296
+-experts.7.0.bias -0.08363001048564911
+-experts.7.2.bias 0.003016135422512889
+-experts.7.4.bias -0.004600831773132086
+-Saved run metadata → /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_195605_3ab1b4b/run_metadata.json
+-Final r: 0.3040
+-Final R²: -0.0135
+-Results logged to /home/4429/projects/Neural_VAE_ODE/src/training_results.txt
++      valid loss 7.67020 | recon 7.67006 | kl 29.97491 | smooth 0.00000 | trans 0.07261 | lle 0.00000 | geo 0.00000 | metric 0.00000 | r 0.2258 | R² 0.0171 | eta 01:19
++      saved best checkpoint -> /home/4429/projects/Neural_VAE_ODE/runs/2026-05-27_200727_0f15862/ode_vae_best.pt
++Traceback (most recent call last):
++  File "/home/4429/projects/Neural_VAE_ODE/src/v6_neural_vae.py", line 2730, in <module>
++    best_val, mean_r2, mean_r = train(args)
++                                ^^^^^^^^^^^
++  File "/home/4429/projects/Neural_VAE_ODE/src/v6_neural_vae.py", line 2256, in train
++    transition_loss = torch.mean((dx_hat - dx_true) ** 2)
++                                 ~~~~~~~~~~~~~~~~~~~^^~~
++  File "/home/4429/envs/odevae/lib/python3.11/site-packages/torch/_tensor.py", line 33, in wrapped

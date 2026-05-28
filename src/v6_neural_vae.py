@@ -799,6 +799,8 @@ def train_model_on_sequences(args, X_train, tvec, latent_dim):
                 lambda_geo=lambda_geo,
                 metric_loss=metric_loss,
                 lambda_metric=lambda_metric,
+                recon_loss_type=getattr(args, "recon_loss", getattr(args, "reconstruction_loss", "mse")),
+                recon_loss_eps=getattr(args, "recon_loss_eps", 1e-8),
             )
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -1793,11 +1795,41 @@ def compute_mind_geometry_loss(
     return torch.sum(weights * err) / (torch.sum(weights) + float(eps))
 
 
-def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0, geo_loss=None, lambda_geo=0.0, metric_loss=None, lambda_metric=0.0):
+def reconstruction_loss(xhat, x, loss_type="mse", eps=1e-8):
+    """
+    Reconstruction objective.
+
+    mse: ordinary mean squared error.
+    r2: minimize Var(residual) / Var(target), i.e. maximize variance explained.
+    per_neuron_r2: same ratio averaged per neuron so high-variance neurons do not dominate.
+    """
+    loss_type = str(loss_type).strip().lower()
+    if loss_type in ("mse", "l2"):
+        return torch.mean((xhat - x) ** 2)
+
+    if loss_type in ("r2", "variance_r2", "var_explained", "variance_explained"):
+        residual_var = torch.var((xhat - x).reshape(-1), unbiased=False)
+        target_var = torch.var(x.reshape(-1), unbiased=False)
+        return residual_var / (target_var + float(eps))
+
+    if loss_type in ("per_neuron_r2", "neuron_r2", "feature_r2"):
+        x_flat = x.reshape(-1, x.shape[-1])
+        xhat_flat = xhat.reshape(-1, xhat.shape[-1])
+        residual_var = torch.var(xhat_flat - x_flat, dim=0, unbiased=False)
+        target_var = torch.var(x_flat, dim=0, unbiased=False)
+        valid = target_var > float(eps)
+        if not torch.any(valid):
+            return x.new_tensor(0.0)
+        return torch.mean(residual_var[valid] / (target_var[valid] + float(eps)))
+
+    raise ValueError(f"Unknown recon_loss type: {loss_type}")
+
+
+def vae_loss(xhat, x, mu, logvar, zdiff, beta=1.0, lambda_smooth=0.0, transition_loss=None, lambda_transition=0.0, lle_loss=None, lambda_lle=0.0, geo_loss=None, lambda_geo=0.0, metric_loss=None, lambda_metric=0.0, recon_loss_type="mse", recon_loss_eps=1e-8):
     # --- Safety clamp to prevent numerical overflow ---
     logvar = torch.clamp(logvar, min=-10.0, max=10.0)
 
-    recon = torch.mean((xhat - x) ** 2)
+    recon = reconstruction_loss(xhat, x, loss_type=recon_loss_type, eps=recon_loss_eps)
     kl = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     smooth = torch.mean(zdiff**2) if lambda_smooth > 0 else x.new_tensor(0.0)
     if transition_loss is None or lambda_transition <= 0:
@@ -2314,6 +2346,8 @@ def train(args):
                 lambda_geo=lambda_geo,
                 metric_loss=metric_loss,
                 lambda_metric=lambda_metric,
+                recon_loss_type=getattr(args, "recon_loss", getattr(args, "reconstruction_loss", "mse")),
+                recon_loss_eps=getattr(args, "recon_loss_eps", 1e-8),
             )
             
             # ---- NaN check ----
@@ -2418,6 +2452,8 @@ def train(args):
                     lambda_geo=lambda_geo,
                     metric_loss=metric_loss,
                     lambda_metric=lambda_metric,
+                    recon_loss_type=getattr(args, "recon_loss", getattr(args, "reconstruction_loss", "mse")),
+                    recon_loss_eps=getattr(args, "recon_loss_eps", 1e-8),
                 )
                 vl += loss.item(); vr += rec.item(); vk += kl.item(); vs += sm.item(); vt += trn.item(); vlle += lle.item(); vg += geo.item(); vm += metric.item()
                 val_preds.append(xhat.cpu().numpy())

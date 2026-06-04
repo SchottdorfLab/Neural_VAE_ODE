@@ -1,0 +1,27 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=161, heldout=17 (0.096)
+PCA feature space: dim=115, explained_variance=0.9506
+Selected train landmarks: 750 of 19320 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=6.7207, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.02573 | val 0.02286 | feature 0.02003 | z 1.01080 | teacher 0.01353 | raw 0.02316
+[025] train 0.00433 | val 0.00453 | feature 0.00318 | z 5.34150 | teacher 0.00253 | raw 0.00521
+[050] train 0.00292 | val 0.00317 | feature 0.00204 | z 7.98156 | teacher 0.00195 | raw 0.00392
+[075] train 0.00237 | val 0.00262 | feature 0.00159 | z 9.39949 | teacher 0.00174 | raw 0.00337
+[100] train 0.00206 | val 0.00231 | feature 0.00134 | z 10.25103 | teacher 0.00163 | raw 0.00306
+[125] train 0.00185 | val 0.00212 | feature 0.00118 | z 10.79799 | teacher 0.00156 | raw 0.00286
+[150] train 0.00170 | val 0.00196 | feature 0.00105 | z 11.17871 | teacher 0.00151 | raw 0.00271
+[175] train 0.00160 | val 0.00185 | feature 0.00097 | z 11.42262 | teacher 0.00148 | raw 0.00261
+[200] train 0.00150 | val 0.00174 | feature 0.00089 | z 11.67771 | teacher 0.00145 | raw 0.00252
+[225] train 0.00142 | val 0.00167 | feature 0.00082 | z 11.86456 | teacher 0.00143 | raw 0.00244
+[250] train 0.00136 | val 0.00161 | feature 0.00077 | z 11.97131 | teacher 0.00141 | raw 0.00238
+[275] train 0.00131 | val 0.00157 | feature 0.00073 | z 12.03533 | teacher 0.00139 | raw 0.00232
+[300] train 0.00126 | val 0.00151 | feature 0.00069 | z 12.12689 | teacher 0.00138 | raw 0.00228
+Binned heldout r 0.7379 | R2 0.5432 | MIND_R2 0.5438 | trial median 0.5620
+Raw mapped heldout r 0.7331 | R2 0.5361 | MIND_R2 0.5367 | trial median 0.5524
+Raw mapped event capture top1 0.4846 | dyn ratio 0.7765
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-06-03_210054_834cd6a

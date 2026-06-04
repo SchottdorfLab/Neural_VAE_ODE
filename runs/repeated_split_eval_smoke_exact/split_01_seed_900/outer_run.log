@@ -1,0 +1,15 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=160, heldout=18 (0.101)
+PCA feature space: dim=50, explained_variance=0.7872
+Selected train landmarks: 750 of 19200 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=7.0909, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.04586 | val 0.03831 | feature 0.03640 | z 1.02041 | teacher 0.02881 | raw 0.02256
+Binned heldout r 0.4910 | R2 0.2346 | MIND_R2 0.2347 | trial median 0.2124
+Raw mapped heldout r 0.4883 | R2 0.2325 | MIND_R2 0.2326 | trial median 0.2012
+Raw mapped event capture top1 0.1967 | dyn ratio 0.2784
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/repeated_split_eval_smoke_exact/split_01_seed_900

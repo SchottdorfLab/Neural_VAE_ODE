@@ -1,0 +1,29 @@
+/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py:692: RuntimeWarning: invalid value encountered in matmul
+  gram = centered @ centered.T
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=160, heldout=18 (0.101)
+PCA feature space: dim=50, explained_variance=0.7937
+Selected train landmarks: 750 of 19200 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=6.9395, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.04568 | val 0.03943 | feature 0.03631 | z 1.02330 | teacher 0.02846 | raw 0.02260
+[025] train 0.00470 | val 0.00481 | feature 0.00323 | z 6.06646 | teacher 0.00291 | raw 0.00744
+[050] train 0.00319 | val 0.00330 | feature 0.00196 | z 8.92285 | teacher 0.00216 | raw 0.00685
+[075] train 0.00262 | val 0.00270 | feature 0.00148 | z 10.64391 | teacher 0.00190 | raw 0.00662
+[100] train 0.00231 | val 0.00240 | feature 0.00121 | z 11.78158 | teacher 0.00177 | raw 0.00649
+[125] train 0.00211 | val 0.00219 | feature 0.00105 | z 12.48274 | teacher 0.00169 | raw 0.00641
+[150] train 0.00197 | val 0.00205 | feature 0.00093 | z 12.92936 | teacher 0.00164 | raw 0.00635
+[175] train 0.00188 | val 0.00196 | feature 0.00084 | z 13.19697 | teacher 0.00161 | raw 0.00631
+[200] train 0.00177 | val 0.00184 | feature 0.00075 | z 13.35305 | teacher 0.00156 | raw 0.00627
+[225] train 0.00172 | val 0.00180 | feature 0.00071 | z 13.37838 | teacher 0.00155 | raw 0.00624
+[250] train 0.00165 | val 0.00171 | feature 0.00065 | z 13.40796 | teacher 0.00152 | raw 0.00620
+[275] train 0.00161 | val 0.00169 | feature 0.00061 | z 13.36018 | teacher 0.00151 | raw 0.00618
+[300] train 0.00158 | val 0.00164 | feature 0.00058 | z 13.29614 | teacher 0.00150 | raw 0.00618
+Binned heldout r 0.6601 | R2 0.4339 | MIND_R2 0.4351 | trial median 0.4786
+Raw mapped heldout r 0.6481 | R2 0.4179 | MIND_R2 0.4193 | trial median 0.4068
+Raw mapped event capture top1 0.3902 | dyn ratio 0.6666
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/repeated_split_eval_v6_binned_raw_fixed_10splits/split_04_seed_45

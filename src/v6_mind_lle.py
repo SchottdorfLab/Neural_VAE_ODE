@@ -27,6 +27,21 @@ from sklearn.neighbors import NearestNeighbors
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+MIND_SANDBOX_TRIALS = np.asarray([
+    9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30,
+    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49,
+    50, 51, 53, 55, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70,
+    71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+    89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104,
+    105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119,
+    120, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134,
+    135, 136, 137, 138, 139, 142, 143, 144, 145, 146, 147, 148, 149, 150,
+    151, 152, 153, 154, 155, 156, 157, 159, 160, 161, 162, 163, 164, 165,
+    166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
+    180, 181, 182, 183, 184, 185, 186, 187, 189, 190, 191, 192, 194, 195,
+    196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
+    210,
+], dtype=np.int64)
 
 
 def parse_value(raw: str) -> Any:
@@ -85,6 +100,20 @@ def set_seed(seed: int) -> np.random.Generator:
     np.random.seed(seed)
     torch.manual_seed(seed)
     return np.random.default_rng(seed)
+
+
+def jsonable(obj: Any) -> Any:
+    if isinstance(obj, (np.floating, np.float32, np.float64)):
+        return float(obj)
+    if isinstance(obj, (np.integer, np.int32, np.int64)):
+        return int(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {str(k): jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [jsonable(v) for v in obj]
+    return obj
 
 
 def get_npz_array(data: np.lib.npyio.NpzFile, names: Iterable[str]) -> np.ndarray | None:
@@ -233,14 +262,76 @@ def baseline_correct_trials(x: np.ndarray, quantile: float = 0.1) -> np.ndarray:
     return (x - base).astype(np.float32)
 
 
-def split_trials(n_trials: int, frac: float, seed: int) -> Tuple[np.ndarray, np.ndarray]:
+def split_trials(n_trials: int, frac: float, seed: int, exact: bool = False) -> Tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
+    if exact:
+        n_test = int(round(n_trials * frac))
+        n_test = min(max(n_test, 1), max(n_trials - 1, 1))
+        order = rng.permutation(n_trials)
+        test = np.sort(order[:n_test]).astype(np.int64)
+        train = np.sort(order[n_test:]).astype(np.int64)
+        return train, test
     mask = rng.random(n_trials) >= frac
     if mask.all():
         mask[rng.integers(0, n_trials)] = False
     if (~mask).all():
         mask[rng.integers(0, n_trials)] = True
     return np.flatnonzero(mask), np.flatnonzero(~mask)
+
+
+def build_mind_sandbox_frame_split(
+    roi: np.ndarray,
+    trials: np.ndarray,
+    cfg: Dict[str, Any],
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+    """Build the raw-frame train/test arrays used by exp1_embeddingCrossval.m.
+
+    The MATLAB sandbox first removes globally silent frames and neurons, then
+    splits an explicit list of trial IDs with `rand(...) > 0.1`. The returned
+    arrays are shaped as one long sequence so downstream code can still compute
+    local deltas on the concatenated frame stream, matching the sandbox's
+    `data.t = (1:size(training_data,1))./15` construction.
+    """
+    trial_ids = np.asarray(cfg.get("mind_sandbox_trials", MIND_SANDBOX_TRIALS), dtype=np.int64)
+    frac = float(cfg.get("mind_test_frac", cfg.get("test_frac", 0.1)))
+    seed = int(cfg.get("mind_split_seed", cfg.get("seed", 42)))
+    rng = np.random.default_rng(seed)
+    train_mask = rng.random(trial_ids.size) > frac
+    if train_mask.all():
+        train_mask[rng.integers(0, trial_ids.size)] = False
+    if (~train_mask).all():
+        train_mask[rng.integers(0, trial_ids.size)] = True
+    train_trials = trial_ids[train_mask]
+    test_trials = trial_ids[~train_mask]
+
+    frame_active = np.sum(roi, axis=1) > float(cfg.get("silent_frame_threshold", 0.0))
+    all_data = roi[frame_active]
+    all_trialn = trials[frame_active].astype(np.int64)
+    train_frame_mask = np.isin(all_trialn, train_trials)
+    test_frame_mask = np.isin(all_trialn, test_trials)
+    train_data = all_data[train_frame_mask].astype(np.float32)
+    test_data = all_data[test_frame_mask].astype(np.float32)
+    if train_data.size == 0 or test_data.size == 0:
+        raise ValueError("MIND sandbox raw split produced empty train or test frame data.")
+
+    meta = {
+        "data_mode": "mind_sandbox_raw",
+        "trial_ids": trial_ids,
+        "train_trial_ids": train_trials,
+        "test_trial_ids": test_trials,
+        "train_frame_trial_ids": all_trialn[train_frame_mask],
+        "test_frame_trial_ids": all_trialn[test_frame_mask],
+        "globally_active_frame_count": int(frame_active.sum()),
+        "globally_silent_frame_count": int((~frame_active).sum()),
+        "n_trials_total": int(trial_ids.size),
+        "n_trials_train": int(train_trials.size),
+        "n_trials_heldout": int(test_trials.size),
+        "heldout_fraction": float(test_trials.size / trial_ids.size),
+        "n_train_frames": int(train_data.shape[0]),
+        "n_test_frames": int(test_data.shape[0]),
+        "split_note": "MIND sandbox structure: explicit E65 trial list, rand > test_frac split, raw active frames.",
+    }
+    return train_data[None, :, :], test_data[None, :, :], meta
 
 
 def flatten_trials(x: np.ndarray) -> np.ndarray:
@@ -673,6 +764,274 @@ class KernelRegressor:
         return out
 
 
+def mind_lle_k_grid() -> list[int]:
+    """MATLAB sandbox grid: [5:20, 12:5:50], with duplicates removed."""
+    return sorted(set(list(range(5, 21)) + list(range(12, 51, 5))))
+
+
+def mind_lle_ridge_grid() -> list[float]:
+    """MATLAB sandbox lambda grid: 10.^(-8:.5:0)."""
+    return [float(10.0 ** x) for x in np.arange(-8.0, 0.0001, 0.5)]
+
+
+def parse_int_grid(raw: Any, default: Iterable[int]) -> list[int]:
+    if raw is None:
+        return [int(x) for x in default]
+    if isinstance(raw, (list, tuple, np.ndarray)):
+        return [int(x) for x in raw]
+    text = str(raw).strip()
+    if not text:
+        return [int(x) for x in default]
+    if text.lower() in {"mind", "mind_lle", "sandbox"}:
+        return mind_lle_k_grid()
+    out: list[int] = []
+    for token in text.replace(";", ",").split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if ":" in token:
+            parts = [int(float(x.strip())) for x in token.split(":")]
+            if len(parts) == 2:
+                start, stop = parts
+                step = 1
+            elif len(parts) == 3:
+                start, step, stop = parts
+            else:
+                raise ValueError(f"Bad integer grid token {token!r}")
+            if step == 0:
+                raise ValueError(f"Integer grid step cannot be zero in {token!r}")
+            stop_inclusive = stop + (1 if step > 0 else -1)
+            out.extend(range(start, stop_inclusive, step))
+        else:
+            out.append(int(float(token)))
+    return sorted(set(int(x) for x in out))
+
+
+def parse_float_grid(raw: Any, default: Iterable[float]) -> list[float]:
+    if raw is None:
+        return [float(x) for x in default]
+    if isinstance(raw, (list, tuple, np.ndarray)):
+        return [float(x) for x in raw]
+    text = str(raw).strip()
+    if not text:
+        return [float(x) for x in default]
+    if text.lower() in {"mind", "mind_lle", "sandbox"}:
+        return mind_lle_ridge_grid()
+    out: list[float] = []
+    for token in text.replace(";", ",").split(","):
+        token = token.strip()
+        if not token:
+            continue
+        if token.lower().startswith("log10:"):
+            _, start, step, stop = token.split(":")
+            out.extend(float(10.0 ** x) for x in np.arange(float(start), float(stop) + 1e-12, float(step)))
+        elif ":" in token:
+            parts = [float(x.strip()) for x in token.split(":")]
+            if len(parts) == 2:
+                start, stop = parts
+                step = 1.0
+            elif len(parts) == 3:
+                start, step, stop = parts
+            else:
+                raise ValueError(f"Bad float grid token {token!r}")
+            if step == 0:
+                raise ValueError(f"Float grid step cannot be zero in {token!r}")
+            out.extend(float(x) for x in np.arange(start, stop + np.sign(step) * 1e-12, step))
+        else:
+            out.append(float(token))
+    return sorted(set(float(x) for x in out))
+
+
+def _cv_sample_indices(n: int, max_points: int, seed: int) -> np.ndarray:
+    if max_points <= 0 or n <= max_points:
+        return np.arange(n, dtype=np.int64)
+    rng = np.random.default_rng(seed)
+    return np.sort(rng.choice(n, size=max_points, replace=False).astype(np.int64))
+
+
+def _make_cv_folds(n: int, nfolds: int, seed: int) -> list[np.ndarray]:
+    nfolds = max(2, min(int(nfolds), n))
+    rng = np.random.default_rng(seed)
+    order = rng.permutation(n)
+    return [fold.astype(np.int64) for fold in np.array_split(order, nfolds) if fold.size > 0]
+
+
+def _lle_predict_from_neighbors(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_query: np.ndarray,
+    neighbor_indices: np.ndarray,
+    ridge: float,
+) -> np.ndarray:
+    out = np.empty((x_query.shape[0], y_train.shape[1]), dtype=np.float32)
+    for i, row in enumerate(neighbor_indices):
+        xi = x_query[i]
+        nb = x_train[row]
+        centered = nb - xi[None, :]
+        gram = centered @ centered.T
+        trace = float(np.trace(gram))
+        reg = float(ridge) * (trace / max(gram.shape[0], 1) if trace > 0 else 1.0)
+        gram = gram + np.eye(gram.shape[0], dtype=np.float32) * (reg + 1e-8)
+        ones = np.ones(gram.shape[0], dtype=np.float32)
+        try:
+            weights = np.linalg.solve(gram, ones)
+        except np.linalg.LinAlgError:
+            weights = np.linalg.lstsq(gram, ones, rcond=None)[0]
+        denom = float(np.sum(weights))
+        if abs(denom) < 1e-12:
+            weights = np.full_like(weights, 1.0 / weights.size)
+        else:
+            weights = weights / denom
+        out[i] = weights.astype(np.float32) @ y_train[row]
+    return out
+
+
+def tune_lle_mapper_cv(
+    x: np.ndarray,
+    y: np.ndarray,
+    k_grid: Iterable[int],
+    ridge_grid: Iterable[float],
+    nfolds: int = 10,
+    seed: int = 42,
+    max_points: int = 0,
+) -> Dict[str, Any]:
+    """Choose LLE k/ridge by train-only CV, matching the MIND mapping idea."""
+    x = np.asarray(x, dtype=np.float32)
+    y = np.asarray(y, dtype=np.float32)
+    sample_idx = _cv_sample_indices(x.shape[0], int(max_points), seed)
+    xs = x[sample_idx]
+    ys = y[sample_idx]
+    folds = _make_cv_folds(xs.shape[0], nfolds, seed + 101)
+    k_values = [int(k) for k in k_grid if int(k) > 0]
+    ridge_values = [float(r) for r in ridge_grid if float(r) >= 0]
+    if not k_values or not ridge_values:
+        raise ValueError("LLE CV requires non-empty k and ridge grids.")
+
+    max_k = min(max(k_values), xs.shape[0] - max(1, int(math.ceil(xs.shape[0] / max(1, len(folds))))))
+    max_k = max(1, max_k)
+    fold_data = []
+    all_idx = np.arange(xs.shape[0], dtype=np.int64)
+    for test_idx in folds:
+        train_idx = np.setdiff1d(all_idx, test_idx, assume_unique=False)
+        if train_idx.size < 2:
+            continue
+        k_fold = min(max_k, train_idx.size)
+        nn = NearestNeighbors(n_neighbors=k_fold, metric="euclidean").fit(xs[train_idx])
+        inds = nn.kneighbors(xs[test_idx], return_distance=False)
+        fold_data.append((train_idx, test_idx, inds))
+    if not fold_data:
+        raise ValueError("LLE CV could not construct any valid folds.")
+
+    results = []
+    best = {"error": float("inf"), "k": int(k_values[0]), "ridge": float(ridge_values[0])}
+    for k in k_values:
+        fold_max = min(k, max_k)
+        if fold_max < 1:
+            continue
+        for ridge in ridge_values:
+            sse = 0.0
+            count = 0
+            for train_idx, test_idx, inds in fold_data:
+                kk = min(fold_max, inds.shape[1])
+                pred = _lle_predict_from_neighbors(xs[train_idx], ys[train_idx], xs[test_idx], inds[:, :kk], ridge)
+                resid = pred.astype(np.float64) - ys[test_idx].astype(np.float64)
+                sse += float(np.sum(resid ** 2))
+                count += int(resid.size)
+            err = sse / max(1, count)
+            results.append({"k": int(fold_max), "ridge": float(ridge), "mse": float(err)})
+            if err < best["error"]:
+                best = {"error": float(err), "k": int(fold_max), "ridge": float(ridge)}
+    return {
+        "selected_k": int(best["k"]),
+        "selected_ridge": float(best["ridge"]),
+        "selected_mse": float(best["error"]),
+        "n_points": int(xs.shape[0]),
+        "n_folds": int(len(fold_data)),
+        "k_grid": [int(k) for k in k_values],
+        "ridge_grid": [float(r) for r in ridge_values],
+        "results": results,
+    }
+
+
+def tune_kernel_regressor_cv(
+    x: np.ndarray,
+    y: np.ndarray,
+    k_grid: Iterable[int],
+    bandwidth_grid: Iterable[float],
+    nfolds: int = 10,
+    seed: int = 42,
+    max_points: int = 5000,
+    eps: float = 1e-8,
+) -> Dict[str, Any]:
+    """Choose local weighted-average decoder k/bandwidth by train-only CV."""
+    x = np.asarray(x, dtype=np.float32)
+    y = np.asarray(y, dtype=np.float32)
+    sample_idx = _cv_sample_indices(x.shape[0], int(max_points), seed)
+    xs = x[sample_idx]
+    ys = y[sample_idx]
+    folds = _make_cv_folds(xs.shape[0], nfolds, seed + 203)
+    k_values = [int(k) for k in k_grid if int(k) > 0]
+    bandwidth_values = [float(h) for h in bandwidth_grid if float(h) > 0]
+    if not k_values or not bandwidth_values:
+        raise ValueError("Kernel CV requires non-empty k and bandwidth grids.")
+
+    max_k = min(max(k_values), xs.shape[0] - max(1, int(math.ceil(xs.shape[0] / max(1, len(folds))))))
+    max_k = max(1, max_k)
+    all_idx = np.arange(xs.shape[0], dtype=np.int64)
+    fold_data = []
+    for test_idx in folds:
+        train_idx = np.setdiff1d(all_idx, test_idx, assume_unique=False)
+        if train_idx.size < 2:
+            continue
+        k_fold = min(max_k, train_idx.size)
+        nn = NearestNeighbors(n_neighbors=k_fold, metric="euclidean").fit(xs[train_idx])
+        dists, inds = nn.kneighbors(xs[test_idx], return_distance=True)
+        fold_data.append((train_idx, test_idx, dists.astype(np.float32), inds.astype(np.int64)))
+    if not fold_data:
+        raise ValueError("Kernel CV could not construct any valid folds.")
+
+    results = []
+    best = {"error": float("inf"), "k": int(k_values[0]), "bandwidth": float(bandwidth_values[0])}
+    for k in k_values:
+        fold_max = min(k, max_k)
+        for bandwidth in bandwidth_values:
+            sse = 0.0
+            count = 0
+            for train_idx, test_idx, dists_all, inds_all in fold_data:
+                kk = min(fold_max, inds_all.shape[1])
+                dists = dists_all[:, :kk]
+                inds = inds_all[:, :kk]
+                scale = np.median(dists, axis=1, keepdims=True)
+                fallback = np.maximum(dists[:, -1:], eps)
+                scale = np.where(scale > eps, scale, fallback)
+                denom = np.maximum(scale * max(float(bandwidth), eps), eps)
+                logits = -0.5 * (dists / denom) ** 2
+                logits = logits - logits.max(axis=1, keepdims=True)
+                weights = np.exp(logits).astype(np.float32)
+                weights = weights / np.maximum(weights.sum(axis=1, keepdims=True), eps)
+                pred = np.empty((test_idx.size, ys.shape[1]), dtype=np.float32)
+                y_train = ys[train_idx]
+                for i, row in enumerate(inds):
+                    pred[i] = weights[i] @ y_train[row]
+                resid = pred.astype(np.float64) - ys[test_idx].astype(np.float64)
+                sse += float(np.sum(resid ** 2))
+                count += int(resid.size)
+            err = sse / max(1, count)
+            results.append({"k": int(fold_max), "bandwidth": float(bandwidth), "mse": float(err)})
+            if err < best["error"]:
+                best = {"error": float(err), "k": int(fold_max), "bandwidth": float(bandwidth)}
+    return {
+        "selected_k": int(best["k"]),
+        "selected_bandwidth": float(best["bandwidth"]),
+        "selected_mse": float(best["error"]),
+        "n_points": int(xs.shape[0]),
+        "n_folds": int(len(fold_data)),
+        "k_grid": [int(k) for k in k_values],
+        "bandwidth_grid": [float(h) for h in bandwidth_values],
+        "results": results,
+    }
+
+
 def corr_and_r2(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     a = y_true.reshape(-1).astype(np.float64)
     b = y_pred.reshape(-1).astype(np.float64)
@@ -680,13 +1039,13 @@ def corr_and_r2(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     a = a[valid]
     b = b[valid]
     if a.size == 0:
-        return {"r": float("nan"), "R2": float("nan"), "variance_explained": float("nan")}
+        return {"r": float("nan"), "R2": float("nan"), "variance_explained": float("nan"), "MIND_R2": float("nan")}
     r = float(np.corrcoef(a, b)[0, 1]) if np.std(a) > 0 and np.std(b) > 0 else 0.0
     sse = float(np.sum((a - b) ** 2))
     sst = float(np.sum((a - np.mean(a)) ** 2))
     r2 = 1.0 - sse / sst if sst > 0 else float("nan")
     var_exp = 1.0 - float(np.var(a - b)) / float(np.var(a)) if np.var(a) > 0 else float("nan")
-    return {"r": r, "R2": float(r2), "variance_explained": float(var_exp)}
+    return {"r": r, "R2": float(r2), "variance_explained": float(var_exp), "MIND_R2": float(var_exp)}
 
 
 def r2_value(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -696,6 +1055,80 @@ def r2_value(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     if sst <= 0:
         return float("nan")
     return float(1.0 - np.sum((a - b) ** 2) / sst)
+
+
+def mind_r2_value(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Match the MATLAB MIND score: 1 - var(raw - recon) / var(raw)."""
+    a = y_true.reshape(-1).astype(np.float64)
+    b = y_pred.reshape(-1).astype(np.float64)
+    valid = np.isfinite(a) & np.isfinite(b)
+    a = a[valid]
+    b = b[valid]
+    if a.size == 0:
+        return float("nan")
+    denom = float(np.var(a))
+    if denom <= 0:
+        return float("nan")
+    return float(1.0 - np.var(a - b) / denom)
+
+
+def summarize_trial_mind_r2(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, Any]:
+    """Compute the per-trial MIND R2 scatter scores used in the MATLAB script."""
+    if y_true.shape[0] != y_pred.shape[0]:
+        raise ValueError("Trial metric arrays must have the same first dimension")
+    scores = np.asarray([mind_r2_value(y_true[i], y_pred[i]) for i in range(y_true.shape[0])], dtype=np.float64)
+    finite = scores[np.isfinite(scores)]
+    if finite.size == 0:
+        return {
+            "MIND_R2_trial_mean": float("nan"),
+            "MIND_R2_trial_median": float("nan"),
+            "MIND_R2_trial_min": float("nan"),
+            "MIND_R2_trial_max": float("nan"),
+            "MIND_R2_trial_scores": [],
+        }
+    return {
+        "MIND_R2_trial_mean": float(np.mean(finite)),
+        "MIND_R2_trial_median": float(np.median(finite)),
+        "MIND_R2_trial_min": float(np.min(finite)),
+        "MIND_R2_trial_max": float(np.max(finite)),
+        "MIND_R2_trial_scores": [float(x) for x in scores],
+    }
+
+
+def summarize_frame_trial_mind_r2(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    frame_trial_ids: np.ndarray,
+    trial_ids: np.ndarray,
+) -> Dict[str, Any]:
+    """Per-trial scatter scores for raw-frame MIND sandbox mode."""
+    true_flat = np.asarray(y_true).reshape(-1, y_true.shape[-1])
+    pred_flat = np.asarray(y_pred).reshape(-1, y_pred.shape[-1])
+    frame_trial_ids = np.asarray(frame_trial_ids).reshape(-1)
+    scores = []
+    for tid in np.asarray(trial_ids).reshape(-1):
+        sel = frame_trial_ids == int(tid)
+        if np.any(sel):
+            scores.append(mind_r2_value(true_flat[sel], pred_flat[sel]))
+        else:
+            scores.append(float("nan"))
+    scores_arr = np.asarray(scores, dtype=np.float64)
+    finite = scores_arr[np.isfinite(scores_arr)]
+    if finite.size == 0:
+        return {
+            "MIND_R2_trial_mean": float("nan"),
+            "MIND_R2_trial_median": float("nan"),
+            "MIND_R2_trial_min": float("nan"),
+            "MIND_R2_trial_max": float("nan"),
+            "MIND_R2_trial_scores": [],
+        }
+    return {
+        "MIND_R2_trial_mean": float(np.mean(finite)),
+        "MIND_R2_trial_median": float(np.median(finite)),
+        "MIND_R2_trial_min": float(np.min(finite)),
+        "MIND_R2_trial_max": float(np.max(finite)),
+        "MIND_R2_trial_scores": [float(x) for x in scores_arr],
+    }
 
 
 def apply_reconstruction_postprocess(
@@ -797,23 +1230,100 @@ def compute_event_metrics(y_true: np.ndarray, y_pred: np.ndarray, percentile: fl
     return out
 
 
-def save_recon_heatmap(y_true: np.ndarray, y_pred: np.ndarray, out_path: Path, title: str) -> None:
-    t_end = min(16, y_true.shape[1])
-    n_end = min(41, y_true.shape[2])
-    raw = y_true[0, :t_end, :n_end].T
-    recon = y_pred[0, :t_end, :n_end].T
+def save_recon_heatmap(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    out_path: Path,
+    title: str,
+    *,
+    frame_trial_ids: np.ndarray | None = None,
+    trial_index: int = 0,
+    t_start: int = 0,
+    t_end: int = 15,
+    neuron_start: int = 0,
+    neuron_end: int = 40,
+) -> None:
+    """Save the fixed per-run reconstruction report.
+
+    Raw and reconstruction share one activity scale; the residual gets a
+    symmetric scale around zero. For raw-frame MIND-style runs, frame_trial_ids
+    lets the report select one real held-out trial from the concatenated frames.
+    Time and neuron bounds are inclusive.
+    """
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    if y_true.ndim != 3 or y_pred.ndim != 3:
+        raise ValueError(f"Expected [trial,time,neuron] arrays, got {y_true.shape} and {y_pred.shape}")
+    if y_true.shape != y_pred.shape:
+        raise ValueError(f"y_true and y_pred shapes differ: {y_true.shape} vs {y_pred.shape}")
+
+    trial_label = str(int(np.clip(trial_index, 0, y_true.shape[0] - 1)))
+    if frame_trial_ids is not None:
+        ids = np.asarray(frame_trial_ids).reshape(-1)
+        if y_true.shape[0] != 1 or ids.size != y_true.shape[1]:
+            raise ValueError(
+                "frame_trial_ids is only valid for one concatenated sequence with one ID per frame; "
+                f"got y_true={y_true.shape}, frame_trial_ids={ids.shape}"
+            )
+        unique_ids = np.unique(ids)
+        pick = int(np.clip(trial_index, 0, unique_ids.size - 1))
+        trial_id = unique_ids[pick]
+        frame_idx = np.flatnonzero(ids == trial_id)
+        y_true_win_source = y_true[0, frame_idx, :]
+        y_pred_win_source = y_pred[0, frame_idx, :]
+        trial_label = str(int(trial_id))
+    else:
+        pick = int(np.clip(trial_index, 0, y_true.shape[0] - 1))
+        y_true_win_source = y_true[pick]
+        y_pred_win_source = y_pred[pick]
+
+    t0 = max(0, int(t_start))
+    t1 = min(int(t_end) + 1, y_true_win_source.shape[0])
+    n0 = max(0, int(neuron_start))
+    n1 = min(int(neuron_end) + 1, y_true_win_source.shape[1])
+    if t0 >= t1 or n0 >= n1:
+        raise ValueError(
+            f"Requested empty reconstruction window: time {t_start}-{t_end}, "
+            f"neurons {neuron_start}-{neuron_end}, source shape={y_true_win_source.shape}"
+        )
+
+    raw = y_true_win_source[t0:t1, n0:n1].T
+    recon = y_pred_win_source[t0:t1, n0:n1].T
     resid = raw - recon
-    vmax = float(np.nanmax(np.abs(raw))) if raw.size else 1.0
-    if vmax <= 0 or not np.isfinite(vmax):
-        vmax = 1.0
+
+    activity_vmin = float(np.nanmin([np.nanmin(raw), np.nanmin(recon)]))
+    activity_vmax = float(np.nanmax([np.nanmax(raw), np.nanmax(recon)]))
+    if not np.isfinite(activity_vmin) or not np.isfinite(activity_vmax) or activity_vmin == activity_vmax:
+        activity_vmin, activity_vmax = 0.0, 1.0
+    resid_vmax = float(np.nanmax(np.abs(resid))) if resid.size else 1.0
+    if not np.isfinite(resid_vmax) or resid_vmax <= 0:
+        resid_vmax = 1.0
+
     fig, axes = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
     for ax, arr, label in zip(axes, [raw, recon, resid], ["raw", "recon", "raw - recon"]):
-        im = ax.imshow(arr, aspect="auto", interpolation="nearest", cmap="viridis" if label != "raw - recon" else "coolwarm")
+        if label == "raw - recon":
+            im = ax.imshow(
+                arr,
+                aspect="auto",
+                interpolation="nearest",
+                cmap="coolwarm",
+                vmin=-resid_vmax,
+                vmax=resid_vmax,
+            )
+        else:
+            im = ax.imshow(
+                arr,
+                aspect="auto",
+                interpolation="nearest",
+                cmap="viridis",
+                vmin=activity_vmin,
+                vmax=activity_vmax,
+            )
         ax.set_title(label)
         ax.set_xlabel("time bin")
         ax.set_ylabel("neuron")
         fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    fig.suptitle(title)
+    fig.suptitle(f"{title}: heldout trial {trial_label}, time {t0}-{t1 - 1}, neurons {n0}-{n1 - 1}")
     fig.savefig(out_path, dpi=160)
     plt.close(fig)
 
@@ -865,13 +1375,33 @@ def main() -> None:
         mask = np.ones(roi.shape[1], dtype=bool)
         removed = 0
 
-    sequences, trial_ids, axis = build_trial_sequences(roi, trials, time, position, cfg)
-    print(f"Built sequences: B={sequences.shape[0]}, L={sequences.shape[1]}, N={sequences.shape[2]}")
+    data_mode = str(cfg.get("data_mode", cfg.get("trial_mode", "resampled_trials"))).lower()
+    raw_split_meta: Dict[str, Any] | None = None
+    if data_mode in {"mind_sandbox_raw", "sandbox_raw", "raw_frames"}:
+        x_train, x_test, raw_split_meta = build_mind_sandbox_frame_split(roi, trials, cfg)
+        train_idx = np.arange(raw_split_meta["n_trials_train"], dtype=np.int64)
+        test_idx = np.arange(raw_split_meta["n_trials_heldout"], dtype=np.int64)
+        trial_ids = raw_split_meta["trial_ids"]
+        axis = np.arange(x_train.shape[1], dtype=np.float32) / float(cfg.get("fps", 15.0))
+        sequences = None
+        print(
+            "MIND sandbox raw-frame split: "
+            f"train trials={raw_split_meta['n_trials_train']} ({raw_split_meta['n_train_frames']} frames) | "
+            f"test trials={raw_split_meta['n_trials_heldout']} ({raw_split_meta['n_test_frames']} frames)"
+        )
+    else:
+        sequences, trial_ids, axis = build_trial_sequences(roi, trials, time, position, cfg)
+        print(f"Built sequences: B={sequences.shape[0]}, L={sequences.shape[1]}, N={sequences.shape[2]}")
 
-    train_idx, test_idx = split_trials(sequences.shape[0], float(cfg.get("test_frac", cfg.get("mind_test_frac", 0.1))), int(cfg.get("mind_split_seed", seed)))
-    x_train = sequences[train_idx]
-    x_test = sequences[test_idx]
-    print(f"Trial split: train={len(train_idx)}, heldout={len(test_idx)} ({len(test_idx) / sequences.shape[0]:.3f})")
+        train_idx, test_idx = split_trials(
+            sequences.shape[0],
+            float(cfg.get("test_frac", cfg.get("mind_test_frac", 0.1))),
+            int(cfg.get("mind_split_seed", seed)),
+            exact=bool(cfg.get("split_exact_test_fraction", False)),
+        )
+        x_train = sequences[train_idx]
+        x_test = sequences[test_idx]
+        print(f"Trial split: train={len(train_idx)}, heldout={len(test_idx)} ({len(test_idx) / sequences.shape[0]:.3f})")
 
     if bool(cfg.get("filter_train_silent_neurons", False)):
         std = flatten_trials(x_train).std(axis=0)
@@ -906,13 +1436,18 @@ def main() -> None:
         x_train_flat_proc = x_train_flat.astype(np.float32)
         x_test_flat_proc = x_test_flat.astype(np.float32)
 
-    use_pca = bool(cfg.get("use_pca", False)) or int(cfg.get("pca_dim", 0) or 0) > 0
+    use_pca = bool(cfg.get("use_pca", False)) or int(cfg.get("pca_dim", 0) or 0) > 0 or cfg.get("pca_variance", None) is not None
     pca = None
     if use_pca:
-        pca_dim = int(cfg.get("pca_dim", 0) or 0)
-        if pca_dim <= 0:
-            pca_dim = min(x_train_flat_proc.shape[1], int(cfg.get("pca_max_dim", 64)))
-        pca = PCA(n_components=min(pca_dim, x_train_flat_proc.shape[1]), random_state=seed)
+        pca_dim = cfg.get("pca_dim", 0) or 0
+        pca_variance = cfg.get("pca_variance", None)
+        if isinstance(pca_dim, (int, float)) and float(pca_dim) > 0:
+            n_components: int | float = min(int(pca_dim), x_train_flat_proc.shape[1])
+        elif pca_variance is not None and 0.0 < float(pca_variance) < 1.0:
+            n_components = float(pca_variance)
+        else:
+            n_components = min(x_train_flat_proc.shape[1], int(cfg.get("pca_max_dim", 64)))
+        pca = PCA(n_components=n_components, random_state=seed, svd_solver="full")
         f_train_flat = pca.fit_transform(x_train_flat_proc).astype(np.float32)
         f_test_flat = pca.transform(x_test_flat_proc).astype(np.float32)
         pca_var = float(np.sum(pca.explained_variance_ratio_))
@@ -956,7 +1491,11 @@ def main() -> None:
             f"train states ({manifold_meta['active_fraction']:.3f})"
         )
 
-    landmark_count = int(cfg.get("landmark_count", min(750, f_train_flat.shape[0])))
+    raw_landmark_count = cfg.get("landmark_count", min(750, f_train_flat.shape[0]))
+    if isinstance(raw_landmark_count, str) and raw_landmark_count.lower() in {"all", "mind", "sandbox"}:
+        landmark_count = max(1, f_train_flat.shape[0] - 1)
+    else:
+        landmark_count = int(raw_landmark_count)
     manifold_indices = np.flatnonzero(manifold_mask)
     f_manifold = f_train_flat[manifold_mask]
     x_manifold = x_train_flat[manifold_mask]
@@ -1061,9 +1600,28 @@ def main() -> None:
 
     train_metrics = corr_and_r2(x_train_proc, xhat_train)
     test_metrics = corr_and_r2(x_test_proc, xhat_test)
+    if raw_split_meta is not None:
+        train_metrics.update(summarize_frame_trial_mind_r2(
+            x_train_proc,
+            xhat_train,
+            raw_split_meta["train_frame_trial_ids"],
+            raw_split_meta["train_trial_ids"],
+        ))
+        test_metrics.update(summarize_frame_trial_mind_r2(
+            x_test_proc,
+            xhat_test,
+            raw_split_meta["test_frame_trial_ids"],
+            raw_split_meta["test_trial_ids"],
+        ))
+    else:
+        train_metrics.update(summarize_trial_mind_r2(x_train_proc, xhat_train))
+        test_metrics.update(summarize_trial_mind_r2(x_test_proc, xhat_test))
     event_metrics = compute_event_metrics(x_test_proc, xhat_test, percentile=float(cfg.get("event_metric_percentile", 99.0)))
-    print(f"Train r {train_metrics['r']:.4f} | R2 {train_metrics['R2']:.4f}")
-    print(f"Heldout r {test_metrics['r']:.4f} | R2 {test_metrics['R2']:.4f}")
+    print(f"Train r {train_metrics['r']:.4f} | R2 {train_metrics['R2']:.4f} | MIND_R2 {train_metrics['MIND_R2']:.4f}")
+    print(
+        f"Heldout r {test_metrics['r']:.4f} | R2 {test_metrics['R2']:.4f} | "
+        f"MIND_R2 {test_metrics['MIND_R2']:.4f} | trial median {test_metrics['MIND_R2_trial_median']:.4f}"
+    )
     print(f"Event capture top1 {event_metrics.get('top_1_percent_event_capture', float('nan')):.4f} | dyn ratio {event_metrics.get('pred_dynamics_std_over_true_dynamics_std', float('nan')):.4f}")
 
     np.savez_compressed(
@@ -1077,8 +1635,10 @@ def main() -> None:
         z_landmarks=z_lm.astype(np.float32),
         landmark_indices=lm_idx.astype(np.int64),
         mind_distances=d_mind.astype(np.float32),
-        train_trial_ids=trial_ids[train_idx],
-        test_trial_ids=trial_ids[test_idx],
+        train_trial_ids=raw_split_meta["train_trial_ids"] if raw_split_meta is not None else trial_ids[train_idx],
+        test_trial_ids=raw_split_meta["test_trial_ids"] if raw_split_meta is not None else trial_ids[test_idx],
+        train_frame_trial_ids=raw_split_meta["train_frame_trial_ids"] if raw_split_meta is not None else np.asarray([], dtype=np.int64),
+        test_frame_trial_ids=raw_split_meta["test_frame_trial_ids"] if raw_split_meta is not None else np.asarray([], dtype=np.int64),
         neuron_mask=mask,
         axis=axis,
         metrics_json=json.dumps({"train": train_metrics, "heldout": test_metrics, "events": event_metrics}),
@@ -1086,7 +1646,13 @@ def main() -> None:
         landmark_selection_json=json.dumps(landmark_meta),
         manifold_filter_json=json.dumps(manifold_meta),
     )
-    save_recon_heatmap(x_test_proc, xhat_test, out_dir / "raw_vs_recon_t0_15_n0_40.png", "MIND-LLE held-out reconstruction")
+    save_recon_heatmap(
+        x_test_proc,
+        xhat_test,
+        out_dir / "raw_vs_recon_t0_15_n0_40.png",
+        "MIND-LLE held-out reconstruction",
+        frame_trial_ids=raw_split_meta["test_frame_trial_ids"] if raw_split_meta is not None else None,
+    )
     save_embedding_plot(z_lm, out_dir / "latent_manifold_mds.png")
 
     final_metrics = {
@@ -1102,11 +1668,14 @@ def main() -> None:
         "script": Path(__file__).name,
         "config_path": str(Path(args.config).resolve()),
         "data_path": str(data_path),
-        "n_trials_total": int(sequences.shape[0]),
-        "n_trials_train": int(len(train_idx)),
-        "n_trials_heldout": int(len(test_idx)),
-        "heldout_fraction": float(len(test_idx) / sequences.shape[0]),
-        "sequence_length": int(sequences.shape[1]),
+        "data_mode": data_mode,
+        "n_trials_total": int(raw_split_meta["n_trials_total"]) if raw_split_meta is not None else int(sequences.shape[0]),
+        "n_trials_train": int(raw_split_meta["n_trials_train"]) if raw_split_meta is not None else int(len(train_idx)),
+        "n_trials_heldout": int(raw_split_meta["n_trials_heldout"]) if raw_split_meta is not None else int(len(test_idx)),
+        "heldout_fraction": float(raw_split_meta["heldout_fraction"]) if raw_split_meta is not None else float(len(test_idx) / sequences.shape[0]),
+        "n_train_frames": int(raw_split_meta["n_train_frames"]) if raw_split_meta is not None else int(x_train_proc.reshape(-1, x_train_proc.shape[-1]).shape[0]),
+        "n_heldout_frames": int(raw_split_meta["n_test_frames"]) if raw_split_meta is not None else int(x_test_proc.reshape(-1, x_test_proc.shape[-1]).shape[0]),
+        "sequence_length": int(x_train_proc.shape[1]),
         "n_neurons": int(x_train.shape[-1]),
         "globally_silent_neurons_removed": int(removed),
         "feature_dim": int(f_train_flat.shape[1]),
@@ -1117,8 +1686,14 @@ def main() -> None:
         "manifold_filter": manifold_meta,
         "latent_dim": int(latent_dim),
         "split_seed": int(cfg.get("mind_split_seed", seed)),
-        "train_trial_ids": [int(x) if float(x).is_integer() else float(x) for x in np.asarray(trial_ids[train_idx], dtype=float)],
-        "heldout_trial_ids": [int(x) if float(x).is_integer() else float(x) for x in np.asarray(trial_ids[test_idx], dtype=float)],
+        "train_trial_ids": [
+            int(x) if float(x).is_integer() else float(x)
+            for x in np.asarray(raw_split_meta["train_trial_ids"] if raw_split_meta is not None else trial_ids[train_idx], dtype=float)
+        ],
+        "heldout_trial_ids": [
+            int(x) if float(x).is_integer() else float(x)
+            for x in np.asarray(raw_split_meta["test_trial_ids"] if raw_split_meta is not None else trial_ids[test_idx], dtype=float)
+        ],
         "transition_distance_meta": dist_meta,
         "embedding_meta": embed_meta,
         "lle_k": int(lle_k),
@@ -1129,11 +1704,12 @@ def main() -> None:
         "decoder_target": decoder_target,
         "inverse_fit_states": int(z_train.shape[0]),
         "postprocess_meta": postprocess_meta,
+        "mind_sandbox_split": raw_split_meta,
         "metrics": final_metrics,
         "method_note": "Train-only MIND-style local population geometry: PCA features, event-aware landmarks, graph geodesic distances, Sammon/MDS embedding, LLE f->z mapping from landmarks, and inverse z->PCA-feature decoder fit on all mapped train states for held-out trial reconstruction.",
     }
     with open(out_dir / "run_metadata.json", "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
+        json.dump(jsonable(metadata), f, indent=2)
     with open(out_dir / "training_results.txt", "w", encoding="utf-8") as f:
         f.write(json.dumps(final_metrics, indent=2))
         f.write("\n")

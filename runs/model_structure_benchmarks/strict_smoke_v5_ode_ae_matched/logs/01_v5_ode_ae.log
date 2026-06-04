@@ -1,0 +1,43 @@
+Running script: v5_neural_vae.py
+Loading configuration from /Users/kathleenhiggins/Neural_VAE_ODE/runs/model_structure_benchmarks/strict_smoke_v5_ode_ae_matched/configs/01_v5_ode_ae.txt
+Device: cpu
+PCA (train-only) reduced 357 → 50 dims (79.44% variance)
+MIND split: train trials=161 | test trials=17
+MIND neuron filter: removed 18 silent neurons; kept 357 active neurons.
+Sequence alignment: position (Position); coordinate range 0.000-1.000
+/Users/kathleenhiggins/miniforge3/lib/python3.12/site-packages/torch/nn/modules/transformer.py:392: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
+  warnings.warn(
+[001] train loss 0.04052 | recon 0.04052 | kl 0.37571 | smooth 0.00000 | trans 0.00000 | lle 0.00000 | beta 0.000
+      valid loss 0.03756 | recon 0.03756 | kl 0.21218 | smooth 0.00000 | trans 0.00000 | lle 0.00000 | r 0.2048 | R² 0.0394 | eta 00:00
+      saved best checkpoint -> /Users/kathleenhiggins/Neural_VAE_ODE/runs/model_structure_benchmarks/strict_smoke_v5_ode_ae_matched/runs/01_v5_ode_ae/ode_vae_best.pt
+      wrote /Users/kathleenhiggins/Neural_VAE_ODE/runs/model_structure_benchmarks/strict_smoke_v5_ode_ae_matched/runs/01_v5_ode_ae/latent_manifold_mds.png
+done.
+experts.0.0.bias -0.009962172247469425
+experts.0.2.bias 0.00021501665469259024
+experts.0.4.bias -0.005089950747787952
+experts.1.0.bias 0.020778771489858627
+experts.1.2.bias 0.003279505530372262
+experts.1.4.bias -0.0031676485668867826
+experts.2.0.bias -0.012621224857866764
+experts.2.2.bias 0.0013280271086841822
+experts.2.4.bias 0.00668826000764966
+experts.3.0.bias -0.018420830368995667
+experts.3.2.bias -0.002584584057331085
+experts.3.4.bias 0.005635646637529135
+experts.4.0.bias -0.005522649269551039
+experts.4.2.bias -0.000992239685729146
+experts.4.4.bias 0.006627917289733887
+experts.5.0.bias -0.003001064294949174
+experts.5.2.bias -0.0012986267684027553
+experts.5.4.bias 5.9045552916359156e-05
+experts.6.0.bias -0.02982371300458908
+experts.6.2.bias 0.0020498079247772694
+experts.6.4.bias 0.012799998745322227
+experts.7.0.bias -0.01339445449411869
+experts.7.2.bias 0.00078126962762326
+experts.7.4.bias -0.00014716893201693892
+Saved run metadata → /Users/kathleenhiggins/Neural_VAE_ODE/runs/model_structure_benchmarks/strict_smoke_v5_ode_ae_matched/runs/01_v5_ode_ae/run_metadata.json
+Final r: 0.2048
+Final R²: 0.0394
+Results logged to /Users/kathleenhiggins/Neural_VAE_ODE/src/training_results.txt
+Exception ignored in: Exception ignored in sys.unraisablehook

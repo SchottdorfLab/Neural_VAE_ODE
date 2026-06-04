@@ -126,12 +126,16 @@ def save_raw_vs_recon_window_plot(
 
     true_win = x_true[trial_index, t0:t1, n0:n1]
     pred_win = x_pred[trial_index, t0:t1, n0:n1]
+    resid_win = true_win - pred_win
     vmin = float(np.nanmin([np.nanmin(true_win), np.nanmin(pred_win)]))
     vmax = float(np.nanmax([np.nanmax(true_win), np.nanmax(pred_win)]))
     if not np.isfinite(vmin) or not np.isfinite(vmax) or vmin == vmax:
         vmin, vmax = None, None
+    resid_vmax = float(np.nanmax(np.abs(resid_win))) if resid_win.size else 1.0
+    if not np.isfinite(resid_vmax) or resid_vmax <= 0:
+        resid_vmax = 1.0
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharex=True, sharey=True)
     im0 = axes[0].imshow(true_win.T, aspect="auto", cmap="viridis", vmin=vmin, vmax=vmax, interpolation="nearest")
     axes[0].set_title("Raw")
     axes[0].set_xlabel("Time bin")
@@ -147,11 +151,25 @@ def save_raw_vs_recon_window_plot(
     axes[1].set_xticks(np.arange(t1 - t0))
     axes[1].set_xticklabels(np.arange(t0, t1), rotation=90, fontsize=7)
 
+    im2 = axes[2].imshow(
+        resid_win.T,
+        aspect="auto",
+        cmap="coolwarm",
+        vmin=-resid_vmax,
+        vmax=resid_vmax,
+        interpolation="nearest",
+    )
+    axes[2].set_title("Raw - reconstruction")
+    axes[2].set_xlabel("Time bin")
+    axes[2].set_xticks(np.arange(t1 - t0))
+    axes[2].set_xticklabels(np.arange(t0, t1), rotation=90, fontsize=7)
+
     fig.suptitle(
         f"Trial {trial_index}: time bins {t0}-{t1 - 1}, neurons {n0}-{n1 - 1} ({metric_space})",
         fontsize=10,
     )
-    fig.colorbar(im0, ax=axes.ravel().tolist(), shrink=0.8, label="Activity")
+    fig.colorbar(im0, ax=axes[:2].ravel().tolist(), shrink=0.8, label="Activity")
+    fig.colorbar(im2, ax=axes[2], shrink=0.8, label="Residual")
     fig.savefig(path, dpi=160, bbox_inches="tight")
     plt.close(fig)
 

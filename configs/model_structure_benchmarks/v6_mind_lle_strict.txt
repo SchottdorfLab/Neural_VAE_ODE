@@ -1,0 +1,68 @@
+# Strict heldout benchmark for the nonparametric MIND-LLE baseline.
+
+data_path = src/npz_e65_data/E65_data.npz
+out_dir = runs/model_structure_benchmarks/manual_v6_mind_lle
+seed = 42
+
+trial_len_s = 12
+fps = 10
+min_frames = 10
+drop_first_trials = 10
+sequence_alignment = position
+position_normalize = true
+position_cumulative_max = true
+
+mind_test_frac = 0.10
+mind_split_seed = 42
+
+filter_inactive_neurons = true
+inactive_neuron_threshold = 0.0
+filter_train_silent_neurons = false
+train_silent_threshold = 1e-7
+baseline_correct = false
+normalize_inputs = false
+normalize_eps = 1e-6
+use_pca = true
+pca_dim = 50
+pca_max_dim = 64
+
+latent_dim = 7
+landmark_count = 750
+filter_silent_frames_for_manifold = false
+silent_frame_threshold = 0.0
+silent_frame_score = sum
+event_aware_landmarks = true
+landmark_activity_fraction = 0.15
+landmark_transition_fraction = 0.15
+landmark_event_pool_multiplier = 5.0
+landmark_activity_score = max
+landmark_transition_score = max_abs
+transition_k = 16
+transition_weight = 0.0
+transition_probability_mode = local
+transition_exclude_self = true
+use_graph_geodesics = true
+transition_temperature = 1.0
+graph_sym = min
+
+embedding_mode = sammon
+sammon_iters = 500
+sammon_lr = 0.01
+
+lle_k = 16
+lle_ridge = 0.001
+
+inverse_decoder = kernel
+inverse_k = 128
+kernel_bandwidth = 0.35
+decoder_target = feature
+
+postprocess_reconstruction = true
+recon_clip_min = 0.0
+recon_clip_max = none
+recon_floor_mode = train_opt
+recon_activity_floor = 0.0
+recon_floor_max = 0.3
+recon_floor_steps = 61
+
+event_metric_percentile = 99.0

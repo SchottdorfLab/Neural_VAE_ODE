@@ -1,0 +1,27 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Raw-frame split: train trials=170 (6693 frames) | heldout trials=18 (722 frames)
+PCA feature space: dim=125, explained_variance=0.9504
+Selected train landmarks: 750 of 6693 raw states (event_aware: activity=112, transition=112, coverage=526)
+Built neural-state distances: max=6.5046, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.03191 | val 0.03243 | feature 0.02120 | z 0.99844 | teacher 0.00851 | raw 0.03262 | next 0.02128 | next_raw 0.00000
+[025] train 0.01050 | val 0.01098 | feature 0.00661 | z 2.49041 | teacher 0.00403 | raw 0.01119 | next 0.00705 | next_raw 0.00000
+[050] train 0.00716 | val 0.00757 | feature 0.00428 | z 4.23670 | teacher 0.00376 | raw 0.00772 | next 0.00467 | next_raw 0.00000
+[075] train 0.00596 | val 0.00658 | feature 0.00344 | z 5.49523 | teacher 0.00366 | raw 0.00650 | next 0.00381 | next_raw 0.00000
+[100] train 0.00523 | val 0.00596 | feature 0.00293 | z 6.56929 | teacher 0.00360 | raw 0.00577 | next 0.00328 | next_raw 0.00000
+[125] train 0.00478 | val 0.00559 | feature 0.00262 | z 7.39832 | teacher 0.00356 | raw 0.00532 | next 0.00293 | next_raw 0.00000
+[150] train 0.00442 | val 0.00529 | feature 0.00237 | z 8.19766 | teacher 0.00356 | raw 0.00496 | next 0.00266 | next_raw 0.00000
+[175] train 0.00414 | val 0.00502 | feature 0.00218 | z 8.76349 | teacher 0.00351 | raw 0.00468 | next 0.00247 | next_raw 0.00000
+[200] train 0.00393 | val 0.00483 | feature 0.00203 | z 9.33502 | teacher 0.00352 | raw 0.00448 | next 0.00231 | next_raw 0.00000
+[225] train 0.00375 | val 0.00470 | feature 0.00191 | z 9.75953 | teacher 0.00350 | raw 0.00430 | next 0.00218 | next_raw 0.00000
+[250] train 0.00364 | val 0.00458 | feature 0.00183 | z 10.11054 | teacher 0.00348 | raw 0.00418 | next 0.00208 | next_raw 0.00000
+[275] train 0.00350 | val 0.00451 | feature 0.00173 | z 10.46964 | teacher 0.00350 | raw 0.00404 | next 0.00198 | next_raw 0.00000
+[300] train 0.00341 | val 0.00442 | feature 0.00167 | z 10.74028 | teacher 0.00348 | raw 0.00395 | next 0.00192 | next_raw 0.00000
+Raw geometric AE train r 0.9485 | R2 0.8916 | MIND_R2 0.8920
+Raw geometric AE heldout r 0.6681 | R2 0.4447 | MIND_R2 0.4455 | trial median 0.5287
+Teacher raw MIND heldout r 0.5526 | R2 0.2967 | MIND_R2 0.2990 | trial median 0.3411
+Next-frame heldout feature MSE 0.01167 | raw next R2 0.3467
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-06-03_194238_834cd6a

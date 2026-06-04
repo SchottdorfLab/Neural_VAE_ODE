@@ -1,0 +1,27 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=160, heldout=18 (0.101)
+PCA feature space: dim=50, explained_variance=0.7889
+Selected train landmarks: 750 of 19200 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=6.8455, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.04557 | val 0.03899 | feature 0.03622 | z 1.05052 | teacher 0.02837 | raw 0.02254
+[025] train 0.00466 | val 0.00498 | feature 0.00319 | z 5.61423 | teacher 0.00287 | raw 0.00753
+[050] train 0.00324 | val 0.00346 | feature 0.00199 | z 8.40388 | teacher 0.00218 | raw 0.00699
+[075] train 0.00263 | val 0.00283 | feature 0.00148 | z 10.19011 | teacher 0.00191 | raw 0.00674
+[100] train 0.00232 | val 0.00251 | feature 0.00122 | z 11.24536 | teacher 0.00178 | raw 0.00661
+[125] train 0.00212 | val 0.00229 | feature 0.00104 | z 11.87734 | teacher 0.00170 | raw 0.00653
+[150] train 0.00197 | val 0.00213 | feature 0.00092 | z 12.26684 | teacher 0.00164 | raw 0.00648
+[175] train 0.00187 | val 0.00201 | feature 0.00082 | z 12.45309 | teacher 0.00160 | raw 0.00642
+[200] train 0.00179 | val 0.00194 | feature 0.00075 | z 12.53504 | teacher 0.00158 | raw 0.00639
+[225] train 0.00172 | val 0.00189 | feature 0.00069 | z 12.49929 | teacher 0.00155 | raw 0.00635
+[250] train 0.00167 | val 0.00180 | feature 0.00065 | z 12.47364 | teacher 0.00154 | raw 0.00635
+[275] train 0.00161 | val 0.00174 | feature 0.00060 | z 12.42870 | teacher 0.00152 | raw 0.00630
+[300] train 0.00158 | val 0.00171 | feature 0.00057 | z 12.36767 | teacher 0.00150 | raw 0.00629
+Binned heldout r 0.6637 | R2 0.4396 | MIND_R2 0.4404 | trial median 0.4534
+Raw mapped heldout r 0.6608 | R2 0.4357 | MIND_R2 0.4366 | trial median 0.4496
+Raw mapped event capture top1 0.4216 | dyn ratio 0.7111
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/repeated_split_eval_v6_binned_raw_fixed_10splits/split_06_seed_47

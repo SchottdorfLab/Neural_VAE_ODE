@@ -193,24 +193,40 @@ def prepare_data(cfg: Dict[str, Any], seed: int) -> Dict[str, Any]:
         mask = np.ones(roi.shape[1], dtype=bool)
         removed = 0
 
-    sequences, trial_ids, axis = mind.build_trial_sequences(roi, trials, time, position, cfg)
-    print(f"Built sequences: B={sequences.shape[0]}, L={sequences.shape[1]}, N={sequences.shape[2]}")
-    cfg["_seq_len"] = int(sequences.shape[1])
-
-    if cfg_bool(cfg, "mind_style_eval_all", False):
-        train_idx = np.arange(sequences.shape[0], dtype=np.int64)
-        test_idx = np.arange(sequences.shape[0], dtype=np.int64)
-        print(f"MIND-style all-points eval: fit={len(train_idx)}, eval={len(test_idx)}")
-    else:
-        train_idx, test_idx = mind.split_trials(
-            sequences.shape[0],
-            cfg_float(cfg, "test_frac", cfg_float(cfg, "mind_test_frac", 0.1)),
-            cfg_int(cfg, "mind_split_seed", seed),
+    data_mode = str(cfg.get("data_mode", cfg.get("trial_mode", "resampled_trials"))).lower()
+    raw_split_meta: Dict[str, Any] | None = None
+    if data_mode in {"mind_sandbox_raw", "sandbox_raw", "raw_frames"}:
+        x_train, x_test, raw_split_meta = mind.build_mind_sandbox_frame_split(roi, trials, cfg)
+        train_idx = np.arange(raw_split_meta["n_trials_train"], dtype=np.int64)
+        test_idx = np.arange(raw_split_meta["n_trials_heldout"], dtype=np.int64)
+        trial_ids = raw_split_meta["trial_ids"]
+        axis = np.arange(x_train.shape[1], dtype=np.float32) / cfg_float(cfg, "fps", 15.0)
+        sequences = None
+        print(
+            "MIND sandbox raw-frame split: "
+            f"train trials={raw_split_meta['n_trials_train']} ({raw_split_meta['n_train_frames']} frames) | "
+            f"test trials={raw_split_meta['n_trials_heldout']} ({raw_split_meta['n_test_frames']} frames)"
         )
-        print(f"Trial split: train={len(train_idx)}, heldout={len(test_idx)} ({len(test_idx) / sequences.shape[0]:.3f})")
+    else:
+        sequences, trial_ids, axis = mind.build_trial_sequences(roi, trials, time, position, cfg)
+        print(f"Built sequences: B={sequences.shape[0]}, L={sequences.shape[1]}, N={sequences.shape[2]}")
 
-    x_train = sequences[train_idx]
-    x_test = sequences[test_idx]
+        if cfg_bool(cfg, "mind_style_eval_all", False):
+            train_idx = np.arange(sequences.shape[0], dtype=np.int64)
+            test_idx = np.arange(sequences.shape[0], dtype=np.int64)
+            print(f"MIND-style all-points eval: fit={len(train_idx)}, eval={len(test_idx)}")
+        else:
+            train_idx, test_idx = mind.split_trials(
+                sequences.shape[0],
+                cfg_float(cfg, "test_frac", cfg_float(cfg, "mind_test_frac", 0.1)),
+                cfg_int(cfg, "mind_split_seed", seed),
+                exact=cfg_bool(cfg, "split_exact_test_fraction", False),
+            )
+            print(f"Trial split: train={len(train_idx)}, heldout={len(test_idx)} ({len(test_idx) / sequences.shape[0]:.3f})")
+
+        x_train = sequences[train_idx]
+        x_test = sequences[test_idx]
+    cfg["_seq_len"] = int(x_train.shape[1])
 
     if cfg_bool(cfg, "filter_train_silent_neurons", False):
         std = flatten_trials(x_train).std(axis=0)
@@ -245,13 +261,18 @@ def prepare_data(cfg: Dict[str, Any], seed: int) -> Dict[str, Any]:
         x_train_flat_proc = x_train_flat.astype(np.float32)
         x_test_flat_proc = x_test_flat.astype(np.float32)
 
-    use_pca = cfg_bool(cfg, "use_pca", True) or cfg_int(cfg, "pca_dim", 0) > 0
+    use_pca = cfg_bool(cfg, "use_pca", True) or cfg_int(cfg, "pca_dim", 0) > 0 or cfg.get("pca_variance", None) is not None
     pca = None
     if use_pca:
-        pca_dim = cfg_int(cfg, "pca_dim", 50)
-        if pca_dim <= 0:
-            pca_dim = min(x_train_flat_proc.shape[1], cfg_int(cfg, "pca_max_dim", 64))
-        pca = PCA(n_components=min(pca_dim, x_train_flat_proc.shape[1]), random_state=seed)
+        pca_dim = cfg.get("pca_dim", 50)
+        pca_variance = cfg.get("pca_variance", None)
+        if isinstance(pca_dim, (int, float)) and float(pca_dim) > 0:
+            n_components: int | float = min(int(pca_dim), x_train_flat_proc.shape[1])
+        elif pca_variance is not None and 0.0 < float(pca_variance) < 1.0:
+            n_components = float(pca_variance)
+        else:
+            n_components = min(x_train_flat_proc.shape[1], cfg_int(cfg, "pca_max_dim", 64))
+        pca = PCA(n_components=n_components, random_state=seed, svd_solver="full")
         f_train_flat = pca.fit_transform(x_train_flat_proc).astype(np.float32)
         f_test_flat = pca.transform(x_test_flat_proc).astype(np.float32)
         pca_var = float(np.sum(pca.explained_variance_ratio_))
@@ -268,6 +289,8 @@ def prepare_data(cfg: Dict[str, Any], seed: int) -> Dict[str, Any]:
         "mask": mask,
         "globally_silent_removed": removed,
         "sequences": sequences,
+        "data_mode": data_mode,
+        "raw_split_meta": raw_split_meta,
         "trial_ids": trial_ids,
         "axis": axis,
         "train_idx": train_idx,
@@ -356,6 +379,27 @@ def build_mind_teacher(cfg: Dict[str, Any], data: Dict[str, Any]) -> Dict[str, A
 
     lle_k = cfg_int(cfg, "lle_k", 16)
     lle_ridge = cfg_float(cfg, "lle_ridge", 0.001)
+    f2z_cv_meta: Dict[str, Any] | None = None
+    if cfg_bool(cfg, "tune_lle_mapping", False):
+        k_grid = mind.parse_int_grid(cfg.get("lle_cv_k_grid", cfg.get("mapping_k_grid", "mind")), mind.mind_lle_k_grid())
+        ridge_grid = mind.parse_float_grid(cfg.get("lle_cv_ridge_grid", cfg.get("mapping_lambda_grid", "mind")), mind.mind_lle_ridge_grid())
+        print(
+            "Tuning f->z LLE map on landmarks: "
+            f"{len(k_grid)} k values x {len(ridge_grid)} ridge values, "
+            f"folds={cfg_int(cfg, 'lle_cv_folds', 10)}"
+        )
+        f2z_cv_meta = mind.tune_lle_mapper_cv(
+            f_lm,
+            z_lm,
+            k_grid=k_grid,
+            ridge_grid=ridge_grid,
+            nfolds=cfg_int(cfg, "lle_cv_folds", 10),
+            seed=cfg_int(cfg, "seed", 42) + 700,
+            max_points=cfg_int(cfg, "lle_cv_max_points", 0),
+        )
+        lle_k = int(f2z_cv_meta["selected_k"])
+        lle_ridge = float(f2z_cv_meta["selected_ridge"])
+        print(f"Selected f->z LLE params: k={lle_k}, ridge={lle_ridge:g}, cv_mse={f2z_cv_meta['selected_mse']:.6g}")
     f2z = mind.LLEMapper(lle_k, lle_ridge).fit(f_lm, z_lm)
     z_train = f2z.transform(data["f_train_flat"])
     z_test = f2z.transform(data["f_test_flat"])
@@ -374,6 +418,64 @@ def build_mind_teacher(cfg: Dict[str, Any], data: Dict[str, Any]) -> Dict[str, A
         decoder_train_target = data["x_train_flat"]
     else:
         decoder_train_target = data["f_train_flat"]
+    inverse_cv_meta: Dict[str, Any] | None = None
+    if cfg_bool(cfg, "tune_inverse_decoder", False):
+        inverse_k_grid = mind.parse_int_grid(
+            cfg.get("inverse_cv_k_grid", cfg.get("decoder_k_grid", "32,64,96,128,192,256")),
+            [inverse_k],
+        )
+        if inverse_decoder in {"kernel", "rbf", "weighted", "weighted_average"}:
+            bandwidth_grid = mind.parse_float_grid(
+                cfg.get("kernel_bandwidth_grid", cfg.get("inverse_cv_bandwidth_grid", "0.15,0.25,0.35,0.5,0.75,1.0")),
+                [kernel_bandwidth],
+            )
+            print(
+                "Tuning inverse kernel decoder on mapped train states: "
+                f"{len(inverse_k_grid)} k values x {len(bandwidth_grid)} bandwidth values, "
+                f"folds={cfg_int(cfg, 'inverse_cv_folds', 10)}, "
+                f"max_points={cfg_int(cfg, 'inverse_cv_max_points', 5000)}"
+            )
+            inverse_cv_meta = mind.tune_kernel_regressor_cv(
+                z_train,
+                decoder_train_target,
+                k_grid=inverse_k_grid,
+                bandwidth_grid=bandwidth_grid,
+                nfolds=cfg_int(cfg, "inverse_cv_folds", 10),
+                seed=cfg_int(cfg, "seed", 42) + 900,
+                max_points=cfg_int(cfg, "inverse_cv_max_points", 5000),
+            )
+            inverse_k = int(inverse_cv_meta["selected_k"])
+            kernel_bandwidth = float(inverse_cv_meta["selected_bandwidth"])
+            print(
+                f"Selected inverse kernel params: k={inverse_k}, bandwidth={kernel_bandwidth:g}, "
+                f"cv_mse={inverse_cv_meta['selected_mse']:.6g}"
+            )
+        elif inverse_decoder in {"lle", "local_linear"}:
+            ridge_grid = mind.parse_float_grid(
+                cfg.get("inverse_cv_ridge_grid", cfg.get("mapping_lambda_grid", "mind")),
+                [lle_ridge],
+            )
+            print(
+                "Tuning inverse LLE decoder on mapped train states: "
+                f"{len(inverse_k_grid)} k values x {len(ridge_grid)} ridge values, "
+                f"folds={cfg_int(cfg, 'inverse_cv_folds', 10)}, "
+                f"max_points={cfg_int(cfg, 'inverse_cv_max_points', 5000)}"
+            )
+            inverse_cv_meta = mind.tune_lle_mapper_cv(
+                z_train,
+                decoder_train_target,
+                k_grid=inverse_k_grid,
+                ridge_grid=ridge_grid,
+                nfolds=cfg_int(cfg, "inverse_cv_folds", 10),
+                seed=cfg_int(cfg, "seed", 42) + 901,
+                max_points=cfg_int(cfg, "inverse_cv_max_points", 5000),
+            )
+            inverse_k = int(inverse_cv_meta["selected_k"])
+            lle_ridge = float(inverse_cv_meta["selected_ridge"])
+            print(
+                f"Selected inverse LLE params: k={inverse_k}, ridge={lle_ridge:g}, "
+                f"cv_mse={inverse_cv_meta['selected_mse']:.6g}"
+            )
     if inverse_decoder in {"kernel", "rbf", "weighted", "weighted_average"}:
         z2target = mind.KernelRegressor(inverse_k, kernel_bandwidth).fit(z_train, decoder_train_target)
     elif inverse_decoder in {"lle", "local_linear"}:
@@ -401,6 +503,12 @@ def build_mind_teacher(cfg: Dict[str, Any], data: Dict[str, Any]) -> Dict[str, A
         "embed_meta": embed_meta,
         "landmark_meta": landmark_meta,
         "manifold_meta": manifold_meta,
+        "f2z_cv_meta": f2z_cv_meta,
+        "inverse_cv_meta": inverse_cv_meta,
+        "selected_lle_k": int(lle_k),
+        "selected_lle_ridge": float(lle_ridge),
+        "selected_inverse_k": int(inverse_k),
+        "selected_kernel_bandwidth": float(kernel_bandwidth),
     }
 
 
@@ -601,6 +709,23 @@ def main() -> None:
 
     train_metrics = mind.corr_and_r2(data["x_train_proc"], xhat_train)
     test_metrics = mind.corr_and_r2(data["x_test_proc"], xhat_test)
+    raw_split_meta = data.get("raw_split_meta")
+    if raw_split_meta is not None:
+        train_metrics.update(mind.summarize_frame_trial_mind_r2(
+            data["x_train_proc"],
+            xhat_train,
+            raw_split_meta["train_frame_trial_ids"],
+            raw_split_meta["train_trial_ids"],
+        ))
+        test_metrics.update(mind.summarize_frame_trial_mind_r2(
+            data["x_test_proc"],
+            xhat_test,
+            raw_split_meta["test_frame_trial_ids"],
+            raw_split_meta["test_trial_ids"],
+        ))
+    else:
+        train_metrics.update(mind.summarize_trial_mind_r2(data["x_train_proc"], xhat_train))
+        test_metrics.update(mind.summarize_trial_mind_r2(data["x_test_proc"], xhat_test))
     event_metrics = mind.compute_event_metrics(
         data["x_test_proc"],
         xhat_test,
@@ -624,10 +749,32 @@ def main() -> None:
     )
     teacher_train_metrics = mind.corr_and_r2(data["x_train_proc"], teacher_xhat_train_flat.reshape(x_train_shape))
     teacher_test_metrics = mind.corr_and_r2(data["x_test_proc"], teacher_xhat_test_flat.reshape(x_test_shape))
+    if raw_split_meta is not None:
+        teacher_train_metrics.update(mind.summarize_frame_trial_mind_r2(
+            data["x_train_proc"],
+            teacher_xhat_train_flat.reshape(x_train_shape),
+            raw_split_meta["train_frame_trial_ids"],
+            raw_split_meta["train_trial_ids"],
+        ))
+        teacher_test_metrics.update(mind.summarize_frame_trial_mind_r2(
+            data["x_test_proc"],
+            teacher_xhat_test_flat.reshape(x_test_shape),
+            raw_split_meta["test_frame_trial_ids"],
+            raw_split_meta["test_trial_ids"],
+        ))
+    else:
+        teacher_train_metrics.update(mind.summarize_trial_mind_r2(data["x_train_proc"], teacher_xhat_train_flat.reshape(x_train_shape)))
+        teacher_test_metrics.update(mind.summarize_trial_mind_r2(data["x_test_proc"], teacher_xhat_test_flat.reshape(x_test_shape)))
 
-    print(f"Neural AE train r {train_metrics['r']:.4f} | R2 {train_metrics['R2']:.4f}")
-    print(f"Neural AE heldout r {test_metrics['r']:.4f} | R2 {test_metrics['R2']:.4f}")
-    print(f"Teacher MIND heldout r {teacher_test_metrics['r']:.4f} | R2 {teacher_test_metrics['R2']:.4f}")
+    print(f"Neural AE train r {train_metrics['r']:.4f} | R2 {train_metrics['R2']:.4f} | MIND_R2 {train_metrics['MIND_R2']:.4f}")
+    print(
+        f"Neural AE heldout r {test_metrics['r']:.4f} | R2 {test_metrics['R2']:.4f} | "
+        f"MIND_R2 {test_metrics['MIND_R2']:.4f} | trial median {test_metrics['MIND_R2_trial_median']:.4f}"
+    )
+    print(
+        f"Teacher MIND heldout r {teacher_test_metrics['r']:.4f} | R2 {teacher_test_metrics['R2']:.4f} | "
+        f"MIND_R2 {teacher_test_metrics['MIND_R2']:.4f} | trial median {teacher_test_metrics['MIND_R2_trial_median']:.4f}"
+    )
     print(f"Event capture top1 {event_metrics['top_1_percent_event_capture']:.4f} | dyn ratio {event_metrics['pred_dynamics_std_over_true_dynamics_std']:.4f}")
 
     torch.save({"model_state": model.state_dict(), "config": jsonable(cfg), "train_meta": jsonable(train_meta)}, out_dir / "model.pt")
@@ -641,11 +788,19 @@ def main() -> None:
         z_train=zhat_train.reshape(x_train_shape[0], x_train_shape[1], -1).astype(np.float32),
         z_teacher_train=teacher["z_train"].reshape(x_train_shape[0], x_train_shape[1], -1).astype(np.float32),
         z_teacher_test=teacher["z_test"].reshape(x_test_shape[0], x_test_shape[1], -1).astype(np.float32),
-        train_trial_ids=data["trial_ids"][data["train_idx"]],
-        test_trial_ids=data["trial_ids"][data["test_idx"]],
+        train_trial_ids=raw_split_meta["train_trial_ids"] if raw_split_meta is not None else data["trial_ids"][data["train_idx"]],
+        test_trial_ids=raw_split_meta["test_trial_ids"] if raw_split_meta is not None else data["trial_ids"][data["test_idx"]],
+        train_frame_trial_ids=raw_split_meta["train_frame_trial_ids"] if raw_split_meta is not None else np.asarray([], dtype=np.int64),
+        test_frame_trial_ids=raw_split_meta["test_frame_trial_ids"] if raw_split_meta is not None else np.asarray([], dtype=np.int64),
         metrics_json=np.asarray(json.dumps(jsonable({"train": train_metrics, "heldout": test_metrics, "events": event_metrics}))),
     )
-    mind.save_recon_heatmap(data["x_test_proc"], xhat_test, out_dir / "raw_vs_recon_t0_15_n0_40.png", "Neural MIND-AE held-out reconstruction")
+    mind.save_recon_heatmap(
+        data["x_test_proc"],
+        xhat_test,
+        out_dir / "raw_vs_recon_t0_15_n0_40.png",
+        "Neural MIND-AE held-out reconstruction",
+        frame_trial_ids=raw_split_meta["test_frame_trial_ids"] if raw_split_meta is not None else None,
+    )
     mind.save_embedding_plot(teacher["z_lm"], out_dir / "latent_manifold_mds.png")
 
     final_metrics = {
@@ -662,10 +817,13 @@ def main() -> None:
         "script": Path(__file__).name,
         "config_path": str(Path(args.config).resolve()),
         "data_path": str(data["data_path"]),
-        "n_trials_total": int(data["sequences"].shape[0]),
-        "n_trials_train": int(len(data["train_idx"])),
-        "n_trials_heldout": int(len(data["test_idx"])),
-        "heldout_fraction": float(len(data["test_idx"]) / data["sequences"].shape[0]),
+        "data_mode": data["data_mode"],
+        "n_trials_total": int(raw_split_meta["n_trials_total"]) if raw_split_meta is not None else int(data["sequences"].shape[0]),
+        "n_trials_train": int(raw_split_meta["n_trials_train"]) if raw_split_meta is not None else int(len(data["train_idx"])),
+        "n_trials_heldout": int(raw_split_meta["n_trials_heldout"]) if raw_split_meta is not None else int(len(data["test_idx"])),
+        "heldout_fraction": float(raw_split_meta["heldout_fraction"]) if raw_split_meta is not None else float(len(data["test_idx"]) / data["sequences"].shape[0]),
+        "n_train_frames": int(raw_split_meta["n_train_frames"]) if raw_split_meta is not None else int(data["x_train_proc"].reshape(-1, data["x_train_proc"].shape[-1]).shape[0]),
+        "n_heldout_frames": int(raw_split_meta["n_test_frames"]) if raw_split_meta is not None else int(data["x_test_proc"].reshape(-1, data["x_test_proc"].shape[-1]).shape[0]),
         "sequence_length": int(data["x_train_proc"].shape[1]),
         "n_neurons": int(data["x_train_proc"].shape[-1]),
         "feature_dim": int(data["f_train_flat"].shape[1]),
@@ -678,6 +836,7 @@ def main() -> None:
         "manifold_filter": teacher["manifold_meta"],
         "postprocess_meta": postprocess_meta,
         "teacher_postprocess_meta": teacher_post,
+        "mind_sandbox_split": raw_split_meta,
         "training": train_meta,
         "metrics": final_metrics,
         "method_note": "Deterministic neural MIND-AE distilled from train-only v6_mind_lle geometry: PCA features -> neural z -> PCA features, with MIND-LLE z teacher and graph/geodesic local population geometry.",

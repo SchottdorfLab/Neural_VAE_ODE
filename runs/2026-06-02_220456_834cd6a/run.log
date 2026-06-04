@@ -1,0 +1,26 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Raw-frame split: train trials=170 (6693 frames) | heldout trials=18 (722 frames)
+PCA feature space: dim=125, explained_variance=0.9504
+Selected train landmarks: 750 of 6693 raw states (event_aware: activity=112, transition=112, coverage=526)
+Built neural-state distances: max=6.5046, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.02655 | val 0.02700 | feature 0.02117 | z 0.99706 | teacher 0.00849 | raw 0.03260
+[025] train 0.00854 | val 0.00873 | feature 0.00644 | z 2.50378 | teacher 0.00401 | raw 0.01094
+[050] train 0.00596 | val 0.00647 | feature 0.00426 | z 4.12516 | teacher 0.00374 | raw 0.00770
+[075] train 0.00501 | val 0.00563 | feature 0.00345 | z 5.39292 | teacher 0.00363 | raw 0.00653
+[100] train 0.00437 | val 0.00511 | feature 0.00290 | z 6.48332 | teacher 0.00359 | raw 0.00574
+[125] train 0.00400 | val 0.00477 | feature 0.00259 | z 7.26684 | teacher 0.00355 | raw 0.00529
+[150] train 0.00371 | val 0.00452 | feature 0.00233 | z 8.07218 | teacher 0.00353 | raw 0.00494
+[175] train 0.00350 | val 0.00431 | feature 0.00216 | z 8.62641 | teacher 0.00349 | raw 0.00467
+[200] train 0.00336 | val 0.00421 | feature 0.00204 | z 9.17186 | teacher 0.00348 | raw 0.00449
+[225] train 0.00321 | val 0.00407 | feature 0.00191 | z 9.66453 | teacher 0.00349 | raw 0.00430
+[250] train 0.00312 | val 0.00397 | feature 0.00183 | z 9.99811 | teacher 0.00349 | raw 0.00420
+[275] train 0.00300 | val 0.00388 | feature 0.00173 | z 10.38890 | teacher 0.00347 | raw 0.00404
+[300] train 0.00293 | val 0.00379 | feature 0.00166 | z 10.78847 | teacher 0.00349 | raw 0.00396
+Raw geometric AE train r 0.9482 | R2 0.8914 | MIND_R2 0.8918
+Raw geometric AE heldout r 0.6556 | R2 0.4283 | MIND_R2 0.4292 | trial median 0.5138
+Teacher raw MIND heldout r 0.5526 | R2 0.2967 | MIND_R2 0.2990 | trial median 0.3411
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-06-02_220456_834cd6a

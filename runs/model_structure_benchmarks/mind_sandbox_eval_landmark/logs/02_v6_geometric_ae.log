@@ -1,0 +1,27 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+MIND sandbox raw-frame split: train trials=170 (6693 frames) | test trials=18 (722 frames)
+PCA feature space: dim=125, explained_variance=0.9504
+Selected train landmarks: 750 of 6693 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=6.5899, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.02673 | val 0.02716 | feature 0.02117 | z 0.99972 | teacher 0.00823 | raw 0.03503
+[025] train 0.00867 | val 0.00888 | feature 0.00644 | z 2.78296 | teacher 0.00415 | raw 0.01189
+[050] train 0.00606 | val 0.00653 | feature 0.00425 | z 4.47782 | teacher 0.00389 | raw 0.00838
+[075] train 0.00508 | val 0.00572 | feature 0.00343 | z 5.75289 | teacher 0.00375 | raw 0.00714
+[100] train 0.00449 | val 0.00518 | feature 0.00292 | z 6.88229 | teacher 0.00372 | raw 0.00636
+[125] train 0.00407 | val 0.00478 | feature 0.00257 | z 7.82447 | teacher 0.00368 | raw 0.00581
+[150] train 0.00379 | val 0.00454 | feature 0.00233 | z 8.66881 | teacher 0.00368 | raw 0.00543
+[175] train 0.00357 | val 0.00437 | feature 0.00215 | z 9.28890 | teacher 0.00364 | raw 0.00515
+[200] train 0.00339 | val 0.00419 | feature 0.00200 | z 9.89351 | teacher 0.00362 | raw 0.00492
+[225] train 0.00326 | val 0.00408 | feature 0.00188 | z 10.41585 | teacher 0.00364 | raw 0.00472
+[250] train 0.00316 | val 0.00397 | feature 0.00179 | z 10.77403 | teacher 0.00363 | raw 0.00460
+[275] train 0.00306 | val 0.00390 | feature 0.00171 | z 11.14047 | teacher 0.00361 | raw 0.00446
+[300] train 0.00297 | val 0.00378 | feature 0.00163 | z 11.53297 | teacher 0.00362 | raw 0.00435
+Neural AE train r 0.9401 | R2 0.8795 | MIND_R2 0.8795
+Neural AE heldout r 0.6356 | R2 0.3982 | MIND_R2 0.3985 | trial median 0.4834
+Teacher MIND heldout r 0.5346 | R2 0.2796 | MIND_R2 0.2801 | trial median 0.3189
+Event capture top1 0.4293 | dyn ratio 0.8251
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/model_structure_benchmarks/mind_sandbox_eval_landmark/runs/02_v6_geometric_ae

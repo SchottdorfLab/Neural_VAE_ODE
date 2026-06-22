@@ -1,0 +1,22 @@
+Loaded E65 activity from src/npz_e65_data/E65_data.npz: neurons=375, frames=7434
+Starting optimization...
+Epoch 000 | Loss: 158.2410
+Geodesic Model Parameters: 25822
+Free Dynamics Model Parameters: 58493
+
+Epoch 000 | NLL Sum: 322120768.00
+Epoch 000 | NLL Sum: 271199404032.00
+
+========================================
+ MODEL COMPARISON RESULTS 
+========================================
+Metric          | Geodesic Model  | Free Model     
+---------------------------------------------
+Parameters (k)  | 25822           | 58493          
+Final NLL       | 322120768.00    | 271199404032.00
+AIC             | 644293180.00    | 542398925050.00
+BIC             | 644624753.73    | 542399676143.72
+========================================
+
+Preferred Model by AIC: Geodesic
+Preferred Model by BIC: Geodesic

@@ -290,7 +290,48 @@ def main() -> None:
 
     prediction_decoder = str(cfg.get("prediction_decoder", "neural")).lower()
     prediction_meta: Dict[str, Any] = {"decoder": prediction_decoder}
-    if prediction_decoder in {"local_kernel", "kernel", "mind_local", "local"}:
+    raw_decoder_mode = str(cfg.get("raw_decoder_mode", cfg.get("observation_model", "inverse_pca"))).lower()
+    sparse_event_raw = raw_decoder_mode in {
+        "sparse_event",
+        "event",
+        "hurdle",
+        "sparse_event_residual",
+        "event_residual",
+        "residual_event",
+    }
+    residual_event_raw = raw_decoder_mode in {"sparse_event_residual", "event_residual", "residual_event"}
+    if sparse_event_raw and prediction_decoder in {"neural", "mlp", "global", "global_neural"}:
+        base_train = base_test = None
+        if residual_event_raw:
+            base_train = neural.inverse_features_numpy(fhat_train, data["pca"], data["norm_mu"], data["norm_sd"])
+            base_test = neural.inverse_features_numpy(fhat_test, data["pca"], data["norm_mu"], data["norm_sd"])
+        xhat_train_flat, p_train, amp_train = neural.predict_sparse_raw(
+            model,
+            data["f_train_flat"],
+            device,
+            cfg_int(cfg, "predict_batch_size", 4096),
+            base_train,
+        )
+        xhat_test_flat, p_test, amp_test = neural.predict_sparse_raw(
+            model,
+            data["f_test_flat"],
+            device,
+            cfg_int(cfg, "predict_batch_size", 4096),
+            base_test,
+        )
+        prediction_meta.update({
+            "raw_decoder_mode": raw_decoder_mode,
+            "xhat": (
+                "clip(inverse_pca + sigmoid(event_logits) * softplus(amplitude_logits), min=0)"
+                if residual_event_raw
+                else "sigmoid(event_logits) * softplus(amplitude_logits)"
+            ),
+            "train_event_probability_mean": float(np.mean(p_train)),
+            "heldout_event_probability_mean": float(np.mean(p_test)),
+            "train_amplitude_mean": float(np.mean(amp_train)),
+            "heldout_amplitude_mean": float(np.mean(amp_test)),
+        })
+    elif prediction_decoder in {"local_kernel", "kernel", "mind_local", "local"}:
         target = str(cfg.get("local_prediction_target", cfg.get("decoder_target", "feature"))).lower()
         k = cfg_int(cfg, "local_prediction_k", cfg_int(cfg, "inverse_k", 128))
         bandwidth = cfg_float(cfg, "local_prediction_bandwidth", cfg_float(cfg, "kernel_bandwidth", 0.35))

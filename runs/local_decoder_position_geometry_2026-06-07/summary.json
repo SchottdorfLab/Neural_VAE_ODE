@@ -1,0 +1,72 @@
+[
+  {
+    "name": "pos_geo_local_kernel_feature",
+    "ok": true,
+    "elapsed_sec": 107.73535299301147,
+    "raw_R2": 0.5059666356889271,
+    "raw_r": 0.7211629283664167,
+    "raw_MIND_R2": 0.5072920765485462,
+    "trial_mean": 0.5139986349430518,
+    "trial_median": 0.5273018642595922,
+    "event_top1": 0.4052191878889782,
+    "event_top05": 0.44911366265029595,
+    "pred_std_ratio": 0.6080970506531117,
+    "dyn_ratio": 0.6330283603067477,
+    "event_frame_R2": 0.5272180978099918,
+    "binned_R2": 0.5183936649080132,
+    "prediction_decoder": {
+      "decoder": "local_kernel",
+      "target": "feature",
+      "k": 128,
+      "bandwidth": 0.35
+    },
+    "position_geometry": {
+      "enabled": true,
+      "same_trial_only": true,
+      "positive_radius": 0.04,
+      "negative_radius": 0.25,
+      "mean_positive_candidates": 7.833333333333333,
+      "mean_negative_candidates": 68.25,
+      "n_pairs": 19320,
+      "axis_min": 0.0,
+      "axis_max": 1.0
+    },
+    "best_epoch": 295,
+    "best_val": 0.0017438989889342338
+  },
+  {
+    "name": "pos_geo_local_kernel_raw",
+    "ok": true,
+    "elapsed_sec": 109.62356305122375,
+    "raw_R2": 0.49883586540833713,
+    "raw_r": 0.7099141671516741,
+    "raw_MIND_R2": 0.49975785495240477,
+    "trial_mean": 0.5002558807879955,
+    "trial_median": 0.5373865649244366,
+    "event_top1": 0.4257839921456955,
+    "event_top05": 0.4724313140239908,
+    "pred_std_ratio": 0.6449505637169297,
+    "dyn_ratio": 0.7649857845530118,
+    "event_frame_R2": 0.5247801781346391,
+    "binned_R2": 0.5081413360886506,
+    "prediction_decoder": {
+      "decoder": "local_kernel",
+      "target": "raw",
+      "k": 128,
+      "bandwidth": 0.35
+    },
+    "position_geometry": {
+      "enabled": true,
+      "same_trial_only": true,
+      "positive_radius": 0.04,
+      "negative_radius": 0.25,
+      "mean_positive_candidates": 7.833333333333333,
+      "mean_negative_candidates": 68.25,
+      "n_pairs": 19320,
+      "axis_min": 0.0,
+      "axis_max": 1.0
+    },
+    "best_epoch": 295,
+    "best_val": 0.0017438989889342338
+  }
+]

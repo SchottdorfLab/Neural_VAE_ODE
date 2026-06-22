@@ -1,0 +1,128 @@
+# Raw-frame population-geometry AE.
+# Model input is only neural activity: x_t -> PCA f_t -> z_t.
+# Position/time/behavior are metadata only for weak geometry losses, probes, and plots.
+
+data_path = src/npz_e65_data/E65_data.npz
+out_dir = /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-06-09_091530_82c6b6f
+seed = 42
+device = auto
+
+# Raw-frame trial construction. No position bins, no time bins, no position input.
+data_mode = raw_frames_by_trial
+trial_source = mind_sandbox
+min_frames = 10
+mind_test_frac = 0.10
+mind_split_seed = 42
+filter_silent_frames = true
+silent_frame_threshold = 0.0
+
+# Neural preprocessing.
+filter_inactive_neurons = true
+inactive_neuron_threshold = 0.0
+filter_train_silent_neurons = false
+train_silent_threshold = 1e-7
+normalize_inputs = false
+normalize_eps = 1e-6
+
+# Feature space. PCA is fit on train frames only.
+use_pca = true
+pca_dim = 0
+pca_variance = 0.95
+pca_max_dim = 128
+
+# Train-only MIND-style reference geometry, retained for teacher diagnostics.
+latent_dim = 7
+landmark_count = 750
+filter_silent_frames_for_manifold = false
+exclude_boundary_landmarks = true
+respect_trial_boundaries = true
+event_aware_landmarks = true
+landmark_activity_fraction = 0.15
+landmark_transition_fraction = 0.15
+landmark_event_pool_multiplier = 5.0
+landmark_activity_score = max
+landmark_transition_score = max_abs
+transition_k = 16
+transition_weight = 0.0
+transition_probability_mode = local
+transition_exclude_self = true
+use_graph_geodesics = true
+transition_temperature = 1.0
+graph_sym = min
+embedding_mode = sammon
+sammon_iters = 500
+sammon_lr = 0.01
+lle_k = 16
+lle_ridge = 0.001
+inverse_decoder = kernel
+inverse_k = 128
+kernel_bandwidth = 0.35
+decoder_target = feature
+
+# Neural AE.
+batch_size = 512
+epochs = 300
+lr = 0.001
+weight_decay = 0.00001
+hidden = 256
+layers = 2
+dropout = 0.0
+grad_clip = 5.0
+state_val_frac = 0.10
+early_stopping_patience = 50
+early_stopping_min_delta = 0.00001
+log_every = 25
+transition_head_layers = 2
+
+# Sparse event observation model.
+sparse_event_threshold = 0.0
+event_bce_pos_weight_max = 50.0
+lambda_event_bce = 0.05
+lambda_event_amplitude = 0.1
+lambda_event_rate = 0.01
+
+# Event-aware frame weighting and sampling.
+lambda_raw_recon = 0.1
+event_weight_alpha = 5.0
+event_weight_mode = dx
+event_weight_percentile = 95.0
+event_balanced_sampling = true
+sampling_activity_percentile = 95.0
+sampling_dx_percentile = 95.0
+sampling_low_percentile = 50.0
+sampling_high_activity_boost = 3.0
+sampling_high_dx_boost = 3.0
+sampling_low_activity_boost = 1.25
+
+# Feature, transition, and geometry losses.
+lambda_feature_recon = 1.0
+lambda_teacher_z = 0.0
+lambda_teacher_recon = 0.0
+lambda_next = 0.1
+lambda_next_raw = 0.0
+lambda_dx = 0.05
+lambda_position_geometry = 0.005
+position_positive_radius_cm = 10.0
+position_negative_radius_cm = 50.0
+position_geometry_margin = 0.2
+lambda_local_geometry = 0.01
+local_lle_k = 16
+local_lle_ridge = 0.001
+lambda_population_corr = 0.001
+pop_corr_neuron_count = 128
+lambda_coactivity = 0.001
+coactivity_pair_count = 32
+coactivity_min_active_fraction = 0.001
+
+# Reconstruction calibration, applied after the sparse event raw decoder.
+postprocess_reconstruction = true
+recon_clip_min = 0.0
+recon_clip_max = none
+recon_floor_mode = train_opt
+recon_activity_floor = 0.0
+recon_floor_max = 0.3
+recon_floor_steps = 61
+
+# Diagnostics.
+event_metric_percentile = 99.0
+predict_batch_size = 4096

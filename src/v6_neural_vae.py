@@ -77,10 +77,34 @@ def jsonable(obj: Any) -> Any:
 class MindDistilledAE(nn.Module):
     """Deterministic feature -> manifold -> feature autoencoder."""
 
-    def __init__(self, feature_dim: int, latent_dim: int, hidden: int, layers: int, dropout: float):
+    def __init__(
+        self,
+        feature_dim: int,
+        latent_dim: int,
+        hidden: int,
+        layers: int,
+        dropout: float,
+        raw_dim: int | None = None,
+        raw_decoder_mode: str = "inverse_pca",
+    ):
         super().__init__()
+        self.raw_decoder_mode = raw_decoder_mode.lower()
         self.encoder = self._mlp(feature_dim, latent_dim, hidden, layers, dropout)
         self.decoder = self._mlp(latent_dim, feature_dim, hidden, layers, dropout)
+        self.event_logits: nn.Module | None = None
+        self.event_amplitude: nn.Module | None = None
+        if self.raw_decoder_mode in {
+            "sparse_event",
+            "event",
+            "hurdle",
+            "sparse_event_residual",
+            "event_residual",
+            "residual_event",
+        }:
+            if raw_dim is None:
+                raise ValueError("raw_dim is required for sparse_event raw decoding.")
+            self.event_logits = self._mlp(latent_dim, raw_dim, hidden, layers, dropout)
+            self.event_amplitude = self._mlp(latent_dim, raw_dim, hidden, layers, dropout)
 
     @staticmethod
     def _mlp(in_dim: int, out_dim: int, hidden: int, layers: int, dropout: float) -> nn.Sequential:
@@ -100,6 +124,24 @@ class MindDistilledAE(nn.Module):
         z = self.encoder(features)
         fhat = self.decoder(z)
         return fhat, z
+
+    def raw_event_reconstruction(
+        self,
+        z: torch.Tensor,
+        base_raw: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if self.event_logits is None or self.event_amplitude is None:
+            raise RuntimeError("raw_event_reconstruction called without a sparse event decoder.")
+        logits = self.event_logits(z)
+        amplitude = F.softplus(self.event_amplitude(z))
+        event = torch.sigmoid(logits) * amplitude
+        if self.raw_decoder_mode in {"sparse_event_residual", "event_residual", "residual_event"}:
+            if base_raw is None:
+                raise ValueError("base_raw is required for sparse event residual decoding.")
+            xhat = torch.clamp(base_raw + event, min=0.0)
+        else:
+            xhat = event
+        return xhat, logits, amplitude
 
 
 def set_torch_seed(seed: int) -> None:
@@ -175,6 +217,113 @@ def make_event_weights(x: np.ndarray, cfg: Dict[str, Any]) -> np.ndarray:
         scale = np.max(score) if np.max(score) > 1e-8 else 1.0
     score = np.clip(score / scale, 0.0, 10.0)
     return (1.0 + alpha * score[:, None]).astype(np.float32)
+
+
+def sparse_event_loss(
+    xhat: torch.Tensor,
+    logits: torch.Tensor,
+    amplitude: torch.Tensor,
+    x: torch.Tensor,
+    w: torch.Tensor,
+    cfg: Dict[str, Any],
+    pos_weight: torch.Tensor,
+) -> tuple[torch.Tensor, Dict[str, float]]:
+    threshold = cfg_float(cfg, "sparse_event_threshold", 0.0)
+    target = (x > threshold).to(x.dtype)
+    loss_recon = torch.mean(w * (xhat - x) ** 2)
+    loss_bce = F.binary_cross_entropy_with_logits(logits, target, pos_weight=pos_weight)
+    positive = target > 0
+    if bool(torch.any(positive)):
+        amp_error = (amplitude - x) ** 2
+        loss_amp = torch.mean(w.expand_as(x)[positive] * amp_error[positive])
+    else:
+        loss_amp = torch.zeros((), device=x.device)
+    lambda_bce = cfg_float(cfg, "lambda_event_bce", 0.01)
+    lambda_amp = cfg_float(cfg, "lambda_event_amplitude", 0.0)
+    loss = loss_recon + lambda_bce * loss_bce + lambda_amp * loss_amp
+    return loss, {
+        "raw": float(loss_recon.detach().cpu()),
+        "event_bce": float(loss_bce.detach().cpu()),
+        "event_amp": float(loss_amp.detach().cpu()),
+    }
+
+
+def build_position_geometry_pairs(
+    data: Dict[str, Any],
+    cfg: Dict[str, Any],
+    rng: np.random.Generator,
+) -> tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+    x = data["x_train_proc"]
+    if x.ndim != 3:
+        raise ValueError(f"Position geometry pairs require trial-shaped data, got shape {x.shape}")
+    n_trials, seq_len, _ = x.shape
+    axis = np.asarray(data.get("axis", np.linspace(0.0, 1.0, seq_len)), dtype=np.float64).reshape(-1)
+    if axis.size != seq_len:
+        axis = np.linspace(0.0, 1.0, seq_len, dtype=np.float64)
+
+    pos_radius = cfg_float(cfg, "position_positive_radius", 0.04)
+    neg_radius = cfg_float(cfg, "position_negative_radius", 0.25)
+    if neg_radius <= pos_radius:
+        raise ValueError("position_negative_radius must be larger than position_positive_radius")
+
+    pos_idx = np.empty(n_trials * seq_len, dtype=np.int64)
+    neg_idx = np.empty(n_trials * seq_len, dtype=np.int64)
+    pos_counts = []
+    neg_counts = []
+    abs_dist = np.abs(axis[:, None] - axis[None, :])
+
+    for b in range(n_trials):
+        base = b * seq_len
+        for t in range(seq_len):
+            positives = np.flatnonzero((abs_dist[t] <= pos_radius) & (np.arange(seq_len) != t))
+            if positives.size == 0:
+                positives = np.asarray([min(seq_len - 1, t + 1) if t == 0 else t - 1], dtype=np.int64)
+            negatives = np.flatnonzero(abs_dist[t] >= neg_radius)
+            if negatives.size == 0:
+                negatives = np.asarray([int(np.argmax(abs_dist[t]))], dtype=np.int64)
+            pos_counts.append(int(positives.size))
+            neg_counts.append(int(negatives.size))
+            pos_idx[base + t] = base + int(rng.choice(positives))
+            neg_idx[base + t] = base + int(rng.choice(negatives))
+
+    meta = {
+        "enabled": True,
+        "same_trial_only": True,
+        "positive_radius": float(pos_radius),
+        "negative_radius": float(neg_radius),
+        "mean_positive_candidates": float(np.mean(pos_counts)),
+        "mean_negative_candidates": float(np.mean(neg_counts)),
+        "n_pairs": int(pos_idx.size),
+        "axis_min": float(np.min(axis)),
+        "axis_max": float(np.max(axis)),
+    }
+    return pos_idx, neg_idx, meta
+
+
+def latent_triplet_position_loss(
+    z_anchor: torch.Tensor,
+    z_pos: torch.Tensor,
+    z_neg: torch.Tensor,
+    cfg: Dict[str, Any],
+) -> tuple[torch.Tensor, Dict[str, float]]:
+    if cfg_bool(cfg, "position_geometry_normalize_z", True):
+        z_anchor = F.normalize(z_anchor, dim=1)
+        z_pos = F.normalize(z_pos, dim=1)
+        z_neg = F.normalize(z_neg, dim=1)
+    d_pos = torch.sum((z_anchor - z_pos) ** 2, dim=1)
+    d_neg = torch.sum((z_anchor - z_neg) ** 2, dim=1)
+    margin = cfg_float(cfg, "position_geometry_margin", 0.2)
+    mode = str(cfg.get("position_geometry_loss_mode", "hinge")).lower()
+    if mode in {"softplus", "soft"}:
+        temp = max(cfg_float(cfg, "position_geometry_temperature", 0.1), 1e-6)
+        loss = temp * F.softplus((d_pos - d_neg + margin) / temp)
+    else:
+        loss = F.relu(d_pos - d_neg + margin)
+    return torch.mean(loss), {
+        "position_geo": float(torch.mean(loss).detach().cpu()),
+        "position_d_pos": float(torch.mean(d_pos).detach().cpu()),
+        "position_d_neg": float(torch.mean(d_neg).detach().cpu()),
+    }
 
 
 def prepare_data(cfg: Dict[str, Any], seed: int) -> Dict[str, Any]:
@@ -525,6 +674,20 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         cfg["lambda_teacher_recon"] = 0.0
     x_train = data["x_train_flat"].astype(np.float32)
     weights = make_event_weights(x_train, cfg)
+    lambda_position = cfg_float(cfg, "lambda_position_geometry", 0.0)
+    position_geometry_enabled = cfg_bool(cfg, "position_geometry_loss", False) or lambda_position > 0.0
+    position_geometry_meta: Dict[str, Any] = {"enabled": False}
+    if position_geometry_enabled:
+        pos_idx, neg_idx, position_geometry_meta = build_position_geometry_pairs(
+            data,
+            cfg,
+            np.random.default_rng(cfg_int(cfg, "seed", 42) + 1701),
+        )
+        print(
+            "Position geometry loss: "
+            f"lambda={lambda_position:g}, positive_radius={position_geometry_meta['positive_radius']}, "
+            f"negative_radius={position_geometry_meta['negative_radius']}, pairs={position_geometry_meta['n_pairs']}"
+        )
 
     n = f_train.shape[0]
     val_frac = cfg_float(cfg, "state_val_frac", 0.1)
@@ -541,6 +704,9 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         "x": torch.from_numpy(x_train),
         "w": torch.from_numpy(weights),
     }
+    if position_geometry_enabled:
+        tensors["f_pos"] = torch.from_numpy(f_train[pos_idx])
+        tensors["f_neg"] = torch.from_numpy(f_train[neg_idx])
 
     def subset(indices: np.ndarray) -> TensorDataset:
         return TensorDataset(*(t[indices] for t in tensors.values()))
@@ -551,12 +717,24 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
 
     feature_dim = f_train.shape[1]
     latent_dim = cfg_int(cfg, "latent_dim", 7)
+    raw_decoder_mode = str(cfg.get("raw_decoder_mode", cfg.get("observation_model", "inverse_pca"))).lower()
+    sparse_event_raw = raw_decoder_mode in {
+        "sparse_event",
+        "event",
+        "hurdle",
+        "sparse_event_residual",
+        "event_residual",
+        "residual_event",
+    }
+    residual_event_raw = raw_decoder_mode in {"sparse_event_residual", "event_residual", "residual_event"}
     model = MindDistilledAE(
         feature_dim=feature_dim,
         latent_dim=latent_dim,
         hidden=cfg_int(cfg, "hidden", 256),
         layers=cfg_int(cfg, "layers", cfg_int(cfg, "encoder_layers", 3)),
         dropout=cfg_float(cfg, "dropout", 0.0),
+        raw_dim=x_train.shape[1] if sparse_event_raw else None,
+        raw_decoder_mode=raw_decoder_mode,
     ).to(device)
 
     pca = data["pca"]
@@ -577,24 +755,72 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
     lambda_z = cfg_float(cfg, "lambda_teacher_z", 1.0)
     lambda_teacher = cfg_float(cfg, "lambda_teacher_recon", 0.25)
     lambda_raw = cfg_float(cfg, "lambda_raw_recon", 0.0)
+    if sparse_event_raw:
+        event_threshold = cfg_float(cfg, "sparse_event_threshold", 0.0)
+        event_target = x_train > event_threshold
+        n_pos = int(event_target.sum())
+        n_total = int(event_target.size)
+        raw_pos_weight = (n_total - n_pos) / max(1, n_pos)
+        raw_pos_weight = min(raw_pos_weight, cfg_float(cfg, "sparse_event_pos_weight_max", 25.0))
+        event_pos_weight = torch.tensor(raw_pos_weight, dtype=torch.float32, device=device)
+        print(
+            "Sparse event raw decoder: "
+            f"active_fraction={n_pos / max(1, n_total):.4f}, "
+            f"pos_weight={raw_pos_weight:.3g}, threshold={event_threshold:g}"
+        )
+    else:
+        event_pos_weight = torch.tensor(1.0, dtype=torch.float32, device=device)
 
     def loss_on_batch(batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, Dict[str, float]]:
-        f, zt, ft, x, w = (b.to(device) for b in batch)
+        if position_geometry_enabled:
+            f, zt, ft, x, w, f_pos, f_neg = (b.to(device) for b in batch)
+        else:
+            f, zt, ft, x, w = (b.to(device) for b in batch)
+            f_pos = f_neg = None
         fhat, zhat = model(f)
         loss_feature = F.mse_loss(fhat, f)
         loss_z = F.mse_loss(zhat, zt)
         loss_teacher = F.mse_loss(fhat, ft)
         if lambda_raw > 0:
-            xhat = inverse_features_torch(fhat, pca_components, pca_mean, norm_mu, norm_sd)
-            loss_raw = torch.mean(w * (xhat - x) ** 2)
+            if sparse_event_raw:
+                base_raw = inverse_features_torch(fhat, pca_components, pca_mean, norm_mu, norm_sd) if residual_event_raw else None
+                xhat, event_logits, event_amplitude = model.raw_event_reconstruction(zhat, base_raw)
+                loss_raw, raw_parts = sparse_event_loss(
+                    xhat,
+                    event_logits,
+                    event_amplitude,
+                    x,
+                    w,
+                    cfg,
+                    event_pos_weight,
+                )
+            else:
+                xhat = inverse_features_torch(fhat, pca_components, pca_mean, norm_mu, norm_sd)
+                loss_raw = torch.mean(w * (xhat - x) ** 2)
+                raw_parts = {"raw": float(loss_raw.detach().cpu()), "event_bce": 0.0, "event_amp": 0.0}
         else:
             loss_raw = torch.zeros((), device=device)
-        loss = lambda_feature * loss_feature + lambda_z * loss_z + lambda_teacher * loss_teacher + lambda_raw * loss_raw
+            raw_parts = {"raw": 0.0, "event_bce": 0.0, "event_amp": 0.0}
+        if position_geometry_enabled and f_pos is not None and f_neg is not None and lambda_position > 0:
+            z_pos = model.encoder(f_pos)
+            z_neg = model.encoder(f_neg)
+            loss_position, position_parts = latent_triplet_position_loss(zhat, z_pos, z_neg, cfg)
+        else:
+            loss_position = torch.zeros((), device=device)
+            position_parts = {"position_geo": 0.0, "position_d_pos": 0.0, "position_d_neg": 0.0}
+        loss = (
+            lambda_feature * loss_feature
+            + lambda_z * loss_z
+            + lambda_teacher * loss_teacher
+            + lambda_raw * loss_raw
+            + lambda_position * loss_position
+        )
         return loss, {
             "feature": float(loss_feature.detach().cpu()),
             "z": float(loss_z.detach().cpu()),
             "teacher": float(loss_teacher.detach().cpu()),
-            "raw": float(loss_raw.detach().cpu()),
+            **raw_parts,
+            **position_parts,
         }
 
     best_state = None
@@ -606,7 +832,17 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         model.train()
         train_loss = 0.0
         nb = 0
-        parts_sum = {"feature": 0.0, "z": 0.0, "teacher": 0.0, "raw": 0.0}
+        parts_sum = {
+            "feature": 0.0,
+            "z": 0.0,
+            "teacher": 0.0,
+            "raw": 0.0,
+            "event_bce": 0.0,
+            "event_amp": 0.0,
+            "position_geo": 0.0,
+            "position_d_pos": 0.0,
+            "position_d_neg": 0.0,
+        }
         for batch in train_loader:
             opt.zero_grad(set_to_none=True)
             loss, parts = loss_on_batch(batch)
@@ -637,7 +873,9 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         if epoch == 1 or epoch % max(1, cfg_int(cfg, "log_every", 25)) == 0:
             print(
                 f"[{epoch:03d}] train {train_loss:.5f} | val {val_loss:.5f} | "
-                f"feature {parts_avg['feature']:.5f} | z {parts_avg['z']:.5f} | teacher {parts_avg['teacher']:.5f} | raw {parts_avg['raw']:.5f}"
+                f"feature {parts_avg['feature']:.5f} | z {parts_avg['z']:.5f} | teacher {parts_avg['teacher']:.5f} | "
+                f"raw {parts_avg['raw']:.5f} | event_bce {parts_avg['event_bce']:.5f} | "
+                f"pos_geo {parts_avg['position_geo']:.5f}"
             )
 
         if val_loss < best_val - min_delta:
@@ -653,7 +891,15 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
 
     if best_state is not None:
         model.load_state_dict(best_state)
-    return model, {"history": history, "best_epoch": best_epoch, "best_val_loss": best_val}
+    return model, {
+        "history": history,
+        "best_epoch": best_epoch,
+        "best_val_loss": best_val,
+        "raw_decoder_mode": raw_decoder_mode,
+        "sparse_event_raw": sparse_event_raw,
+        "residual_event_raw": residual_event_raw,
+        "position_geometry": position_geometry_meta,
+    }
 
 
 def predict_features(model: MindDistilledAE, features: np.ndarray, device: torch.device, batch_size: int = 4096) -> Tuple[np.ndarray, np.ndarray]:
@@ -667,6 +913,36 @@ def predict_features(model: MindDistilledAE, features: np.ndarray, device: torch
             fhat_chunks.append(fhat.cpu().numpy())
             z_chunks.append(z.cpu().numpy())
     return np.concatenate(fhat_chunks, axis=0).astype(np.float32), np.concatenate(z_chunks, axis=0).astype(np.float32)
+
+
+def predict_sparse_raw(
+    model: MindDistilledAE,
+    features: np.ndarray,
+    device: torch.device,
+    batch_size: int = 4096,
+    base_raw: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    model.eval()
+    xhat_chunks = []
+    prob_chunks = []
+    amp_chunks = []
+    with torch.no_grad():
+        for start in range(0, features.shape[0], batch_size):
+            batch = torch.from_numpy(features[start:start + batch_size].astype(np.float32)).to(device)
+            _, z = model(batch)
+            if base_raw is not None:
+                base = torch.from_numpy(base_raw[start:start + batch_size].astype(np.float32)).to(device)
+            else:
+                base = None
+            xhat, logits, amplitude = model.raw_event_reconstruction(z, base)
+            xhat_chunks.append(xhat.cpu().numpy())
+            prob_chunks.append(torch.sigmoid(logits).cpu().numpy())
+            amp_chunks.append(amplitude.cpu().numpy())
+    return (
+        np.concatenate(xhat_chunks, axis=0).astype(np.float32),
+        np.concatenate(prob_chunks, axis=0).astype(np.float32),
+        np.concatenate(amp_chunks, axis=0).astype(np.float32),
+    )
 
 
 def main() -> None:
@@ -693,8 +969,13 @@ def main() -> None:
     fhat_train, zhat_train = predict_features(model, data["f_train_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
     fhat_test, zhat_test = predict_features(model, data["f_test_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
 
-    xhat_train_flat = inverse_features_numpy(fhat_train, data["pca"], data["norm_mu"], data["norm_sd"])
-    xhat_test_flat = inverse_features_numpy(fhat_test, data["pca"], data["norm_mu"], data["norm_sd"])
+    raw_decoder_mode = str(cfg.get("raw_decoder_mode", cfg.get("observation_model", "inverse_pca"))).lower()
+    if raw_decoder_mode in {"sparse_event", "event", "hurdle"}:
+        xhat_train_flat, _, _ = predict_sparse_raw(model, data["f_train_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
+        xhat_test_flat, _, _ = predict_sparse_raw(model, data["f_test_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
+    else:
+        xhat_train_flat = inverse_features_numpy(fhat_train, data["pca"], data["norm_mu"], data["norm_sd"])
+        xhat_test_flat = inverse_features_numpy(fhat_test, data["pca"], data["norm_mu"], data["norm_sd"])
     xhat_train_flat, xhat_test_flat, postprocess_meta = mind.apply_reconstruction_postprocess(
         xhat_train_flat,
         xhat_test_flat,

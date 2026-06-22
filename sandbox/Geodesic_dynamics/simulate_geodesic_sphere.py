@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import random
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -51,6 +52,26 @@ for i in range(N_neurons):
     product = (np.cos(theta_centers[i]) * np.cos(theta_t) + 
                    np.sin(theta_centers[i]) * np.sin(theta_t) * np.cos(phi_t - phi_centers[i]))
     activity[i, :] = np.exp(kappa * product)
+
+if os.environ.get("GEODESIC_DATASET", "").lower() == "e65":
+    data_path = os.environ.get("GEODESIC_E65_PATH", "src/npz_e65_data/E65_data.npz")
+    data = np.load(data_path, allow_pickle=True)
+    activity = np.asarray(data["roi"], dtype=np.float32)
+    trials = np.asarray(data["Trial"]).reshape(-1)
+    if activity.shape[0] == trials.shape[0]:
+        activity = activity.T
+    start = int(os.environ.get("GEODESIC_E65_START_FRAME", "0"))
+    max_frames = int(os.environ.get("GEODESIC_E65_MAX_FRAMES", "0"))
+    max_neurons = int(os.environ.get("GEODESIC_E65_MAX_NEURONS", "0"))
+    if max_frames > 0:
+        activity = activity[:, start:start + max_frames]
+    elif start > 0:
+        activity = activity[:, start:]
+    if max_neurons > 0:
+        activity = activity[:max_neurons, :]
+    N_neurons = activity.shape[0]
+    t_eval = np.arange(activity.shape[1], dtype=np.float32)
+    print(f"Loaded E65 activity from {data_path}: neurons={activity.shape[0]}, frames={activity.shape[1]}")
 
 
 fig = plt.figure(figsize=(14, 6))
@@ -308,7 +329,11 @@ def train_inverse_model(target_activity, t_eval_np, epochs=300, lr=1e-3):
 
 
 # Finally train!
-model, losses, recovered_latents = train_inverse_model(activity, t_eval, epochs=1000)
+model, losses, recovered_latents = train_inverse_model(
+    activity,
+    t_eval,
+    epochs=int(os.environ.get("GEODESIC_FIRST_FIT_EPOCHS", "1000")),
+)
 plt.plot(losses)
 
 plt.scatter(recovered_latents[:,0], recovered_latents[:,1])
@@ -432,8 +457,9 @@ print(f"Geodesic Model Parameters: {params_geo}")
 print(f"Free Dynamics Model Parameters: {params_free}\n")
 
 #Train models
-model_geo, loss_geo, latents_geo, nll_geo = train_and_evaluate(model_geo, activity, t_eval, epochs=300)
-model_free, loss_free, latents_free, nll_free = train_and_evaluate(model_free, activity, t_eval, epochs=300)
+comparison_epochs = int(os.environ.get("GEODESIC_COMPARE_EPOCHS", "300"))
+model_geo, loss_geo, latents_geo, nll_geo = train_and_evaluate(model_geo, activity, t_eval, epochs=comparison_epochs)
+model_free, loss_free, latents_free, nll_free = train_and_evaluate(model_free, activity, t_eval, epochs=comparison_epochs)
 
 #Get AIC/BIC
 aic_geo, bic_geo = calculate_ic(nll_geo, params_geo, num_obs)

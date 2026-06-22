@@ -1,0 +1,33 @@
+Device: cpu
+Loading data: /Users/kathleenhiggins/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Raw-frame split: train trials=170 (6693 frames) | heldout trials=18 (722 frames)
+PCA feature space: dim=125, explained_variance=0.9504
+Selected train landmarks: 750 of 6693 raw states (event_aware: activity=112, transition=112, coverage=526)
+Built neural-state distances: max=6.5046, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+/Users/kathleenhiggins/Neural_VAE_ODE/src/v6_mind_lle.py:763: RuntimeWarning: invalid value encountered in matmul
+  out[start + r] = weights[r] @ self.y_train[row]
+[001] train 0.08712 | val 0.05233 | feature 0.02453 | z 1.04823 | teacher 0.00951 | raw 0.38403 | event_bce 0.92300 | rate 0.19979 | next 0.02662 | dx 0.07377 | pos 0.19758 | local 0.00000
+[025] train 0.01317 | val 0.01413 | feature 0.00689 | z 3.05423 | teacher 0.00590 | raw 0.01375 | event_bce 0.50723 | rate 0.00573 | next 0.00758 | dx 0.00127 | pos 0.00717 | local 0.00214
+[050] train 0.00791 | val 0.00969 | feature 0.00437 | z 5.13336 | teacher 0.00563 | raw 0.00761 | event_bce 0.28619 | rate 0.00309 | next 0.00503 | dx 0.00115 | pos 0.00443 | local 0.00489
+[075] train 0.00586 | val 0.00770 | feature 0.00342 | z 6.70744 | teacher 0.00539 | raw 0.00512 | event_bce 0.18160 | rate 0.00172 | next 0.00401 | dx 0.00113 | pos 0.00176 | local 0.00738
+[100] train 0.00482 | val 0.00678 | feature 0.00298 | z 8.12119 | teacher 0.00555 | raw 0.00359 | event_bce 0.12789 | rate 0.00102 | next 0.00352 | dx 0.00111 | pos 0.00232 | local 0.00879
+[125] train 0.00419 | val 0.00630 | feature 0.00269 | z 9.19378 | teacher 0.00562 | raw 0.00278 | event_bce 0.09390 | rate 0.00067 | next 0.00319 | dx 0.00108 | pos 0.00053 | local 0.00970
+[150] train 0.00366 | val 0.00593 | feature 0.00241 | z 9.39520 | teacher 0.00553 | raw 0.00214 | event_bce 0.07338 | rate 0.00047 | next 0.00291 | dx 0.00103 | pos 0.00190 | local 0.01036
+[175] train 0.00329 | val 0.00571 | feature 0.00220 | z 9.73752 | teacher 0.00562 | raw 0.00177 | event_bce 0.05991 | rate 0.00037 | next 0.00271 | dx 0.00100 | pos 0.00084 | local 0.01066
+[200] train 0.00299 | val 0.00555 | feature 0.00204 | z 9.96857 | teacher 0.00570 | raw 0.00145 | event_bce 0.04913 | rate 0.00027 | next 0.00255 | dx 0.00098 | pos 0.00046 | local 0.01067
+[225] train 0.00284 | val 0.00544 | feature 0.00195 | z 9.78872 | teacher 0.00550 | raw 0.00128 | event_bce 0.04404 | rate 0.00023 | next 0.00243 | dx 0.00097 | pos 0.00069 | local 0.01025
+[250] train 0.00258 | val 0.00534 | feature 0.00180 | z 9.84893 | teacher 0.00557 | raw 0.00105 | event_bce 0.03699 | rate 0.00019 | next 0.00225 | dx 0.00092 | pos 0.00031 | local 0.01028
+[275] train 0.00240 | val 0.00531 | feature 0.00168 | z 9.77600 | teacher 0.00553 | raw 0.00091 | event_bce 0.03222 | rate 0.00015 | next 0.00215 | dx 0.00090 | pos 0.00012 | local 0.01033
+[300] train 0.00228 | val 0.00526 | feature 0.00162 | z 9.92293 | teacher 0.00570 | raw 0.00079 | event_bce 0.02788 | rate 0.00014 | next 0.00210 | dx 0.00089 | pos 0.00007 | local 0.00976
+/Users/kathleenhiggins/miniforge3/lib/python3.12/site-packages/sklearn/metrics/_classification.py:2801: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+/Users/kathleenhiggins/miniforge3/lib/python3.12/site-packages/sklearn/metrics/_classification.py:2801: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+Population geometry AE train r 0.9853 | R2 0.9708 | MIND_R2 0.9708
+Population geometry AE heldout r 0.5946 | R2 0.3128 | MIND_R2 0.3133 | trial median 0.3466
+Teacher raw MIND heldout r 0.5526 | R2 0.2967 | MIND_R2 0.2990 | trial median 0.3411
+Next-frame heldout feature MSE 0.01153 | raw next R2 0.3530
+Saved outputs to /Users/kathleenhiggins/Neural_VAE_ODE/runs/2026-06-09_091530_82c6b6f

@@ -7,19 +7,42 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+device_name = os.environ.get("GEODESIC_DEVICE")
+if device_name:
+    device = torch.device(device_name)
+elif torch.cuda.is_available():
+    device = torch.device("cuda")
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
+print(f"Using device: {device}")
+
 # ======================================================
 # ================ LOAD THE E65 DATASET ================
 # ======================================================
 
 print("Loading and preparing data...")
-mat_path = os.environ.get("E65_MAT_PATH", "./E65.mat")
+mat_path = os.environ.get("E65_MAT_PATH")
+if mat_path is None:
+    mat_path = "src/mat_E65_data/E65.mat" if os.path.exists("src/mat_E65_data/E65.mat") else "./E65.mat"
 mat = sio.loadmat(mat_path, squeeze_me=True, struct_as_record=False)
 nic_output = mat['nic_output']
 
 # Extract raw arrays
 ROIactivities = nic_output.ROIactivities # shape: [Time, Neurons]
-trialn = nic_output.trialn               # shape: [Time]
-sensory_input = nic_output.sensory_input # shape: [Time]
+if hasattr(nic_output, "trialn") and hasattr(nic_output, "sensory_input"):
+    trialn = nic_output.trialn               # shape: [Time]
+    sensory_input = nic_output.sensory_input # shape: [Time]
+else:
+    npz_path = os.environ.get("E65_NPZ_PATH", "src/npz_e65_data/E65_data.npz")
+    sensory_key = os.environ.get("E65_SENSORY_KEY", "EvidenceSmooth")
+    print(f"trialn/sensory_input not found in {mat_path}; using {npz_path}:{sensory_key}")
+    npz = np.load(npz_path)
+    trialn = npz["Trial"]
+    sensory_input = npz[sensory_key]
+    if trialn.shape[0] != ROIactivities.shape[0] or sensory_input.shape[0] != ROIactivities.shape[0]:
+        raise ValueError("Fallback npz Trial/sensory arrays must match ROIactivities time dimension.")
 
 # Filter for active timepoints and neurons
 Datarange = ROIactivities.sum(axis=1) > 0
@@ -51,9 +74,9 @@ for t_id in trials_train:
     mask = (trialn == t_id)
     dataset_train.append({
         'idx': trial_to_idx[t_id],
-        'rates': torch.tensor(all_data[mask], dtype=torch.float32),
-        'sensory': torch.tensor(sensory_input[mask], dtype=torch.float32).unsqueeze(1),
-        'seq_len': mask.sum()
+        'rates': torch.tensor(all_data[mask], dtype=torch.float32, device=device),
+        'sensory': torch.tensor(sensory_input[mask], dtype=torch.float32, device=device).unsqueeze(1),
+        'seq_len': int(mask.sum())
     })
 
 n_neurons = all_data.shape[1]
@@ -291,17 +314,20 @@ def train_and_evaluate(model, dataset, epochs=300, lr=1e-4):
         
         for trial in dataset:
             _, pred_rates = model(trial['idx'], trial['sensory'], trial['seq_len'])
-            total_nll += loss_fn(pred_rates, trial['rates'])
+            trial_nll = loss_fn(pred_rates, trial['rates'])
+            total_nll += trial_nll.item()
+            trial_nll.backward()
             
-        total_nll.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         
-        loss_history.append(total_nll.item())
+        loss_history.append(total_nll)
         if epoch % 50 == 0:
-            print(f"Epoch {epoch:03d} | NLL Sum: {total_nll.item():.2f}")
+            print(f"Epoch {epoch:03d} | NLL Sum: {total_nll:.2f}")
+        if device.type == "mps":
+            torch.mps.empty_cache()
 
-    return model, loss_history, total_nll.item()
+    return model, loss_history, total_nll
 
 def calculate_ic(nll_sum, num_params, num_obs):
     aic = 2 * num_params + 2 * nll_sum
@@ -317,8 +343,8 @@ def count_parameters(model):
 
 # latent_dim should be 5. Can be overridden without changing the script body.
 latent_dim = int(os.environ.get("GEODESIC_LATENT_DIM", "5"))
-model_geo = InverseGeodesicModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=n_neurons)
-model_free = InverseFreeModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=n_neurons)
+model_geo = InverseGeodesicModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=n_neurons).to(device)
+model_free = InverseFreeModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=n_neurons).to(device)
 
 params_geo = count_parameters(model_geo)
 params_free = count_parameters(model_free)
@@ -366,7 +392,7 @@ def plot_model_heatmap(dataset, model_g, model_f, dataset_idx=0, num_neurons=50)
         return
 
     trial_data = dataset[dataset_idx]
-    rates_true = trial_data['rates'].detach().numpy()
+    rates_true = trial_data['rates'].detach().cpu().numpy()
     
     # 1. Geodesic model MUST evaluate with gradients enabled
     _, rates_geo_pred = model_g(trial_data['idx'], trial_data['sensory'], trial_data['seq_len'])
@@ -376,8 +402,8 @@ def plot_model_heatmap(dataset, model_g, model_f, dataset_idx=0, num_neurons=50)
         _, rates_free_pred = model_f(trial_data['idx'], trial_data['sensory'], trial_data['seq_len'])
         
     # Detach predictions and convert to NumPy
-    rates_geo_pred = rates_geo_pred.detach().numpy()
-    rates_free_pred = rates_free_pred.detach().numpy()
+    rates_geo_pred = rates_geo_pred.detach().cpu().numpy()
+    rates_free_pred = rates_free_pred.detach().cpu().numpy()
     
     # Select up to `num_neurons` (or all if fewer than requested)
     n_plot = min(num_neurons, rates_true.shape[1])

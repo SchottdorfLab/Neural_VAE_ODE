@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as sio
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,7 +12,8 @@ import torch.nn.functional as F
 # ======================================================
 
 print("Loading and preparing data...")
-mat = sio.loadmat('./E65.mat', squeeze_me=True, struct_as_record=False)
+mat_path = os.environ.get("E65_MAT_PATH", "./E65.mat")
+mat = sio.loadmat(mat_path, squeeze_me=True, struct_as_record=False)
 nic_output = mat['nic_output']
 
 # Extract raw arrays
@@ -313,8 +315,8 @@ def count_parameters(model):
 # ================= Results and Plot ===================
 # ======================================================
 
-# latent_dim should be 5. Leaving at 2 for proof of principle.
-latent_dim = 2
+# latent_dim should be 5. Can be overridden without changing the script body.
+latent_dim = int(os.environ.get("GEODESIC_LATENT_DIM", "5"))
 model_geo = InverseGeodesicModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=n_neurons)
 model_free = InverseFreeModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=n_neurons)
 
@@ -326,7 +328,7 @@ print(f"Free Dynamics Model Parameters: {params_free}\n")
 num_obs = sum(trial['seq_len'] * n_neurons for trial in dataset_train)
 
 # Train Models
-EPOCHS = 500
+EPOCHS = int(os.environ.get("GEODESIC_EPOCHS", "500"))
 model_geo, loss_geo, nll_geo = train_and_evaluate(model_geo, dataset_train, epochs=EPOCHS)
 print("-" * 20)
 model_free, loss_free, nll_free = train_and_evaluate(model_free, dataset_train, epochs=EPOCHS)
@@ -418,6 +420,11 @@ def plot_model_heatmap(dataset, model_g, model_f, dataset_idx=0, num_neurons=50)
         trial_name = dataset_idx
         
     plt.suptitle(f'Population Activity Heatmaps for Trial {trial_name}', fontsize=14, y=1.02)
-    plt.show()
+    out_path = os.environ.get("GEODESIC_HEATMAP_PATH")
+    if out_path:
+        plt.savefig(out_path, dpi=160, bbox_inches="tight")
+        print(f"Saved heatmap to {out_path}")
+    else:
+        plt.show()
 
 plot_model_heatmap(dataset_train, model_geo, model_free, dataset_idx=12, num_neurons=50)

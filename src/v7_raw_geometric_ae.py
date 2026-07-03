@@ -8,7 +8,9 @@ Core assumptions:
 - Split train/test by whole trial.
 - Do not feed position into the model or manifold geometry.
 - Let neural population state geometry carry position/task structure implicitly.
-- Respect trial boundaries when computing frame-to-frame transitions.
+- Time/transition handling is configurable; default behavior respects trial
+  boundaries, while raw_time_mode=mind_frame_order reproduces the sandbox MIND
+  artificial frame clock.
 """
 
 from __future__ import annotations
@@ -112,6 +114,7 @@ def split_raw_frame_trials(
     all_data = roi[frame_mask].astype(np.float32)
     all_trial_ids = trials[frame_mask].astype(np.int64)
     all_frame_index = np.flatnonzero(frame_mask).astype(np.int64)
+    raw_time_mode = str(cfg.get("raw_time_mode", "source")).lower()
     if time is None:
         all_time = all_frame_index.astype(np.float32)
     else:
@@ -128,6 +131,22 @@ def split_raw_frame_trials(
     if x_train.size == 0 or x_test.size == 0:
         raise ValueError("Raw-frame split produced empty train or heldout data.")
 
+    if raw_time_mode in {"mind", "mind_frame_order", "mind_sandbox", "frame_order"}:
+        fps = cfg_float(cfg, "fps", 15.0)
+        if fps <= 0:
+            raise ValueError(f"fps must be positive for raw_time_mode={raw_time_mode!r}, got {fps}")
+        train_frame_time = np.arange(1, x_train.shape[0] + 1, dtype=np.float32) / fps
+        test_frame_time = np.arange(1, x_test.shape[0] + 1, dtype=np.float32) / fps
+        time_note = (
+            "MIND sandbox frame clock: after train/heldout splitting, frames are "
+            "renumbered as 1:n / fps. This is metadata for plotting and for "
+            "MIND-style transition assumptions; it is not model input."
+        )
+    else:
+        train_frame_time = all_time[train_frame_mask]
+        test_frame_time = all_time[test_frame_mask]
+        time_note = "Source time metadata from the NPZ, or source frame index if no time vector exists."
+
     meta = {
         "data_mode": "raw_frames_by_trial",
         "trial_source": trial_source,
@@ -136,8 +155,8 @@ def split_raw_frame_trials(
         "test_trial_ids": test_trials,
         "train_frame_trial_ids": all_trial_ids[train_frame_mask],
         "test_frame_trial_ids": all_trial_ids[test_frame_mask],
-        "train_frame_time": all_time[train_frame_mask],
-        "test_frame_time": all_time[test_frame_mask],
+        "train_frame_time": train_frame_time,
+        "test_frame_time": test_frame_time,
         "train_frame_position": all_position[train_frame_mask],
         "test_frame_position": all_position[test_frame_mask],
         "train_source_frame_index": all_frame_index[train_frame_mask],
@@ -149,6 +168,9 @@ def split_raw_frame_trials(
         "n_train_frames": int(x_train.shape[0]),
         "n_test_frames": int(x_test.shape[0]),
         "filter_silent_frames": cfg_bool(cfg, "filter_silent_frames", True),
+        "raw_time_mode": raw_time_mode,
+        "fps": cfg_float(cfg, "fps", 15.0),
+        "time_note": time_note,
         "note": "Raw neural frames; position/time retained as metadata only.",
     }
     return x_train[None, :, :], x_test[None, :, :], meta
@@ -166,6 +188,28 @@ def boundary_deltas(values: np.ndarray, frame_trial_ids: np.ndarray) -> tuple[np
         same_trial = ids[:-1] == ids[1:]
         deltas[:-1][same_trial] = values[1:][same_trial] - values[:-1][same_trial]
         valid[:-1] = same_trial
+    return deltas, valid
+
+
+def transition_deltas(
+    values: np.ndarray,
+    frame_trial_ids: np.ndarray,
+    respect_trial_boundaries: bool,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute next-frame deltas using either clean trial boundaries or MIND-style order.
+
+    When respect_trial_boundaries is false, the sequence is treated like the
+    sandbox MIND training matrix after `data.t = (1:n)/15`: every adjacent row
+    is a valid transition except the final row.
+    """
+    if respect_trial_boundaries:
+        return boundary_deltas(values, frame_trial_ids)
+    values = np.asarray(values, dtype=np.float32)
+    deltas = np.zeros_like(values, dtype=np.float32)
+    valid = np.zeros(values.shape[0], dtype=bool)
+    if values.shape[0] > 1:
+        deltas[:-1] = values[1:] - values[:-1]
+        valid[:-1] = True
     return deltas, valid
 
 
@@ -291,18 +335,15 @@ def build_teacher(cfg: Dict[str, Any], data: Dict[str, Any]) -> Dict[str, Any]:
     f_train = data["f_train_flat"]
     x_train = data["x_train_flat"]
 
-    if cfg_bool(cfg, "respect_trial_boundaries", True):
-        delta_f, valid_transition = boundary_deltas(f_train, raw_meta["train_frame_trial_ids"])
-        delta_x, _ = boundary_deltas(x_train, raw_meta["train_frame_trial_ids"])
-    else:
-        delta_f = mind.sequence_deltas(f_train[None, :, :]).reshape(f_train.shape)
-        delta_x = mind.sequence_deltas(x_train[None, :, :]).reshape(x_train.shape)
-        valid_transition = np.ones(f_train.shape[0], dtype=bool)
+    respect_boundaries = cfg_bool(cfg, "respect_trial_boundaries", True)
+    delta_f, valid_transition = transition_deltas(f_train, raw_meta["train_frame_trial_ids"], respect_boundaries)
+    delta_x, _ = transition_deltas(x_train, raw_meta["train_frame_trial_ids"], respect_boundaries)
 
     manifold_mask = np.ones(f_train.shape[0], dtype=bool)
     manifold_meta: Dict[str, Any] = {
         "filter_silent_frames_for_manifold": cfg_bool(cfg, "filter_silent_frames_for_manifold", False),
-        "respect_trial_boundaries": cfg_bool(cfg, "respect_trial_boundaries", True),
+        "respect_trial_boundaries": respect_boundaries,
+        "transition_time_mode": raw_meta.get("raw_time_mode", "source"),
         "valid_transition_states": int(valid_transition.sum()),
         "total_train_states": int(f_train.shape[0]),
     }
@@ -409,7 +450,7 @@ def make_event_weights(x: np.ndarray, frame_trial_ids: np.ndarray, cfg: Dict[str
         return np.ones((x.shape[0], 1), dtype=np.float32)
     mode = str(cfg.get("event_weight_mode", "activity_or_dx")).lower()
     activity = np.max(np.maximum(x, 0.0), axis=1)
-    dx, _ = boundary_deltas(x, frame_trial_ids)
+    dx, _ = transition_deltas(x, frame_trial_ids, cfg_bool(cfg, "respect_trial_boundaries", True))
     dyn = np.max(np.abs(dx), axis=1)
     if mode == "activity":
         score = activity
@@ -520,18 +561,79 @@ def train_model(
         cfg["lambda_teacher_recon"] = 0.0
     x_train = data["x_train_flat"].astype(np.float32)
     weights = make_event_weights(x_train, data["raw_split_meta"]["train_frame_trial_ids"], cfg)
-    delta_f_train, valid_next_train = boundary_deltas(f_train, data["raw_split_meta"]["train_frame_trial_ids"])
-    delta_x_train, _ = boundary_deltas(x_train, data["raw_split_meta"]["train_frame_trial_ids"])
+    respect_boundaries = cfg_bool(cfg, "respect_trial_boundaries", True)
+    delta_f_train, valid_next_train = transition_deltas(
+        f_train,
+        data["raw_split_meta"]["train_frame_trial_ids"],
+        respect_boundaries,
+    )
+    delta_x_train, _ = transition_deltas(
+        x_train,
+        data["raw_split_meta"]["train_frame_trial_ids"],
+        respect_boundaries,
+    )
     f_next_train = (f_train + delta_f_train).astype(np.float32)
     x_next_train = (x_train + delta_x_train).astype(np.float32)
     next_mask_train = valid_next_train.astype(np.float32)[:, None]
 
     n = f_train.shape[0]
     rng = np.random.default_rng(cfg_int(cfg, "seed", 42) + 17)
-    order = rng.permutation(n)
-    n_val = int(round(n * cfg_float(cfg, "state_val_frac", 0.1)))
-    val_idx = order[:n_val]
-    train_idx = order[n_val:] if n_val > 0 else order
+    state_val_mode = str(cfg.get("state_val_mode", "frame")).lower()
+    state_val_frac = cfg_float(cfg, "state_val_frac", 0.1)
+    if state_val_mode in {"trial", "trials", "whole_trial", "whole_trials"}:
+        train_frame_trial_ids = np.asarray(data["raw_split_meta"]["train_frame_trial_ids"]).reshape(-1)
+        train_trial_ids = np.asarray(data["raw_split_meta"]["train_trial_ids"]).reshape(-1)
+        trial_order = rng.permutation(train_trial_ids)
+        n_val_trials = int(round(train_trial_ids.size * state_val_frac))
+        n_val_trials = min(max(n_val_trials, 1), max(1, train_trial_ids.size - 1))
+        val_trials = trial_order[:n_val_trials]
+        val_mask = np.isin(train_frame_trial_ids, val_trials)
+        val_idx = np.flatnonzero(val_mask)
+        train_idx = np.flatnonzero(~val_mask)
+        val_split_meta = {
+            "state_val_mode": "trial",
+            "state_val_frac": state_val_frac,
+            "n_internal_train_frames": int(train_idx.size),
+            "n_internal_val_frames": int(val_idx.size),
+            "n_internal_train_trials": int(train_trial_ids.size - n_val_trials),
+            "n_internal_val_trials": int(n_val_trials),
+            "internal_val_trial_ids": val_trials.astype(int),
+        }
+        print(
+            f"Internal validation split: whole trials mode, "
+            f"train trials={train_trial_ids.size - n_val_trials}, "
+            f"val trials={n_val_trials}, train frames={train_idx.size}, val frames={val_idx.size}"
+        )
+    elif state_val_mode in {"none", "off", "false"}:
+        train_idx = np.arange(n, dtype=np.int64)
+        val_idx = np.asarray([], dtype=np.int64)
+        val_split_meta = {
+            "state_val_mode": "none",
+            "state_val_frac": state_val_frac,
+            "n_internal_train_frames": int(train_idx.size),
+            "n_internal_val_frames": 0,
+            "n_internal_train_trials": int(data["raw_split_meta"]["n_trials_train"]),
+            "n_internal_val_trials": 0,
+            "internal_val_trial_ids": np.asarray([], dtype=int),
+        }
+        print("Internal validation split: disabled; using training loss for checkpoint selection.")
+    elif state_val_mode in {"frame", "frames", "state", "states"}:
+        order = rng.permutation(n)
+        n_val = int(round(n * state_val_frac))
+        val_idx = order[:n_val]
+        train_idx = order[n_val:] if n_val > 0 else order
+        val_split_meta = {
+            "state_val_mode": "frame",
+            "state_val_frac": state_val_frac,
+            "n_internal_train_frames": int(train_idx.size),
+            "n_internal_val_frames": int(val_idx.size),
+            "n_internal_train_trials": None,
+            "n_internal_val_trials": None,
+            "internal_val_trial_ids": np.asarray([], dtype=int),
+        }
+        print(f"Internal validation split: random frame mode, train frames={train_idx.size}, val frames={val_idx.size}")
+    else:
+        raise ValueError(f"Unknown state_val_mode={state_val_mode!r}")
 
     tensors = {
         "f": torch.from_numpy(f_train),
@@ -549,7 +651,7 @@ def train_model(
 
     batch_size = cfg_int(cfg, "batch_size", 512)
     train_loader = DataLoader(subset(train_idx), batch_size=batch_size, shuffle=True, drop_last=False)
-    val_loader = DataLoader(subset(val_idx), batch_size=batch_size, shuffle=False, drop_last=False) if n_val > 0 else None
+    val_loader = DataLoader(subset(val_idx), batch_size=batch_size, shuffle=False, drop_last=False) if val_idx.size > 0 else None
 
     if cfg_bool(cfg, "use_transition_head", False):
         model: nn.Module = TransitionMindDistilledAE(
@@ -688,7 +790,7 @@ def train_model(
 
     if best_state is not None:
         model.load_state_dict(best_state)
-    return model, {"history": history, "best_epoch": best_epoch, "best_val_loss": best_val}
+    return model, {"history": history, "best_epoch": best_epoch, "best_val_loss": best_val, "validation_split": val_split_meta}
 
 
 def predict_model_outputs(
@@ -728,11 +830,12 @@ def next_prediction_metrics(
     pca: PCA | None,
     norm_mu: np.ndarray | None,
     norm_sd: np.ndarray | None,
+    respect_trial_boundaries: bool = True,
 ) -> Dict[str, Any]:
     if fnext_pred is None:
         return {}
-    delta_f, valid = boundary_deltas(f_true, frame_trial_ids)
-    delta_x, _ = boundary_deltas(x_true, frame_trial_ids)
+    delta_f, valid = transition_deltas(f_true, frame_trial_ids, respect_trial_boundaries)
+    delta_x, _ = transition_deltas(x_true, frame_trial_ids, respect_trial_boundaries)
     if not np.any(valid):
         return {"n_valid_next": 0}
     f_next_true = f_true + delta_f
@@ -808,6 +911,7 @@ def main() -> None:
             data["pca"],
             data["norm_mu"],
             data["norm_sd"],
+            cfg_bool(cfg, "respect_trial_boundaries", True),
         ),
         "heldout": next_prediction_metrics(
             fnext_test,
@@ -817,9 +921,9 @@ def main() -> None:
             data["pca"],
             data["norm_mu"],
             data["norm_sd"],
+            cfg_bool(cfg, "respect_trial_boundaries", True),
         ),
     }
-
     teacher_train_decoded = teacher["teacher_train_target"]
     teacher_test_decoded = teacher["teacher_test_target"]
     if teacher["decoder_target"] in {"raw", "neural", "activity"}:
@@ -855,7 +959,6 @@ def main() -> None:
             f"Next-frame heldout feature MSE {next_metrics['heldout']['next_feature_mse']:.5f} | "
             f"raw next R2 {next_metrics['heldout']['next_raw_R2']:.4f}"
         )
-
     torch.save({"model_state": model.state_dict(), "config": jsonable(cfg), "train_meta": jsonable(train_meta)}, out_dir / "model.pt")
     np.savez_compressed(
         out_dir / "analysis_cache_best.npz",
@@ -897,6 +1000,11 @@ def main() -> None:
         "r": test_metrics["r"],
     }
     torch.save(final_metrics, out_dir / "final_metrics.pt")
+    transition_assumption = (
+        "MIND-style adjacent-row transitions over the concatenated frame matrix"
+        if not cfg_bool(cfg, "respect_trial_boundaries", True)
+        else "trial-boundary-aware transitions"
+    )
     metadata = {
         "script": Path(__file__).name,
         "config_path": str(Path(args.config).resolve()),
@@ -907,7 +1015,7 @@ def main() -> None:
             "whole-trial heldout split",
             "no position bins",
             "no position covariate",
-            "trial-boundary-aware transitions",
+            transition_assumption,
             "optional latent one-step transition head predicts next PCA feature",
         ],
         "n_trials_total": int(raw_meta["n_trials_total"]),

@@ -1,0 +1,30 @@
+{
+  "config": {
+    "num_trials": 4,
+    "N_neurons": 24,
+    "n_timepoints": 16,
+    "kappa": 1.5,
+    "speed": 0.7,
+    "epochs": 2,
+    "lr": 0.001,
+    "device": "cpu"
+  },
+  "geodesic": {
+    "params": 3019,
+    "final_nll": 2912.28515625,
+    "R2": -0.9727119207382202,
+    "r": 0.016523978931746203,
+    "AIC": 11862.5703125,
+    "BIC": 27974.7828549833
+  },
+  "free": {
+    "params": 35690,
+    "final_nll": 1897.670166015625,
+    "R2": -0.34936070442199707,
+    "r": 0.013918193030730011,
+    "AIC": 75175.34033203125,
+    "BIC": 265650.61878225615
+  },
+  "preferred_by_AIC": "Geodesic",
+  "preferred_by_BIC": "Geodesic"
+}

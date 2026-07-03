@@ -2,8 +2,15 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## June 29th, 8:48pm:
+- **Note to self:**
+`runs/2026-06-03_200731_834cd6a` is the best model 
+version. 
+- Reverted the code for v6 back to the above version. 
+
 ## June 1st, 6:18pm:
-- Added 
+- Added. 
+
 ## May 28th, 10:43am:
 - Setting lambda_teacher_z to 0 gives best results.
     - Meaning: let the AE learn its own latent coordinate system. 

@@ -288,19 +288,32 @@ class InverseGeodesicModel(nn.Module):
         dt = t_eval[1] - t_eval[0]  # Assuming uniform time steps
         seq_len = len(t_eval)
 
-        x = self.x0[trial_idx].unsqueeze(0)
-        v = self.v0[trial_idx].unsqueeze(0)
+        single_trial = not torch.is_tensor(trial_idx) or trial_idx.ndim == 0
+        if not torch.is_tensor(trial_idx):
+            trial_idx = torch.tensor([trial_idx], dtype=torch.long, device=self.x0.device)
+        elif trial_idx.ndim == 0:
+            trial_idx = trial_idx.reshape(1).to(device=self.x0.device, dtype=torch.long)
+        else:
+            trial_idx = trial_idx.to(device=self.x0.device, dtype=torch.long)
+
+        x = self.x0[trial_idx]
+        v = self.v0[trial_idx]
         latents = []
 
-        # Roll out dynamics
+        # Roll out all requested trials together. Trials remain independent; the
+        # leading tensor dimension is only a compute batch.
         for _ in range(seq_len):
             latents.append(x)
             x, v = self.dynamics((x, v), dt)
 
-        latents = torch.cat(latents, dim=0)  # [seq_len, latent_dim]
+        latents = torch.stack(latents, dim=1)  # [batch, seq_len, latent_dim]
 
         # Decode to neural firing rates
-        rates = self.decoder(latents)  # [seq_len, n_neurons]
+        flat_latents = latents.reshape(-1, latents.shape[-1])
+        flat_rates = self.decoder(flat_latents)
+        rates = flat_rates.reshape(latents.shape[0], seq_len, -1)  # [batch, seq_len, n_neurons]
+        if single_trial:
+            return latents[0], rates[0]
         return latents, rates
 
 
@@ -350,21 +363,35 @@ class InverseFreeModel(nn.Module):
         dt = t_eval[1] - t_eval[0]
         seq_len = len(t_eval)
 
-        x = self.x0[trial_idx].unsqueeze(0)
-        v = self.v0[trial_idx].unsqueeze(0)
+        single_trial = not torch.is_tensor(trial_idx) or trial_idx.ndim == 0
+        if not torch.is_tensor(trial_idx):
+            trial_idx = torch.tensor([trial_idx], dtype=torch.long, device=self.x0.device)
+        elif trial_idx.ndim == 0:
+            trial_idx = trial_idx.reshape(1).to(device=self.x0.device, dtype=torch.long)
+        else:
+            trial_idx = trial_idx.to(device=self.x0.device, dtype=torch.long)
+
+        x = self.x0[trial_idx]
+        v = self.v0[trial_idx]
         latents = []
 
         for _ in range(seq_len):
             latents.append(x)
             x, v = self.dynamics((x, v), dt)
 
-        latents = torch.cat(latents, dim=0)
-        rates = self.decoder(latents)
+        latents = torch.stack(latents, dim=1)
+        flat_latents = latents.reshape(-1, latents.shape[-1])
+        flat_rates = self.decoder(flat_latents)
+        rates = flat_rates.reshape(latents.shape[0], seq_len, -1)
+        if single_trial:
+            return latents[0], rates[0]
         return latents, rates
 
 
 def train_and_evaluate(model, dataset, t_eval_np, epochs=300, lr=1e-3):
     t_eval_torch = torch.tensor(t_eval_np, dtype=torch.float32, device=device)
+    trial_indices = torch.tensor([trial["idx"] for trial in dataset], dtype=torch.long, device=device)
+    target_rates = torch.stack([trial["rates"] for trial in dataset], dim=0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     # We need the SUM of the negative log-likelihood for exact AIC/BIC scaling. I messed this up
@@ -374,14 +401,12 @@ def train_and_evaluate(model, dataset, t_eval_np, epochs=300, lr=1e-3):
 
     for epoch in range(epochs):
         optimizer.zero_grad()
-        nll_sum = torch.zeros((), device=device)
 
-        for trial in dataset:
-            pred_latents, pred_rates = model(trial["idx"], t_eval_torch)
+        pred_latents, pred_rates = model(trial_indices, t_eval_torch)
 
-            # The loss here is the negative log-likelihood (NLL)
-            # (excluding the constant term, which drops out in model comparison)
-            nll_sum = nll_sum + loss_fn(pred_rates, trial["rates"])
+        # The loss here is the negative log-likelihood (NLL)
+        # (excluding the constant term, which drops out in model comparison)
+        nll_sum = loss_fn(pred_rates, target_rates)
 
         nll_sum.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -407,13 +432,9 @@ def count_parameters(model):
 
 def predict_all(model, dataset, t_eval_np):
     t_eval_torch = torch.tensor(t_eval_np, dtype=torch.float32, device=device)
-    pred_all = []
-    latent_all = []
-    for trial in dataset:
-        pred_latents, pred_rates = model(trial["idx"], t_eval_torch)
-        pred_all.append(pred_rates.detach().cpu().numpy())
-        latent_all.append(pred_latents.detach().cpu().numpy())
-    return np.stack(pred_all, axis=0), np.stack(latent_all, axis=0)
+    trial_indices = torch.tensor([trial["idx"] for trial in dataset], dtype=torch.long, device=device)
+    pred_latents, pred_rates = model(trial_indices, t_eval_torch)
+    return pred_rates.detach().cpu().numpy(), pred_latents.detach().cpu().numpy()
 
 
 def corr_and_r2(y_true, y_pred):

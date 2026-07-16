@@ -2,6 +2,54 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## July 16th, 7:16pm:
+- I think that perhaps I've done a poor job of keeping notes. I also, generally, have not been working on this as intently as I could, but I would like to note that I *have* been working on it, but I haven't been taking notes.
+- We have a grand strategy, reader. Dr. Schottdorf has code that computes geodesics to find a space. It's not incredibly complicated, and the idea behind it is using Christoffel symbols/Riemannian geometry stuff to find the geometry of a circle and accurately reconstruct the trajectories in a 3D space.
+- This begins with the following: simulating the data. To do this, we have a 3D circle which we simulate, and we run various trajectories, starting a random place (and I think, random speed, but I have to check) and they run a distance of 4pi. 
+- These "great circles," we call them, make up the basis of our training set. These are the geometries that our model is trained on. 
+- This model, using only christoffel symbols and a knowledge of the metric tensor (which is not constrained to the metric tensor of a circle) is supposed to reconstruct, with near-perfect accuracy, the trajectories on the circle. 
+- The problem is the following. I have integrated my messages to Dr. Schottdorf here, because I am too lazy to retype it all. I've included it in a code block. Enjoy.
+```
+Kathleen  [6:15 PM]
+Sorry I've been so offline, surgery recovery went great, then went south a couple of days ago. I pulled the latest logs.
+Kathleen  [6:34 PM]
+Here's where things are at:
+
+Pre-batching and pre-checkpointing I started a brute force and gave it six days w/ the original configuration (30 sphere trials, 300 neurons, 1000 epochs). It ran out of of time at the 6 day mark and had completed 600/1000 epochs. It took about 14.4 minutes per geodesic epoch (6 days (144hrs) / 600 epochs = 0.23 hours per epoch so 14.4 min per epoch). 
+For the batched version, I ran for 300 epochs, but still 30 trials, same number of timepoints, same number of neurons. It finished 300 epochs in 1:24:20. So 8.4 seconds per epoch compared to the previous 864 seconds per epoch. A lot of time saved by using the GPU better, and the NLL between both the batched version and the unbatched version are very close at the 300 epoch point (4809897.50 versus 4807200.00). So it should be doing the same computations.
+So the good news is we have a technique that speeds up 855 seconds per epoch! My math says that saves us about 9.8 days for 1,000 epochs. 
+Bad news is that it isn't doing well. Because I hadn't started the checkpointing version when I ran the 600 epoch run, I only know NLL, which isn't super helpful. But for the 600 epoch run, NLL started to stagnate at about 300 epochs, and from there on there were only 1% drops in NLL. This is bad, because our 300 epoch run, with the R2, did poorly---0.1163 was the final R2 after 300 epochs. 
+(edited)
+[6:35 PM]So I'm not seeing that perfect reconstruction we should be seeing.
+Kathleen  [6:43 PM]
+Now that we have such a speedup, I'm trying a few different configurations to answer some questions I have about where stuff isn't working:
+
+Is the plateau in the NLL we saw at the 300 epoch mark right? Going to run a 1000 epoch now that everything is faster.
+
+Is more trials making things worse? Running on 4 trials instead of 30. 
+
+Is the model reconstructing well and working right? Single trajectory version, but multiple epochs.
+
+Do we need more neurons to get a better place-field coverage? Increase number of neurons to 600 (edited) 
+Kathleen  [6:52 PM]
+But also, isn't this just a really tough problem for a model to solve? Because the model is supposed to figure out everything about the sphere geodesics from the neural activity, and the metric tensor is unconstrained and doesn't have to be the sphere metric
+Kathleen  [7:03 PM]
+Also some other thoughts/concerns reading thru the code:
+
+Right now we use RK45 for data generation but the learned model fits with Euler steps. On a hunch, I'm guessing the difference between the two isn't causing the really rough R2 we're seeing, but it could be accumulating error over 600 epochs, right? 
+Why do we throw away the first geodesic fit? 
+Looking at the code, it seems like it does two separate training stages, first this:
+
+model, losses, recovered_latents = train_inverse_model(
+    activity,
+    t_eval,
+    epochs=1000,
+)Then later for the model comparison, the script does this:
+model_geo = InverseGeodesicModel(...)
+model_free = InverseFreeModel(...)which creates a new geodesic model from scratch and doesn't reuse the earlier trained model. It looks like we're not using the 1000-epoch fit for the AIC/BIC comparison?
+[7:04 PM]Sorry for the vast amount of messages:sob:
+```
+
 ## June 29th, 8:48pm:
 - **Note to self:**
 `runs/2026-06-03_200731_834cd6a` is the best model 

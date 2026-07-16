@@ -136,6 +136,10 @@ np.savez_compressed(
     t_eval=t_eval.astype(np.float32),
 )
 
+if os.environ.get("SPHERE_GENERATE_ONLY", "").lower() in {"1", "true", "yes"}:
+    print(f"Saved synthetic sphere trials to {out_dir / 'synthetic_sphere_trials.npz'}")
+    raise SystemExit(0)
+
 
 # =============== Geodesic fit ===================#
 

@@ -1,0 +1,110 @@
+{
+  "binned_train": {
+    "r": 0.604368831841427,
+    "R2": 0.1390424534207807,
+    "variance_explained": 0.1390424536349234,
+    "MIND_R2": 0.1390424536349234,
+    "MIND_R2_trial_mean": 0.13904782446126307,
+    "MIND_R2_trial_median": 0.1409522323271737,
+    "MIND_R2_trial_min": 0.08466073097590499,
+    "MIND_R2_trial_max": 0.18163544091558526,
+    "MIND_R2_trial_scores": [
+      0.13596737303671702,
+      0.1171307245084997,
+      0.10570945915397834,
+      0.14946531102782412,
+      0.15388375542043908,
+      0.08466073097590499,
+      0.1571959260133612,
+      0.13230008974158614,
+      0.18163544091558526,
+      0.1409522323271737,
+      0.13355478860435044,
+      0.1505160531702101,
+      0.16464983310078973
+    ]
+  },
+  "binned_heldout": {
+    "r": 0.5160693760296162,
+    "R2": 0.11051065559260531,
+    "variance_explained": 0.11051068491606408,
+    "MIND_R2": 0.11051068491606408,
+    "MIND_R2_trial_mean": 0.11051068491606408,
+    "MIND_R2_trial_median": 0.11051068491606408,
+    "MIND_R2_trial_min": 0.11051068491606408,
+    "MIND_R2_trial_max": 0.11051068491606408,
+    "MIND_R2_trial_scores": [
+      0.11051068491606408
+    ]
+  },
+  "binned_events": {
+    "top_1_percent_event_capture": 0.3516701915633782,
+    "top_0_5_percent_event_capture": 0.35376698338671597,
+    "pred_std_over_true_std": 0.12133286142827267,
+    "pred_dynamics_std_over_true_dynamics_std": 0.08092273584485153,
+    "per_neuron_R2_mean": -0.9352262141972263,
+    "per_neuron_R2_median": 0.04301371851338287,
+    "per_neuron_R2_fraction_positive": 0.625,
+    "event_frame_r": 0.7291327768858971,
+    "event_frame_R2": 0.16606008921777515,
+    "event_frame_variance_explained": 0.16606025798863355,
+    "event_frame_MIND_R2": 0.16606025798863355,
+    "event_frame_count": 2,
+    "event_frame_fraction": 0.016666666666666666
+  },
+  "raw_mapped_train": {
+    "r": 0.6040781187606659,
+    "R2": 0.13879062359711491,
+    "variance_explained": 0.13879062381671436,
+    "MIND_R2": 0.13879062381671436,
+    "MIND_R2_trial_mean": 0.13879594803655948,
+    "MIND_R2_trial_median": 0.14075165876595563,
+    "MIND_R2_trial_min": 0.08437158785479437,
+    "MIND_R2_trial_max": 0.18122369450453546,
+    "MIND_R2_trial_scores": [
+      0.13593871605436847,
+      0.11665242803708586,
+      0.10594173499144877,
+      0.14916449733678705,
+      0.15353715784722655,
+      0.08437158785479437,
+      0.15717104592501885,
+      0.13190247634301122,
+      0.18122369450453546,
+      0.14075165876595563,
+      0.13315031141138922,
+      0.14991788678281104,
+      0.16462412862084064
+    ]
+  },
+  "raw_mapped_heldout": {
+    "r": 0.5173556174009136,
+    "R2": 0.11078889042138784,
+    "variance_explained": 0.11078891963371107,
+    "MIND_R2": 0.11078891963371107,
+    "MIND_R2_trial_mean": 0.11078891963371107,
+    "MIND_R2_trial_median": 0.11078891963371107,
+    "MIND_R2_trial_min": 0.11078891963371107,
+    "MIND_R2_trial_max": 0.11078891963371107,
+    "MIND_R2_trial_scores": [
+      0.11078891963371107
+    ]
+  },
+  "raw_mapped_events": {
+    "top_1_percent_event_capture": 0.34984629156797437,
+    "top_0_5_percent_event_capture": 0.3537569930089768,
+    "pred_std_over_true_std": 0.12129007330164128,
+    "pred_dynamics_std_over_true_dynamics_std": 0.08073729657543748,
+    "per_neuron_R2_mean": -0.9292200539714474,
+    "per_neuron_R2_median": 0.04296948317783306,
+    "per_neuron_R2_fraction_positive": 0.625,
+    "event_frame_r": 0.7098290935654191,
+    "event_frame_R2": 0.17907206241972884,
+    "event_frame_variance_explained": 0.17907232133723916,
+    "event_frame_MIND_R2": 0.17907232133723916,
+    "event_frame_count": 1,
+    "event_frame_fraction": 0.0125
+  },
+  "R2": 0.11078889042138784,
+  "r": 0.5173556174009136
+}

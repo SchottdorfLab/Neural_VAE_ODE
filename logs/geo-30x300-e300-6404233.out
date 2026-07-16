@@ -1,0 +1,84 @@
+Adding package `miniconda/25.1.1.2` to your environment
+Using device: cuda
+Simulated 30 sphere trials: time=300, neurons=300
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 4880663.50
+Epoch 010 | NLL Sum: 3392152.00
+Epoch 020 | NLL Sum: 2889310.00
+Epoch 030 | NLL Sum: 2698592.00
+Epoch 040 | NLL Sum: 2611720.25
+Epoch 050 | NLL Sum: 2568500.00
+Epoch 060 | NLL Sum: 2549027.50
+Epoch 070 | NLL Sum: 2534600.25
+Epoch 080 | NLL Sum: 2527096.75
+Epoch 090 | NLL Sum: 2517656.50
+Epoch 100 | NLL Sum: 2514956.50
+Epoch 110 | NLL Sum: 2509464.50
+Epoch 120 | NLL Sum: 2505889.50
+Epoch 130 | NLL Sum: 2501294.00
+Epoch 140 | NLL Sum: 2499616.50
+Epoch 150 | NLL Sum: 2497372.00
+Epoch 160 | NLL Sum: 2488884.25
+Epoch 170 | NLL Sum: 2484254.00
+Epoch 180 | NLL Sum: 2478889.50
+Epoch 190 | NLL Sum: 2473343.75
+Epoch 200 | NLL Sum: 2468048.00
+Epoch 210 | NLL Sum: 2463148.25
+Epoch 220 | NLL Sum: 2459302.50
+Epoch 230 | NLL Sum: 2454997.25
+Epoch 240 | NLL Sum: 2453376.00
+Epoch 250 | NLL Sum: 2447570.75
+Epoch 260 | NLL Sum: 2443082.00
+Epoch 270 | NLL Sum: 2440066.25
+Epoch 280 | NLL Sum: 2436190.00
+Epoch 290 | NLL Sum: 2436084.75
+--------------------
+Epoch 000 | NLL Sum: 4310389.00
+Epoch 010 | NLL Sum: 3070654.50
+Epoch 020 | NLL Sum: 2742402.00
+Epoch 030 | NLL Sum: 2583091.00
+Epoch 040 | NLL Sum: 2525363.00
+Epoch 050 | NLL Sum: 2504427.50
+Epoch 060 | NLL Sum: 2491595.25
+Epoch 070 | NLL Sum: 2479654.00
+Epoch 080 | NLL Sum: 2464826.50
+Epoch 090 | NLL Sum: 2454046.00
+Epoch 100 | NLL Sum: 2447768.75
+Epoch 110 | NLL Sum: 2443743.25
+Epoch 120 | NLL Sum: 2438609.25
+Epoch 130 | NLL Sum: 2431906.75
+Epoch 140 | NLL Sum: 2430128.50
+Epoch 150 | NLL Sum: 2425749.00
+Epoch 160 | NLL Sum: 2424875.75
+Epoch 170 | NLL Sum: 2421013.00
+Epoch 180 | NLL Sum: 2420182.50
+Epoch 190 | NLL Sum: 2416623.75
+Epoch 200 | NLL Sum: 2416982.25
+Epoch 210 | NLL Sum: 2414278.50
+Epoch 220 | NLL Sum: 2416154.00
+Epoch 230 | NLL Sum: 2404093.50
+Epoch 240 | NLL Sum: 2426507.25
+Epoch 250 | NLL Sum: 2404731.00
+Epoch 260 | NLL Sum: 2401831.50
+Epoch 270 | NLL Sum: 2428975.00
+Epoch 280 | NLL Sum: 2421263.50
+Epoch 290 | NLL Sum: 2406578.75
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Final NLL       | 2430280.00      | 2399086.75     
+R2              | 0.0494          | 0.0673         
+r               | 0.2242          | 0.2598         
+AIC             | 4902686.00      | 4905641.50     
+BIC             | 5172476.96      | 5593907.54     
+=============================================
+
+Preferred Model by AIC: Geodesic
+Preferred Model by BIC: Geodesic
+Saved outputs to runs/geodesic_sphere_test_30x300_e300

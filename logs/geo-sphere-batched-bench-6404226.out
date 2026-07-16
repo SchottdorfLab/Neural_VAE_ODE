@@ -1,0 +1,44 @@
+Adding package `miniconda/25.1.1.2` to your environment
+Using device: cuda
+Simulated 30 sphere trials: time=600, neurons=300
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 9760638.00
+Epoch 001 | NLL Sum: 9305886.00
+Epoch 002 | NLL Sum: 8927010.00
+Epoch 003 | NLL Sum: 8516182.00
+Epoch 004 | NLL Sum: 8181169.00
+Epoch 005 | NLL Sum: 7873974.00
+Epoch 006 | NLL Sum: 7580501.00
+Epoch 007 | NLL Sum: 7352470.00
+Epoch 008 | NLL Sum: 7141881.00
+Epoch 009 | NLL Sum: 6947408.00
+--------------------
+Epoch 000 | NLL Sum: 8619908.00
+Epoch 001 | NLL Sum: 6812890.50
+Epoch 002 | NLL Sum: 6599624.00
+Epoch 003 | NLL Sum: 6527353.00
+Epoch 004 | NLL Sum: 6481036.00
+Epoch 005 | NLL Sum: 6438668.00
+Epoch 006 | NLL Sum: 6395432.50
+Epoch 007 | NLL Sum: 6347920.00
+Epoch 008 | NLL Sum: 6292194.00
+Epoch 009 | NLL Sum: 6224679.00
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Final NLL       | 6947408.00      | 6224679.00     
+R2              | -0.4070         | -0.3001        
+r               | 0.0014          | -0.0014        
+AIC             | 13936942.00     | 12556826.00    
+BIC             | 14221332.72     | 13282337.61    
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Free Dynamics
+Saved outputs to runs/geodesic_sphere_trials_30x600_batched_benchmark

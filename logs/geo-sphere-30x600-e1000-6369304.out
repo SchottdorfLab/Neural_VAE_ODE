@@ -1,0 +1,9 @@
+Using device: cuda
+Simulated 30 sphere trials: time=600, neurons=300
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 9760638.00
+Epoch 010 | NLL Sum: 6776660.50
+Epoch 020 | NLL Sum: 5775834.50
+Epoch 030 | NLL Sum: 5394895.50

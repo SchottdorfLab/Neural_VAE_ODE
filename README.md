@@ -2,6 +2,23 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## July 16th, 9:38pm:
+- Think I'm going to call it a night and keep working on this tomorrow where I have more brainpower and durability to actually ask the right questions about the model.
+
+My thought right now: 
+The first try of the geodesic AE worked great. Because it got the neural data for everything, including the held-out trials, and all it had to do was to go back and compress it and reconstruct it and having the neural data reflect the actual shapes (I believe).
+
+Then, I tried a verison where it only got the start point. That got us a 0.06 R2. Why? Because it made it a first-order system. That's dumb. We need a second-order system. I only gave it initial point location, not the velocity. So, we need to give it the velocity and the initial point. 
+
+But how do we do this? When we have everything based on neural data? Is that neuron one, and then neuron two, or evolve them over a timepoint or something? I don't know, this is gibberish I suppose. But the geometric AE is optimized for neural data. Which is fine, I just need to figure out how to make it speak the same task. 
+
+Ongoing issue tomorrow is to see if the new version of the geometric AE(which is more similar to the geometric version, don't know how) does any better when it's actually a second-order system.
+
+```
+can we give the geodesic AE model the latent positon and the initial latent velocity? and have it solve from there? rerun when complteted. I would like it to be solving the same thing as the geodesic model as much as possible.
+```
+
+
 ## July 16th, 8:15pm:
 - So the problem is that we have a geodesic AE that really gets to cheat, because it *gets* the neural data and only has to compress and recompress.
 

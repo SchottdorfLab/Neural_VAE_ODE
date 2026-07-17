@@ -769,12 +769,13 @@ def evaluate_and_save(
         percentile=cfg_float(cfg, "event_metric_percentile", 99.0),
     )
 
+    eval_label = "heldout future" if bool(train_meta.get("strict_heldout", False)) else "heldout-fit"
     print(
-        f"Binned heldout-fit r {binned_test_metrics['r']:.4f} | R2 {binned_test_metrics['R2']:.4f} | "
+        f"Binned {eval_label} r {binned_test_metrics['r']:.4f} | R2 {binned_test_metrics['R2']:.4f} | "
         f"MIND_R2 {binned_test_metrics['MIND_R2']:.4f} | trial median {binned_test_metrics['MIND_R2_trial_median']:.4f}"
     )
     print(
-        f"Raw mapped heldout-fit r {raw_test_metrics['r']:.4f} | R2 {raw_test_metrics['R2']:.4f} | "
+        f"Raw mapped {eval_label} r {raw_test_metrics['r']:.4f} | R2 {raw_test_metrics['R2']:.4f} | "
         f"MIND_R2 {raw_test_metrics['MIND_R2']:.4f} | trial median {raw_test_metrics['MIND_R2_trial_median']:.4f}"
     )
 
@@ -826,7 +827,7 @@ def evaluate_and_save(
         data["x_test_proc"],
         xhat_test,
         out_dir / "binned_vs_recon_t0_15_n0_40.png",
-        "Geodesic v6 heldout-fit binned reconstruction",
+        f"Geodesic v6 {eval_label} binned reconstruction",
     )
     mind.save_embedding_plot(teacher["z_lm"], out_dir / "latent_manifold_mds.png")
 
@@ -840,6 +841,7 @@ def evaluate_and_save(
         "R2": raw_test_metrics["R2"],
         "r": raw_test_metrics["r"],
         "strict_heldout": bool(train_meta.get("strict_heldout", False)),
+        "evaluation_label": eval_label,
     }
     torch.save(final_metrics, out_dir / "final_metrics.pt")
     metadata = {

@@ -76,6 +76,14 @@ def config_lines(cfg: Dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def initial_condition_mode(cfg: Dict[str, Any]) -> str:
+    return str(cfg.get("geodesic_initial_condition_mode", "fitted")).lower().strip()
+
+
+def uses_start_encoder(cfg: Dict[str, Any]) -> bool:
+    return initial_condition_mode(cfg) in {"start", "start_point", "start_encoder", "initial_state", "future"}
+
+
 class MetricNetwork(nn.Module):
     """Positive-definite latent metric g(z) = L(z)L(z)^T + eps I."""
 
@@ -248,6 +256,65 @@ class GeodesicMindAE(nn.Module):
         return fhat, z_seq
 
 
+class StartConditionGeodesicMindAE(nn.Module):
+    """Geodesic rollout whose only neural input is the first feature vector."""
+
+    def __init__(
+        self,
+        feature_dim: int,
+        latent_dim: int,
+        sensory_dim: int,
+        hidden: int,
+        layers: int,
+        dropout: float,
+        metric_hidden: int,
+        metric_eps: float,
+        friction_init: float,
+        log_tau_init: float,
+        log_tau_min: float,
+        log_tau_max: float,
+        start_hidden: int,
+        start_layers: int,
+    ):
+        super().__init__()
+        self.latent_dim = int(latent_dim)
+        self.log_tau_min = float(log_tau_min)
+        self.log_tau_max = float(log_tau_max)
+        self.metric = MetricNetwork(latent_dim, metric_hidden, metric_eps)
+        self.dynamics = GeodesicDynamics(self.metric, sensory_dim, friction_init)
+        self.decoder = GeodesicMindAE._mlp(latent_dim, feature_dim, hidden, layers, dropout)
+        self.start_encoder = GeodesicMindAE._mlp(feature_dim, 2 * latent_dim, start_hidden, start_layers, dropout)
+        self.log_tau = nn.Parameter(torch.tensor(float(log_tau_init)))
+
+    def encode_initial(self, start_features: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        initial = self.start_encoder(start_features)
+        z0, v0 = torch.chunk(initial, 2, dim=-1)
+        return z0, v0
+
+    def rollout(self, start_features: torch.Tensor, sensory_seq: torch.Tensor, dt_physical: float) -> torch.Tensor:
+        z, v = self.encode_initial(start_features)
+        log_tau = torch.clamp(self.log_tau, self.log_tau_min, self.log_tau_max)
+        dt = torch.as_tensor(float(dt_physical), dtype=z.dtype, device=z.device) * torch.exp(log_tau)
+        latents = []
+        for t in range(sensory_seq.shape[1]):
+            latents.append(z)
+            z, v = self.dynamics(z, v, dt, sensory_seq[:, t, :])
+        return torch.stack(latents, dim=1)
+
+    def forward(
+        self,
+        trial_rows: torch.Tensor,
+        sensory_seq: torch.Tensor,
+        start_features: torch.Tensor,
+        dt_physical: float = 1.0,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        del trial_rows
+        z_seq = self.rollout(start_features, sensory_seq, dt_physical)
+        flat = z_seq.reshape(-1, z_seq.shape[-1])
+        fhat = self.decoder(flat).reshape(z_seq.shape[0], z_seq.shape[1], -1)
+        return fhat, z_seq
+
+
 def build_sensory_sequences(cfg: Dict[str, Any], data: Dict[str, Any]) -> tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
     """Build train/test sensory tensors using the same trial resampling as v6."""
 
@@ -312,8 +379,11 @@ def build_fit_arrays(
 ) -> Dict[str, Any]:
     if data["sequences"] is None:
         raise ValueError("v6_geodesic_binned_raw_eval requires fixed trial sequences, not raw-frame mode.")
-    if not cfg_bool(cfg, "geodesic_fit_all_trials", True):
-        raise NotImplementedError("This Option B implementation fits z0/v0 for all trials. Set geodesic_fit_all_trials=true.")
+    if not cfg_bool(cfg, "geodesic_fit_all_trials", True) and not uses_start_encoder(cfg):
+        raise NotImplementedError(
+            "The fitted-z0/v0 Option B implementation fits z0/v0 for all trials. "
+            "Set geodesic_fit_all_trials=true, or set geodesic_initial_condition_mode=start_encoder."
+        )
 
     n_train, seq_len, raw_dim = data["x_train_proc"].shape
     n_test = data["x_test_proc"].shape[0]
@@ -359,9 +429,8 @@ def build_fit_arrays(
     }
 
 
-def make_model(cfg: Dict[str, Any], fit: Dict[str, Any], device: torch.device) -> GeodesicMindAE:
-    return GeodesicMindAE(
-        num_trials=fit["x_fit"].shape[0],
+def make_model(cfg: Dict[str, Any], fit: Dict[str, Any], device: torch.device) -> nn.Module:
+    common = dict(
         feature_dim=fit["feature_dim"],
         latent_dim=cfg_int(cfg, "latent_dim", 7),
         sensory_dim=fit["sensory_fit"].shape[-1],
@@ -370,11 +439,22 @@ def make_model(cfg: Dict[str, Any], fit: Dict[str, Any], device: torch.device) -
         dropout=cfg_float(cfg, "dropout", 0.0),
         metric_hidden=cfg_int(cfg, "geodesic_metric_hidden", 32),
         metric_eps=cfg_float(cfg, "geodesic_metric_eps", 1e-4),
-        init_scale=cfg_float(cfg, "geodesic_init_scale", 0.1),
         friction_init=cfg_float(cfg, "geodesic_friction_init", -2.0),
         log_tau_init=cfg_float(cfg, "geodesic_log_tau_init", 0.0),
         log_tau_min=cfg_float(cfg, "geodesic_log_tau_min", -5.0),
         log_tau_max=cfg_float(cfg, "geodesic_log_tau_max", 2.0),
+    )
+    if uses_start_encoder(cfg):
+        return StartConditionGeodesicMindAE(
+            **common,
+            start_hidden=cfg_int(cfg, "geodesic_start_encoder_hidden", cfg_int(cfg, "hidden", 256)),
+            start_layers=cfg_int(cfg, "geodesic_start_encoder_layers", cfg_int(cfg, "layers", 2)),
+        ).to(device)
+
+    return GeodesicMindAE(
+        num_trials=fit["x_fit"].shape[0],
+        **common,
+        init_scale=cfg_float(cfg, "geodesic_init_scale", 0.1),
     ).to(device)
 
 
@@ -383,7 +463,7 @@ def train_geodesic_model(
     data: Dict[str, Any],
     fit: Dict[str, Any],
     device: torch.device,
-) -> tuple[GeodesicMindAE, Dict[str, Any]]:
+) -> tuple[nn.Module, Dict[str, Any]]:
     model = make_model(cfg, fit, device)
 
     f_fit = torch.tensor(fit["f_fit"], dtype=torch.float32, device=device)
@@ -401,15 +481,19 @@ def train_geodesic_model(
 
     lr = cfg_float(cfg, "lr", 1e-3)
     ic_mult = cfg_float(cfg, "geodesic_initial_condition_lr_multiplier", 1.0)
-    ic_params = [model.z0, model.v0]
-    other_params = [p for name, p in model.named_parameters() if name not in {"z0", "v0"}]
-    opt = torch.optim.AdamW(
-        [
-            {"params": other_params, "lr": lr},
-            {"params": ic_params, "lr": lr * ic_mult},
-        ],
-        weight_decay=cfg_float(cfg, "weight_decay", 1e-5),
-    )
+    start_mode = isinstance(model, StartConditionGeodesicMindAE)
+    if start_mode:
+        opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=cfg_float(cfg, "weight_decay", 1e-5))
+    else:
+        ic_params = [model.z0, model.v0]
+        other_params = [p for name, p in model.named_parameters() if name not in {"z0", "v0"}]
+        opt = torch.optim.AdamW(
+            [
+                {"params": other_params, "lr": lr},
+                {"params": ic_params, "lr": lr * ic_mult},
+            ],
+            weight_decay=cfg_float(cfg, "weight_decay", 1e-5),
+        )
 
     epochs = cfg_int(cfg, "epochs", 100)
     batch_size = min(cfg_int(cfg, "geodesic_trial_batch_size", 8), fit["x_fit"].shape[0])
@@ -429,10 +513,12 @@ def train_geodesic_model(
     best_epoch = 0
     stale = 0
     history = []
+    strict_heldout = bool(start_mode and cfg_bool(cfg, "geodesic_strict_heldout", True))
+    fit_trial_count = fit["n_train_trials"] if strict_heldout else fit["x_fit"].shape[0]
 
     print(
         "Training GeodesicMindAE: "
-        f"fit_trials={fit['x_fit'].shape[0]}, seq_len={fit['seq_len']}, "
+        f"mode={initial_condition_mode(cfg)}, fit_trials={fit_trial_count}, seq_len={fit['seq_len']}, "
         f"feature_dim={fit['feature_dim']}, latent_dim={cfg_int(cfg, 'latent_dim', 7)}, "
         f"sensory_dim={fit['sensory_fit'].shape[-1]}, trial_batch={batch_size}"
     )
@@ -444,7 +530,7 @@ def train_geodesic_model(
 
     for epoch in range(1, epochs + 1):
         model.train()
-        order = rng.permutation(fit["x_fit"].shape[0])
+        order = rng.permutation(fit_trial_count)
         total = 0.0
         parts_sum = {
             "feature": 0.0,
@@ -459,7 +545,10 @@ def train_geodesic_model(
             rows_np = order[start:start + batch_size]
             rows = torch.tensor(rows_np, dtype=torch.long, device=device)
             opt.zero_grad(set_to_none=True)
-            fhat, zseq = model(rows, sensory_fit[rows], dt_physical)
+            if start_mode:
+                fhat, zseq = model(rows, sensory_fit[rows], f_fit[rows, 0, :], dt_physical)
+            else:
+                fhat, zseq = model(rows, sensory_fit[rows], dt_physical)
             loss_feature = F.mse_loss(fhat, f_fit[rows])
             loss_teacher = F.mse_loss(fhat, teacher_fit[rows])
             loss_z = F.mse_loss(zseq, z_teacher_fit[rows])
@@ -470,7 +559,11 @@ def train_geodesic_model(
             else:
                 loss_raw = torch.zeros((), dtype=torch.float32, device=device)
             loss_latent = torch.mean(zseq ** 2)
-            loss_velocity = torch.mean(model.v0[rows] ** 2)
+            if start_mode:
+                _, v0_batch = model.encode_initial(f_fit[rows, 0, :])
+                loss_velocity = torch.mean(v0_batch ** 2)
+            else:
+                loss_velocity = torch.mean(model.v0[rows] ** 2)
             loss = (
                 lambda_feature * loss_feature
                 + lambda_teacher * loss_teacher
@@ -528,17 +621,19 @@ def train_geodesic_model(
         "history": history,
         "best_epoch": int(best_epoch),
         "best_loss": float(best_loss),
-        "fit_all_trials": cfg_bool(cfg, "geodesic_fit_all_trials", True),
-        "strict_heldout": False,
+        "fit_all_trials": cfg_bool(cfg, "geodesic_fit_all_trials", True) and not strict_heldout,
+        "initial_condition_mode": initial_condition_mode(cfg),
+        "strict_heldout": strict_heldout,
     }
 
 
 def predict_geodesic_features(
-    model: GeodesicMindAE,
+    model: nn.Module,
     sensory: np.ndarray,
     device: torch.device,
     batch_size: int,
     dt_physical: float,
+    start_features: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     model.eval()
     params = list(model.parameters())
@@ -554,7 +649,13 @@ def predict_geodesic_features(
             rows = torch.tensor(rows_np, dtype=torch.long, device=device)
             sensory_t = torch.tensor(sensory[rows_np], dtype=torch.float32, device=device)
             with torch.enable_grad():
-                fhat, zseq = model(rows, sensory_t, dt_physical)
+                if isinstance(model, StartConditionGeodesicMindAE):
+                    if start_features is None:
+                        raise ValueError("start_features are required for StartConditionGeodesicMindAE prediction.")
+                    start_t = torch.tensor(start_features[rows_np], dtype=torch.float32, device=device)
+                    fhat, zseq = model(rows, sensory_t, start_t, dt_physical)
+                else:
+                    fhat, zseq = model(rows, sensory_t, dt_physical)
             f_chunks.append(fhat.detach().cpu().numpy())
             z_chunks.append(zseq.detach().cpu().numpy())
     finally:
@@ -580,7 +681,7 @@ def evaluate_and_save(
     teacher: Dict[str, Any],
     fit: Dict[str, Any],
     sensory_meta: Dict[str, Any],
-    model: GeodesicMindAE,
+    model: nn.Module,
     train_meta: Dict[str, Any],
     device: torch.device,
 ) -> Dict[str, Any]:
@@ -591,6 +692,7 @@ def evaluate_and_save(
         device,
         pred_batch,
         cfg_float(cfg, "geodesic_dt", 1.0),
+        start_features=fit["f_fit"][:, 0, :] if isinstance(model, StartConditionGeodesicMindAE) else None,
     )
     fhat_train, fhat_test, zhat_train, zhat_test = split_predictions(fhat_fit, z_fit, fit)
     x_train_shape = data["x_train_proc"].shape
@@ -737,16 +839,20 @@ def evaluate_and_save(
         "raw_mapped_events": raw_event_metrics,
         "R2": raw_test_metrics["R2"],
         "r": raw_test_metrics["r"],
-        "strict_heldout": False,
+        "strict_heldout": bool(train_meta.get("strict_heldout", False)),
     }
     torch.save(final_metrics, out_dir / "final_metrics.pt")
     metadata = {
         "script": Path(__file__).name,
         "config_path": str(Path(args.config).resolve()),
         "data_path": str(data["data_path"]),
-        "model_type": "geodesic_v6_dr_style",
-        "initial_conditions": "fit_per_trial_z0_v0_for_train_and_heldout",
-        "strict_heldout": False,
+        "model_type": "geodesic_v6_start_encoder" if isinstance(model, StartConditionGeodesicMindAE) else "geodesic_v6_dr_style",
+        "initial_conditions": (
+            "first_feature_state_to_z0_v0_start_encoder"
+            if isinstance(model, StartConditionGeodesicMindAE)
+            else "fit_per_trial_z0_v0_for_train_and_heldout"
+        ),
+        "strict_heldout": bool(train_meta.get("strict_heldout", False)),
         "data_mode": "position_binned_train_raw_frame_eval",
         "train_alignment": str(cfg.get("sequence_alignment", "position")),
         "sequence_length": int(data["x_train_proc"].shape[1]),
@@ -772,10 +878,16 @@ def evaluate_and_save(
         "training": train_meta,
         "metrics": final_metrics,
         "method_note": (
-            "Dr-style geodesic v6: each trial has fitted latent z0/v0; the shared metric, "
-            "time scale, friction, sensory force, and decoder are fit across all trials. "
-            "Because heldout trials also have fitted initial conditions, heldout-fit "
-            "metrics are reconstruction diagnostics rather than strict trial-generalization metrics."
+            "Start-encoder geodesic v6: the model receives only the first PCA feature state for each "
+            "trial, maps it to z0/v0, then rolls the whole trajectory forward with shared geodesic RK4 "
+            "dynamics and a shared decoder. Heldout metrics are strict future-prediction diagnostics."
+            if isinstance(model, StartConditionGeodesicMindAE)
+            else (
+                "Dr-style geodesic v6: each trial has fitted latent z0/v0; the shared metric, "
+                "time scale, friction, sensory force, and decoder are fit across all trials. "
+                "Because heldout trials also have fitted initial conditions, heldout-fit "
+                "metrics are reconstruction diagnostics rather than strict trial-generalization metrics."
+            )
         ),
     }
     (out_dir / "run_metadata.json").write_text(json.dumps(mind.jsonable(metadata), indent=2) + "\n")

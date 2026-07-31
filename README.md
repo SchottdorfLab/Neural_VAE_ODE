@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## July 30th, 10:22pm:
+- Starting this up again. Watch out, world. 
+
 ## July 16th, 9:38pm:
 - Think I'm going to call it a night and keep working on this tomorrow where I have more brainpower and durability to actually ask the right questions about the model.
 

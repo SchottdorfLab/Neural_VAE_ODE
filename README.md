@@ -2,6 +2,90 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## July 30th, 10:22pm:
+- Starting this up again. Watch out, world. 
+
+## July 16th, 9:38pm:
+- Think I'm going to call it a night and keep working on this tomorrow where I have more brainpower and durability to actually ask the right questions about the model.
+
+My thought right now: 
+The first try of the geodesic AE worked great. Because it got the neural data for everything, including the held-out trials, and all it had to do was to go back and compress it and reconstruct it and having the neural data reflect the actual shapes (I believe).
+
+Then, I tried a verison where it only got the start point. That got us a 0.06 R2. Why? Because it made it a first-order system. That's dumb. We need a second-order system. I only gave it initial point location, not the velocity. So, we need to give it the velocity and the initial point. 
+
+But how do we do this? When we have everything based on neural data? Is that neuron one, and then neuron two, or evolve them over a timepoint or something? I don't know, this is gibberish I suppose. But the geometric AE is optimized for neural data. Which is fine, I just need to figure out how to make it speak the same task. 
+
+Ongoing issue tomorrow is to see if the new version of the geometric AE(which is more similar to the geometric version, don't know how) does any better when it's actually a second-order system.
+
+```
+can we give the geodesic AE model the latent positon and the initial latent velocity? and have it solve from there? rerun when complteted. I would like it to be solving the same thing as the geodesic model as much as possible.
+```
+
+
+## July 16th, 8:15pm:
+- So the problem is that we have a geodesic AE that really gets to cheat, because it *gets* the neural data and only has to compress and recompress.
+
+*Note to self: does it work in the same dimensionality? Because I think it might be using 7 dimensions to compress to? Which might be, like, an expansion rather than a compression, haha?* 
+
+- So, I'm thinking---what if I made a version of that same model that gets the same kind of info the geometric model gets? One trajectory, no neural data, and you predict it all. Could that happen? I don't know. I'm trying to have it written now and tested tonight.
+
+I want to ask the same question and give both models the same data, but have them approach the problem in different ways.
+
+The key takeaway here is that if the geodesic AE performs better here (the modified version, granted, the kind that doesn't get the neural data when it is predicting the final trajectories and only gets the first point of data) then we have a better solution---weirdly---than just computing Christoffel symbols. Fundamentally, this doesn't make a lot of sense to me. Why wouldn't using the same geometric assumptions that we went in with---Christoffel symbols (unconstrained, granted) and all of that kind of same architecture not give you the same thing on the backend? I, for one, am highly confused. So I've sent a bunch of messages to Dr. Schottdorf. Fingers crossed, reader.
+
+Also, in the backend, I have six different hyperparameter tests going on right now. But I fear they will validate what I'm already finding---which is that the model is just plain computing things wrong. I think it's a fundamental issue. I think it's with what we're giving our poor model. Thank goodness it's Dr Schottdorf's code and not mine. Even with that, I still feel like I could've messed something up. Where? I have no idea.
+
+Plus, I'm also rerunning a version of the best performing AE version on time, not position (as per Dr. Schottdorf saying hey weirdo, why'd you do that when it's a t-maze. Why would you do that?) Granted, the scores between the two last time I checked were practically the same. Which is weird. Because wouldn't you think that the right and left would make something different? Neurally? I don't know, so I have to check again when I have the models rerun to really make sure I didn't vary the configs in some way.
+
+## July 16th, 7:33pm:
+I ran a test of the geometric AE on the simulated sphere data. It does good. As seen below: 
+### v6 Geometric AE on Simulated Sphere Data
+
+![Latent manifold MDS](runs/v6_sphere_time_30x600/latent_manifold_mds.png)
+
+![Manifold reconstruction versus real trajectories](runs/v6_sphere_time_30x600/sphere_reconstruction_3d_overlay.png)
+
+Now, granted, you may be wondering: hey Kathleen, what is the geometric AE? What a wonderful question, me!
+
+Okay. Here's the strat. 
+
+Haha sike. I'm getting dinner. I'll explain later.
+
+But here are a couple of useful questions and answers about how the geodesic AE gets a better time as compared to the free/geodesic Christoffel version. 
+
+**How does it do so much better on reconstruction?** 
+The world is sooo much easier for the geometric AE. Why? Because it gets current neural state xt as input. All it does it reconstruct each observed state after compressing it. 
+
+In contrast, the geodesic model only gets initial conditions and has to generate the whole trajectory through dynamics. 
+
+**What does this ability of the geometric AE to reconstruct actually tell us about the geometric AE? that it can recover geometric trajectories of a circle well off neural data?**
+Specifically what I'm thinking is like okay, the geometric AE is really great at prediting 
+
+**when we're testing the geometric AE, do we test it to make it reconstruct trajectories it hasn't seen before?**
+Yes! It is tested on trajectories it didn't train on. BUT it recieves each neural state xt as input. It's not just using the first point and then predicting future trajectories based on that like the geodesic model. 
+
+```
+total trajectories: 24
+train trajectories: 22
+heldout trajectories: 2
+heldout fraction: ~8.3%
+```
+
+```
+Heldout raw-mapped R²: 0.99993
+Heldout r:             0.99997
+Heldout angular error: mean 0.231 degrees
+```
+
+Why is stuff different? Because it sees each heldout neural state x_t as input. The question the geometric AE answers is "can the AE compress/reconstuct neural states from unseen trajectories?" 
+
+**so what question is the geodesic model answering?**
+It's answering this question: "can the whole neural trajectory be explained as motion along geodesics in a learned latent geometry?" 
+
+So, like, the model is trying to figure out "hey, if I know the initial latent position and velocity, can geodesic motion through a latent geometry generate the observed neural sequence?" 
+
+More questions: so the geodesic AE is saying hey, using this neural data, I can compress it and reconstruct it and also, when I do this, it's cool because from the neural data I can reconstruct the real trajectory. When the neurons fire for location, I can reconstruct that. 
+
 ## July 16th, 7:16pm:
 - I think that perhaps I've done a poor job of keeping notes. I also, generally, have not been working on this as intently as I could, but I would like to note that I *have* been working on it, but I haven't been taking notes.
 - We have a grand strategy, reader. Dr. Schottdorf has code that computes geodesics to find a space. It's not incredibly complicated, and the idea behind it is using Christoffel symbols/Riemannian geometry stuff to find the geometry of a circle and accurately reconstruct the trajectories in a 3D space.
@@ -9,6 +93,7 @@
 - These "great circles," we call them, make up the basis of our training set. These are the geometries that our model is trained on. 
 - This model, using only christoffel symbols and a knowledge of the metric tensor (which is not constrained to the metric tensor of a circle) is supposed to reconstruct, with near-perfect accuracy, the trajectories on the circle. 
 - The problem is the following. I have integrated my messages to Dr. Schottdorf here, because I am too lazy to retype it all. I've included it in a code block. Enjoy.
+
 ```
 Kathleen  [6:15 PM]
 Sorry I've been so offline, surgery recovery went great, then went south a couple of days ago. I pulled the latest logs.

@@ -1,0 +1,135 @@
+# Strict future-prediction geodesic v6 on the same synthetic sphere trials used
+# in runs/geodesic_sphere_trials_full.
+#
+# Unlike the fitted-z0/v0 Dr-style mode, this model receives only the first
+# PCA feature state of each trial, predicts z0/v0 from that start state, and
+# rolls the whole trajectory forward with shared geodesic RK4 dynamics.
+
+data_path = runs/geodesic_sphere_trials_full/v6_input_sphere_time.npz
+out_dir = runs/v6_geodesic_start_future_sphere_24x80
+seed = 42
+device = auto
+
+# Match source dataset exactly: 24 trajectories, 80 frames each.
+trial_len_s = 8
+fps = 10
+min_frames = 10
+drop_first_trials = 0
+sequence_alignment = time
+normalize_time = true
+position_normalize = true
+position_cumulative_max = true
+
+# Heldout trial split.
+mind_style_eval_all = false
+mind_test_frac = 0.10
+mind_split_seed = 42
+
+# Preprocessing.
+filter_inactive_neurons = true
+inactive_neuron_threshold = 0.0
+filter_train_silent_neurons = false
+train_silent_threshold = 1e-7
+baseline_correct = false
+normalize_inputs = false
+normalize_eps = 1e-6
+use_pca = true
+pca_dim = 50
+pca_max_dim = 64
+
+# MIND geometry teacher/reference.
+latent_dim = 2
+landmark_count = 750
+filter_silent_frames_for_manifold = false
+silent_frame_threshold = 0.0
+silent_frame_score = sum
+event_aware_landmarks = true
+landmark_activity_fraction = 0.15
+landmark_transition_fraction = 0.15
+landmark_event_pool_multiplier = 5.0
+landmark_activity_score = max
+landmark_transition_score = max_abs
+transition_k = 16
+transition_weight = 0.0
+transition_probability_mode = local
+transition_exclude_self = true
+use_graph_geodesics = true
+transition_temperature = 1.0
+graph_sym = min
+embedding_mode = sammon
+sammon_iters = 500
+sammon_lr = 0.01
+lle_k = 16
+lle_ridge = 0.001
+
+# Nonparametric MIND decoder used as teacher target/reference.
+inverse_decoder = kernel
+inverse_k = 128
+kernel_bandwidth = 0.35
+decoder_target = feature
+
+# Geodesic latent AE future-prediction mode.
+epochs = 100
+lr = 0.001
+weight_decay = 0.00001
+hidden = 256
+layers = 2
+dropout = 0.0
+grad_clip = 5.0
+early_stopping_patience = 0
+early_stopping_min_delta = 0.00001
+log_every = 10
+
+geodesic_initial_condition_mode = start_encoder
+geodesic_strict_heldout = true
+geodesic_fit_all_trials = false
+geodesic_trial_batch_size = 8
+geodesic_predict_trial_batch_size = 8
+geodesic_decoder_hidden = 256
+geodesic_decoder_layers = 2
+geodesic_start_encoder_hidden = 256
+geodesic_start_encoder_layers = 2
+geodesic_metric_hidden = 32
+geodesic_metric_eps = 0.0001
+geodesic_friction_init = -2.0
+geodesic_log_tau_init = 0.0
+geodesic_log_tau_min = -5.0
+geodesic_log_tau_max = 2.0
+geodesic_dt = 1.0
+
+# No behavioral/sensory input: start state only, then autonomous geodesic rollout.
+geodesic_sensory_mode = zero
+geodesic_sensory_normalize = false
+geodesic_sensory_scale = 1.0
+
+# Losses.
+lambda_feature_recon = 1.0
+lambda_teacher_z = 0.0
+lambda_teacher_recon = 0.25
+lambda_raw_recon = 0.1
+lambda_geodesic_latent_reg = 0.0
+lambda_geodesic_velocity_reg = 0.0
+event_weight_alpha = 5.0
+event_weight_mode = dx
+event_weight_percentile = 95.0
+
+# Same reconstruction postprocess as v6.
+postprocess_reconstruction = true
+recon_clip_min = 0.0
+recon_clip_max = none
+recon_floor_mode = train_opt
+recon_activity_floor = 0.0
+recon_floor_max = 0.3
+recon_floor_steps = 61
+
+# Raw-frame mapped-back evaluation.
+raw_eval_filter_silent_frames = false
+raw_eval_plot_trial_index = 0
+raw_eval_plot_frame_start = 0
+raw_eval_plot_frame_end = 15
+raw_eval_plot_neuron_start = 0
+raw_eval_plot_neuron_end = 40
+
+# Diagnostics.
+event_metric_percentile = 99.0
+predict_batch_size = 4096

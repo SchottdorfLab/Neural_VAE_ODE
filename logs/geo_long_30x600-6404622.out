@@ -1,0 +1,245 @@
+Adding package `miniconda/25.1.1.2` to your environment
+Thu Jul 16 18:54:38 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   54C    P0             28W /   70W |       1MiB /  15360MiB |      8%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+True Tesla T4
+Using device: cuda
+Simulated 30 sphere trials: time=600, neurons=300
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 9760638.00
+Epoch 010 | NLL Sum: 6776661.00
+Epoch 020 | NLL Sum: 5775835.00
+Epoch 030 | NLL Sum: 5394895.00
+Epoch 040 | NLL Sum: 5222224.00
+Epoch 050 | NLL Sum: 5142295.00
+Epoch 060 | NLL Sum: 5108113.00
+Epoch 070 | NLL Sum: 5086313.50
+Epoch 080 | NLL Sum: 5059704.00
+Epoch 090 | NLL Sum: 5045960.50
+Epoch 100 | NLL Sum: 5046862.00
+Epoch 110 | NLL Sum: 5022806.00
+Epoch 120 | NLL Sum: 4992339.50
+Epoch 130 | NLL Sum: 4964875.00
+Epoch 140 | NLL Sum: 4940297.50
+Epoch 150 | NLL Sum: 4919919.00
+Epoch 160 | NLL Sum: 4903929.00
+Epoch 170 | NLL Sum: 4890883.00
+Epoch 180 | NLL Sum: 4879387.00
+Epoch 190 | NLL Sum: 4869395.00
+Epoch 200 | NLL Sum: 4860710.00
+Epoch 210 | NLL Sum: 4853849.00
+Epoch 220 | NLL Sum: 4846035.00
+Epoch 230 | NLL Sum: 4840671.00
+Epoch 240 | NLL Sum: 4834065.00
+Epoch 250 | NLL Sum: 4830130.00
+Epoch 260 | NLL Sum: 4823929.50
+Epoch 270 | NLL Sum: 4820552.00
+Epoch 280 | NLL Sum: 4814895.00
+Epoch 290 | NLL Sum: 4811032.50
+Epoch 300 | NLL Sum: 4807309.00
+Epoch 310 | NLL Sum: 4803886.50
+Epoch 320 | NLL Sum: 4799333.50
+Epoch 330 | NLL Sum: 4795928.00
+Epoch 340 | NLL Sum: 4792580.50
+Epoch 350 | NLL Sum: 4789214.00
+Epoch 360 | NLL Sum: 4785983.00
+Epoch 370 | NLL Sum: 4783105.50
+Epoch 380 | NLL Sum: 4779490.50
+Epoch 390 | NLL Sum: 4777155.00
+Epoch 400 | NLL Sum: 4772491.00
+Epoch 410 | NLL Sum: 4770913.00
+Epoch 420 | NLL Sum: 4766520.50
+Epoch 430 | NLL Sum: 4764834.50
+Epoch 440 | NLL Sum: 4759681.00
+Epoch 450 | NLL Sum: 4758880.00
+Epoch 460 | NLL Sum: 4754110.00
+Epoch 470 | NLL Sum: 4749192.50
+Epoch 480 | NLL Sum: 4750874.00
+Epoch 490 | NLL Sum: 4748119.00
+Epoch 500 | NLL Sum: 4740102.50
+Epoch 510 | NLL Sum: 4741645.00
+Epoch 520 | NLL Sum: 4732259.50
+Epoch 530 | NLL Sum: 4730776.00
+Epoch 540 | NLL Sum: 4728257.00
+Epoch 550 | NLL Sum: 4730008.50
+Epoch 560 | NLL Sum: 4721932.50
+Epoch 570 | NLL Sum: 4717481.50
+Epoch 580 | NLL Sum: 4711239.00
+Epoch 590 | NLL Sum: 4706917.00
+Epoch 600 | NLL Sum: 4707034.00
+Epoch 610 | NLL Sum: 4700643.50
+Epoch 620 | NLL Sum: 4697225.00
+Epoch 630 | NLL Sum: 4695480.00
+Epoch 640 | NLL Sum: 4690267.50
+Epoch 650 | NLL Sum: 4692106.00
+Epoch 660 | NLL Sum: 4687203.50
+Epoch 670 | NLL Sum: 4681940.00
+Epoch 680 | NLL Sum: 4682117.00
+Epoch 690 | NLL Sum: 4678586.00
+Epoch 700 | NLL Sum: 4678783.00
+Epoch 710 | NLL Sum: 4674264.00
+Epoch 720 | NLL Sum: 4674355.00
+Epoch 730 | NLL Sum: 4667411.50
+Epoch 740 | NLL Sum: 4716939.00
+Epoch 750 | NLL Sum: 4665077.50
+Epoch 760 | NLL Sum: 4667268.50
+Epoch 770 | NLL Sum: 4683629.50
+Epoch 780 | NLL Sum: 4663221.00
+Epoch 790 | NLL Sum: 4662074.50
+Epoch 800 | NLL Sum: 4682108.50
+Epoch 810 | NLL Sum: 4656631.50
+Epoch 820 | NLL Sum: 4676907.50
+Epoch 830 | NLL Sum: 4657080.00
+Epoch 840 | NLL Sum: 4657864.00
+Epoch 850 | NLL Sum: 4662465.00
+Epoch 860 | NLL Sum: 4651723.00
+Epoch 870 | NLL Sum: 4653234.00
+Epoch 880 | NLL Sum: 4673744.00
+Epoch 890 | NLL Sum: 4646369.00
+Epoch 900 | NLL Sum: 4647863.00
+Epoch 910 | NLL Sum: 4643244.00
+Epoch 920 | NLL Sum: 4640872.00
+Epoch 930 | NLL Sum: 4637664.00
+Epoch 940 | NLL Sum: 4636407.00
+Epoch 950 | NLL Sum: 4633751.00
+Epoch 960 | NLL Sum: 4633560.50
+Epoch 970 | NLL Sum: 4630407.00
+Epoch 980 | NLL Sum: 4630955.00
+Epoch 990 | NLL Sum: 4627992.00
+--------------------
+Epoch 000 | NLL Sum: 8619908.00
+Epoch 010 | NLL Sum: 6143352.00
+Epoch 020 | NLL Sum: 5494099.00
+Epoch 030 | NLL Sum: 5170670.00
+Epoch 040 | NLL Sum: 5050182.00
+Epoch 050 | NLL Sum: 5006863.00
+Epoch 060 | NLL Sum: 4980684.50
+Epoch 070 | NLL Sum: 4956491.00
+Epoch 080 | NLL Sum: 4927536.00
+Epoch 090 | NLL Sum: 4911991.00
+Epoch 100 | NLL Sum: 4899856.00
+Epoch 110 | NLL Sum: 4894796.00
+Epoch 120 | NLL Sum: 4880997.00
+Epoch 130 | NLL Sum: 4876877.00
+Epoch 140 | NLL Sum: 4853482.00
+Epoch 150 | NLL Sum: 4870509.00
+Epoch 160 | NLL Sum: 4864421.00
+Epoch 170 | NLL Sum: 4848067.50
+Epoch 180 | NLL Sum: 4845277.00
+Epoch 190 | NLL Sum: 4852005.00
+Epoch 200 | NLL Sum: 4833131.00
+Epoch 210 | NLL Sum: 4829306.00
+Epoch 220 | NLL Sum: 4846767.00
+Epoch 230 | NLL Sum: 4814071.00
+Epoch 240 | NLL Sum: 4834634.50
+Epoch 250 | NLL Sum: 4809421.50
+Epoch 260 | NLL Sum: 4806559.00
+Epoch 270 | NLL Sum: 4816821.00
+Epoch 280 | NLL Sum: 4788727.50
+Epoch 290 | NLL Sum: 4799305.00
+Epoch 300 | NLL Sum: 4829153.50
+Epoch 310 | NLL Sum: 4772001.00
+Epoch 320 | NLL Sum: 4858327.00
+Epoch 330 | NLL Sum: 4791398.00
+Epoch 340 | NLL Sum: 4782199.00
+Epoch 350 | NLL Sum: 4761944.00
+Epoch 360 | NLL Sum: 4800040.00
+Epoch 370 | NLL Sum: 4773849.00
+Epoch 380 | NLL Sum: 4730470.00
+Epoch 390 | NLL Sum: 4743424.00
+Epoch 400 | NLL Sum: 4715091.00
+Epoch 410 | NLL Sum: 4710737.00
+Epoch 420 | NLL Sum: 4698612.00
+Epoch 430 | NLL Sum: 4688303.50
+Epoch 440 | NLL Sum: 4676680.50
+Epoch 450 | NLL Sum: 4654272.00
+Epoch 460 | NLL Sum: 4763711.50
+Epoch 470 | NLL Sum: 4656036.00
+Epoch 480 | NLL Sum: 4647578.50
+Epoch 490 | NLL Sum: 4629141.50
+Epoch 500 | NLL Sum: 4630781.00
+Epoch 510 | NLL Sum: 4689301.00
+Epoch 520 | NLL Sum: 4654901.00
+Epoch 530 | NLL Sum: 4615190.00
+Epoch 540 | NLL Sum: 4723848.00
+Epoch 550 | NLL Sum: 4734502.00
+Epoch 560 | NLL Sum: 4631644.50
+Epoch 570 | NLL Sum: 4611918.00
+Epoch 580 | NLL Sum: 4604067.50
+Epoch 590 | NLL Sum: 4628556.50
+Epoch 600 | NLL Sum: 4585517.50
+Epoch 610 | NLL Sum: 4645664.00
+Epoch 620 | NLL Sum: 4563056.50
+Epoch 630 | NLL Sum: 4831740.00
+Epoch 640 | NLL Sum: 4585580.00
+Epoch 650 | NLL Sum: 4651223.00
+Epoch 660 | NLL Sum: 4565597.00
+Epoch 670 | NLL Sum: 4528949.00
+Epoch 680 | NLL Sum: 4606869.00
+Epoch 690 | NLL Sum: 4640033.00
+Epoch 700 | NLL Sum: 4548660.50
+Epoch 710 | NLL Sum: 4508516.50
+Epoch 720 | NLL Sum: 4653668.00
+Epoch 730 | NLL Sum: 4525627.00
+Epoch 740 | NLL Sum: 4721841.00
+Epoch 750 | NLL Sum: 4512268.50
+Epoch 760 | NLL Sum: 4606974.00
+Epoch 770 | NLL Sum: 4584097.00
+Epoch 780 | NLL Sum: 4502277.50
+Epoch 790 | NLL Sum: 4560830.00
+Epoch 800 | NLL Sum: 4508212.00
+Epoch 810 | NLL Sum: 4618392.00
+Epoch 820 | NLL Sum: 4480907.00
+Epoch 830 | NLL Sum: 4491599.00
+Epoch 840 | NLL Sum: 4492314.00
+Epoch 850 | NLL Sum: 4458319.50
+Epoch 860 | NLL Sum: 4460407.00
+Epoch 870 | NLL Sum: 4450224.00
+Epoch 880 | NLL Sum: 4454355.00
+Epoch 890 | NLL Sum: 4459111.00
+Epoch 900 | NLL Sum: 4435697.00
+Epoch 910 | NLL Sum: 4428067.00
+Epoch 920 | NLL Sum: 4431911.00
+Epoch 930 | NLL Sum: 4416666.00
+Epoch 940 | NLL Sum: 4437957.00
+Epoch 950 | NLL Sum: 4423561.00
+Epoch 960 | NLL Sum: 4415601.00
+Epoch 970 | NLL Sum: 4421936.00
+Epoch 980 | NLL Sum: 4476074.00
+Epoch 990 | NLL Sum: 4425816.50
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Final NLL       | 4628303.50      | 4392949.00     
+R2              | 0.1392          | 0.2223         
+r               | 0.3747          | 0.4716         
+AIC             | 9298733.00      | 8893366.00     
+BIC             | 9583123.72      | 9618877.61     
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Geodesic
+Saved outputs to runs/geodesic_sphere_cfg2_30x600_e1000

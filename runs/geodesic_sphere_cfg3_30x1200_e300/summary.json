@@ -1,0 +1,30 @@
+{
+  "config": {
+    "num_trials": 30,
+    "N_neurons": 300,
+    "n_timepoints": 1200,
+    "kappa": 1.5,
+    "speed": 0.70710678,
+    "epochs": 300,
+    "lr": 0.001,
+    "device": "cuda"
+  },
+  "geodesic": {
+    "params": 21063,
+    "final_nll": 9660284.0,
+    "R2": 0.06181347370147705,
+    "r": 0.2500960216627516,
+    "AIC": 19362694.0,
+    "BIC": 19661684.479105584
+  },
+  "free": {
+    "params": 53734,
+    "final_nll": 9583207.0,
+    "R2": 0.08064275979995728,
+    "r": 0.2856965185896234,
+    "AIC": 19273882.0,
+    "BIC": 20036639.176293004
+  },
+  "preferred_by_AIC": "Free Dynamics",
+  "preferred_by_BIC": "Geodesic"
+}

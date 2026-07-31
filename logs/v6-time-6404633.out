@@ -1,0 +1,51 @@
+Adding package `miniconda/25.1.1.2` to your environment
+/home/4429/envs/odevae/bin/python
+Python 3.11.15
+Thu Jul 16 19:31:47 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   55C    P0             28W /   70W |       1MiB /  15360MiB |     10%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+True Tesla T4
+Device: cuda
+Loading data: /home/4429/projects/Neural_VAE_ODE/src/npz_e65_data/E65_data.npz
+Raw ROI: frames=7434, neurons=375
+MIND neuron filter: removed 18 globally silent neurons; kept 357 neurons.
+Built sequences: B=178, L=120, N=357
+Trial split: train=161, heldout=17 (0.096)
+PCA feature space: dim=50, explained_variance=0.7684
+Selected train landmarks: 750 of 19320 states (event_aware: activity=112, transition=112, coverage=526)
+Built MIND distances: max=7.1351, disconnected_replaced=0
+Embedded landmarks: Z=(750, 7), mode=sammon
+[001] train 0.04736 | val 0.03917 | feature 0.03729 | z 1.03157 | teacher 0.02885 | raw 0.02848 | event_bce 0.00000 | pos_geo 0.00000
+[025] train 0.00524 | val 0.00528 | feature 0.00351 | z 5.40777 | teacher 0.00318 | raw 0.00932 | event_bce 0.00000 | pos_geo 0.00000
+[050] train 0.00361 | val 0.00379 | feature 0.00216 | z 8.20342 | teacher 0.00237 | raw 0.00856 | event_bce 0.00000 | pos_geo 0.00000
+[075] train 0.00300 | val 0.00319 | feature 0.00165 | z 9.96053 | teacher 0.00209 | raw 0.00828 | event_bce 0.00000 | pos_geo 0.00000
+[100] train 0.00268 | val 0.00284 | feature 0.00138 | z 11.01181 | teacher 0.00195 | raw 0.00812 | event_bce 0.00000 | pos_geo 0.00000
+[125] train 0.00242 | val 0.00261 | feature 0.00116 | z 11.67194 | teacher 0.00184 | raw 0.00800 | event_bce 0.00000 | pos_geo 0.00000
+[150] train 0.00225 | val 0.00243 | feature 0.00102 | z 12.05022 | teacher 0.00177 | raw 0.00792 | event_bce 0.00000 | pos_geo 0.00000
+[175] train 0.00214 | val 0.00232 | feature 0.00092 | z 12.32745 | teacher 0.00173 | raw 0.00786 | event_bce 0.00000 | pos_geo 0.00000
+[200] train 0.00205 | val 0.00223 | feature 0.00084 | z 12.42374 | teacher 0.00170 | raw 0.00782 | event_bce 0.00000 | pos_geo 0.00000
+[225] train 0.00196 | val 0.00213 | feature 0.00076 | z 12.53346 | teacher 0.00166 | raw 0.00778 | event_bce 0.00000 | pos_geo 0.00000
+[250] train 0.00192 | val 0.00208 | feature 0.00073 | z 12.49498 | teacher 0.00166 | raw 0.00776 | event_bce 0.00000 | pos_geo 0.00000
+[275] train 0.00186 | val 0.00204 | feature 0.00068 | z 12.51007 | teacher 0.00163 | raw 0.00773 | event_bce 0.00000 | pos_geo 0.00000
+[300] train 0.00183 | val 0.00198 | feature 0.00065 | z 12.46695 | teacher 0.00163 | raw 0.00771 | event_bce 0.00000 | pos_geo 0.00000
+Binned heldout r 0.7382 | R2 0.5438 | MIND_R2 0.5446 | trial median 0.5637
+Raw mapped heldout r 0.7303 | R2 0.5322 | MIND_R2 0.5329 | trial median 0.5496
+Raw mapped event capture top1 0.4825 | dyn ratio 0.7287
+Saved outputs to /home/4429/projects/Neural_VAE_ODE/runs/v6_binned_raw_eval_ae_time_manual

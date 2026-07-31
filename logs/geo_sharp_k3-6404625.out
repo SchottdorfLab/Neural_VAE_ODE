@@ -1,0 +1,105 @@
+Adding package `miniconda/25.1.1.2` to your environment
+Thu Jul 16 18:54:46 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   51C    P0             28W /   70W |       1MiB /  15360MiB |     10%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+True Tesla T4
+Using device: cuda
+Simulated 30 sphere trials: time=600, neurons=300
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 16307278.00
+Epoch 010 | NLL Sum: 7836984.50
+Epoch 020 | NLL Sum: 3516173.50
+Epoch 030 | NLL Sum: 1186582.50
+Epoch 040 | NLL Sum: -166315.75
+Epoch 050 | NLL Sum: -1060154.75
+Epoch 060 | NLL Sum: -1535756.38
+Epoch 070 | NLL Sum: -1915959.25
+Epoch 080 | NLL Sum: -2291703.00
+Epoch 090 | NLL Sum: -2529669.00
+Epoch 100 | NLL Sum: -2679287.00
+Epoch 110 | NLL Sum: -2798067.25
+Epoch 120 | NLL Sum: -2913040.00
+Epoch 130 | NLL Sum: -2964105.75
+Epoch 140 | NLL Sum: -3004396.75
+Epoch 150 | NLL Sum: -3115360.00
+Epoch 160 | NLL Sum: -3162160.00
+Epoch 170 | NLL Sum: -3209158.00
+Epoch 180 | NLL Sum: -3248690.50
+Epoch 190 | NLL Sum: -3282592.00
+Epoch 200 | NLL Sum: -3317132.00
+Epoch 210 | NLL Sum: -3364042.50
+Epoch 220 | NLL Sum: -3399249.50
+Epoch 230 | NLL Sum: -3420111.75
+Epoch 240 | NLL Sum: -3372225.50
+Epoch 250 | NLL Sum: -3444941.50
+Epoch 260 | NLL Sum: -3508140.50
+Epoch 270 | NLL Sum: -3517961.25
+Epoch 280 | NLL Sum: -3583094.50
+Epoch 290 | NLL Sum: -3610090.75
+--------------------
+Epoch 000 | NLL Sum: 13881206.00
+Epoch 010 | NLL Sum: 7133795.00
+Epoch 020 | NLL Sum: 1701304.25
+Epoch 030 | NLL Sum: -1056132.00
+Epoch 040 | NLL Sum: -2209164.00
+Epoch 050 | NLL Sum: -2649169.75
+Epoch 060 | NLL Sum: -2942776.50
+Epoch 070 | NLL Sum: -3125501.00
+Epoch 080 | NLL Sum: -3268225.75
+Epoch 090 | NLL Sum: -3407652.50
+Epoch 100 | NLL Sum: -3528217.00
+Epoch 110 | NLL Sum: -3695450.50
+Epoch 120 | NLL Sum: -3872044.25
+Epoch 130 | NLL Sum: -3999228.00
+Epoch 140 | NLL Sum: -4090177.75
+Epoch 150 | NLL Sum: -4154522.00
+Epoch 160 | NLL Sum: -4231265.50
+Epoch 170 | NLL Sum: -4302666.00
+Epoch 180 | NLL Sum: -4388993.50
+Epoch 190 | NLL Sum: -4468742.00
+Epoch 200 | NLL Sum: -4550017.50
+Epoch 210 | NLL Sum: -4607458.00
+Epoch 220 | NLL Sum: -4578278.00
+Epoch 230 | NLL Sum: -4634399.00
+Epoch 240 | NLL Sum: -4597959.00
+Epoch 250 | NLL Sum: -4731770.00
+Epoch 260 | NLL Sum: -4775572.50
+Epoch 270 | NLL Sum: -4964614.50
+Epoch 280 | NLL Sum: -5043740.00
+Epoch 290 | NLL Sum: -4932223.50
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Final NLL       | -3639761.50     | -5174719.00    
+R2              | -0.0007         | 0.0666         
+r               | 0.0833          | 0.2588         
+AIC             | -7237397.00     | -10241970.00   
+BIC             | -6953006.28     | -9516458.39    
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Free Dynamics
+Saved outputs to runs/geodesic_sphere_cfg5_30x600_k3_e300

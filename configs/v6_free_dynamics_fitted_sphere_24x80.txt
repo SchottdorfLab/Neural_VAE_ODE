@@ -1,12 +1,12 @@
-# Dr-style fitted-initial-condition geodesic v6 on the same synthetic sphere
+# Fitted-initial-condition free-dynamics v6 AE on the same synthetic sphere
 # trials used in runs/geodesic_sphere_trials_full.
 #
-# This is the closest geodesic-AE analogue to the sandbox geodesic model:
-# each trial has fitted latent z0 and v0, while the metric/dynamics/decoder
-# are shared across trials.
+# This is the dynamics-AE comparison to the fitted geodesic-AE:
+# each trial has fitted latent z0 and v0, while the acceleration network,
+# decoder, and evaluation path are shared across trials.
 
 data_path = runs/geodesic_sphere_trials_full/v6_input_sphere_time.npz
-out_dir = runs/v6_geodesic_fitted_sphere_24x80
+out_dir = runs/v6_free_dynamics_fitted_sphere_24x80
 seed = 42
 device = auto
 
@@ -68,7 +68,7 @@ inverse_k = 128
 kernel_bandwidth = 0.35
 decoder_target = feature
 
-# Geodesic latent AE, fitted-z0/v0 mode.
+# Free latent dynamics AE, fitted-z0/v0 mode.
 epochs = 100
 lr = 0.001
 weight_decay = 0.00001
@@ -81,23 +81,22 @@ early_stopping_min_delta = 0.00001
 log_every = 10
 
 geodesic_initial_condition_mode = fitted
-geodesic_dynamics_mode = geodesic
+geodesic_dynamics_mode = free
 geodesic_fit_all_trials = true
 geodesic_trial_batch_size = 8
 geodesic_predict_trial_batch_size = 8
 geodesic_decoder_hidden = 256
 geodesic_decoder_layers = 2
-geodesic_metric_hidden = 32
-geodesic_metric_eps = 0.0001
+free_dynamics_hidden = 128
+free_dynamics_layers = 3
 geodesic_init_scale = 0.1
 geodesic_initial_condition_lr_multiplier = 1.0
-geodesic_friction_init = -2.0
 geodesic_log_tau_init = 0.0
 geodesic_log_tau_min = -5.0
 geodesic_log_tau_max = 2.0
 geodesic_dt = 1.0
 
-# No external input: autonomous geodesic rollout from z0/v0.
+# No external input: autonomous free-dynamics rollout from z0/v0.
 geodesic_sensory_mode = zero
 geodesic_sensory_normalize = false
 geodesic_sensory_scale = 1.0

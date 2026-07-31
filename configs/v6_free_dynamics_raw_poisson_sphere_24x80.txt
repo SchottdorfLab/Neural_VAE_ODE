@@ -1,12 +1,16 @@
-# Dr-style fitted-initial-condition geodesic v6 on the same synthetic sphere
-# trials used in runs/geodesic_sphere_trials_full.
+# Clean free-dynamics latent AE on the same synthetic sphere trials used in
+# runs/geodesic_sphere_trials_full.
 #
-# This is the closest geodesic-AE analogue to the sandbox geodesic model:
-# each trial has fitted latent z0 and v0, while the metric/dynamics/decoder
-# are shared across trials.
+# This removes the extra v6 geometric/MIND training constraints:
+# - no per-timepoint encoder
+# - fitted per-trial z0/v0
+# - shared free acceleration network
+# - shared decoder directly to neural rates
+# - Softplus rate output
+# - Poisson NLL reconstruction loss
 
 data_path = runs/geodesic_sphere_trials_full/v6_input_sphere_time.npz
-out_dir = runs/v6_geodesic_fitted_sphere_24x80
+out_dir = runs/v6_free_dynamics_raw_poisson_sphere_24x80
 seed = 42
 device = auto
 
@@ -25,7 +29,7 @@ mind_style_eval_all = false
 mind_test_frac = 0.10
 mind_split_seed = 42
 
-# Preprocessing.
+# Preprocessing: direct raw rates, no PCA/normalization.
 filter_inactive_neurons = true
 inactive_neuron_threshold = 0.0
 filter_train_silent_neurons = false
@@ -33,22 +37,15 @@ train_silent_threshold = 1e-7
 baseline_correct = false
 normalize_inputs = false
 normalize_eps = 1e-6
-use_pca = true
-pca_dim = 50
-pca_max_dim = 64
+use_pca = false
 
-# MIND geometry teacher/reference.
+# MIND teacher machinery is built for compatibility, but its losses are zero.
 latent_dim = 2
 landmark_count = 750
 filter_silent_frames_for_manifold = false
 silent_frame_threshold = 0.0
 silent_frame_score = sum
-event_aware_landmarks = true
-landmark_activity_fraction = 0.15
-landmark_transition_fraction = 0.15
-landmark_event_pool_multiplier = 5.0
-landmark_activity_score = max
-landmark_transition_score = max_abs
+event_aware_landmarks = false
 transition_k = 16
 transition_weight = 0.0
 transition_probability_mode = local
@@ -61,68 +58,57 @@ sammon_iters = 500
 sammon_lr = 0.01
 lle_k = 16
 lle_ridge = 0.001
-
-# Nonparametric MIND decoder used as teacher target/reference.
 inverse_decoder = kernel
 inverse_k = 128
 kernel_bandwidth = 0.35
 decoder_target = feature
 
-# Geodesic latent AE, fitted-z0/v0 mode.
+# Free latent dynamics AE.
 epochs = 100
 lr = 0.001
-weight_decay = 0.00001
-hidden = 256
-layers = 2
+weight_decay = 0.0
+hidden = 64
+layers = 1
 dropout = 0.0
-grad_clip = 5.0
+grad_clip = 1.0
 early_stopping_patience = 0
 early_stopping_min_delta = 0.00001
 log_every = 10
 
 geodesic_initial_condition_mode = fitted
-geodesic_dynamics_mode = geodesic
+geodesic_dynamics_mode = free
 geodesic_fit_all_trials = true
-geodesic_trial_batch_size = 8
-geodesic_predict_trial_batch_size = 8
-geodesic_decoder_hidden = 256
-geodesic_decoder_layers = 2
-geodesic_metric_hidden = 32
-geodesic_metric_eps = 0.0001
-geodesic_init_scale = 0.1
+geodesic_trial_batch_size = 24
+geodesic_predict_trial_batch_size = 24
+geodesic_decoder_hidden = 64
+geodesic_decoder_layers = 1
+free_dynamics_hidden = 128
+free_dynamics_layers = 3
+geodesic_init_scale = 1.0
 geodesic_initial_condition_lr_multiplier = 1.0
-geodesic_friction_init = -2.0
 geodesic_log_tau_init = 0.0
-geodesic_log_tau_min = -5.0
-geodesic_log_tau_max = 2.0
-geodesic_dt = 1.0
+geodesic_log_tau_min = 0.0
+geodesic_log_tau_max = 0.0
+geodesic_dt = 0.15906799
 
-# No external input: autonomous geodesic rollout from z0/v0.
+# No external input: autonomous free-dynamics rollout from z0/v0.
 geodesic_sensory_mode = zero
 geodesic_sensory_normalize = false
 geodesic_sensory_scale = 1.0
 
-# Losses.
+# Direct neural-rate objective.
+decoder_output_activation = softplus
+feature_loss = poisson_nll
+poisson_rate_eps = 1e-8
 lambda_feature_recon = 1.0
 lambda_teacher_z = 0.0
-lambda_teacher_recon = 0.25
-lambda_raw_recon = 0.1
+lambda_teacher_recon = 0.0
+lambda_raw_recon = 0.0
 lambda_geodesic_latent_reg = 0.0
 lambda_geodesic_velocity_reg = 0.0
-event_weight_alpha = 5.0
-event_weight_mode = dx
-event_weight_percentile = 95.0
 
-# Same reconstruction postprocess as v6.
-postprocess_reconstruction = true
-recon_clip_min = 0.0
-recon_clip_max = none
-recon_floor_mode = train_opt
-recon_activity_floor = 0.0
-recon_floor_max = 0.3
-recon_floor_steps = 61
-
-# Raw-frame mapped-back evaluation.
+# Do not alter predictions after decoding.
+postprocess_reconstruction = false
 raw_eval_filter_silent_frames = false
 raw_eval_plot_trial_index = 0
 raw_eval_plot_frame_start = 0

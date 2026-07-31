@@ -5,6 +5,8 @@
 ## July 30th, 10:22pm:
 - Starting this up again. Watch out, world. 
 
+What I want is a latent dynamics AE. What we previously had was a clever way of reconstructing neural states after seeing them. That's easy. We don't care. What we'd like to be able to do is to take the starting point, and the velocity, and go say hey, go out there and predict the rest of the trajectory. 
+
 ## July 16th, 9:38pm:
 - Think I'm going to call it a night and keep working on this tomorrow where I have more brainpower and durability to actually ask the right questions about the model.
 

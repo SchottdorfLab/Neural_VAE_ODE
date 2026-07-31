@@ -98,6 +98,9 @@ t_span = (0, float(os.environ.get("SPHERE_T_MAX", str(4 * np.pi))))
 t_eval = np.linspace(t_span[0], t_span[1], int(os.environ.get("SPHERE_N_TIME", "80")))
 out_dir = Path(os.environ.get("SPHERE_OUT_DIR", "runs/geodesic_sphere_trials")).expanduser()
 out_dir.mkdir(parents=True, exist_ok=True)
+model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "rk4").strip().lower()
+if model_solver not in {"rk4", "euler"}:
+    raise ValueError(f"Unknown SPHERE_MODEL_SOLVER={model_solver!r}; use 'rk4' or 'euler'.")
 
 # Tile the sphere with "place field"
 indices = np.arange(0, N_neurons, dtype=float) + 0.5
@@ -126,6 +129,7 @@ true_latents = np.stack(true_latents, axis=0)
 initial_conditions = np.stack(initial_conditions, axis=0)
 
 print(f"Simulated {num_trials} sphere trials: time={len(t_eval)}, neurons={N_neurons}")
+print(f"Model solver: {model_solver}")
 np.savez_compressed(
     out_dir / "synthetic_sphere_trials.npz",
     activities=activities,
@@ -227,13 +231,7 @@ class GeodesicDynamics(nn.Module):
                     Gamma[:, k, m, n] = term
         return Gamma
 
-    def forward(self, state, dt):
-        """
-        Performs one integration step (Euler) of the second-order ODE.
-        This produces the geodesic trajectory, given the Gamma/g
-        state: [x, v] where x and v are [batch, latent_dim]
-        """
-        x, v = state
+    def acceleration(self, x, v):
         Gamma = self.compute_christoffel(x)
         d = x.shape[1]
 
@@ -243,11 +241,41 @@ class GeodesicDynamics(nn.Module):
             for m in range(d):
                 for n in range(d):
                     a[:, k] -= Gamma[:, k, m, n] * v[:, m] * v[:, n]
+        return a
 
-        # Euler integration
+    def _euler_step(self, x, v, dt):
+        a = self.acceleration(x, v)
+
         v_next = v + a * dt
         x_next = x + v * dt
         return x_next, v_next
+
+    def _rk4_step(self, x, v, dt):
+        k1_v = self.acceleration(x, v)
+        k1_x = v
+
+        k2_v = self.acceleration(x + 0.5 * dt * k1_x, v + 0.5 * dt * k1_v)
+        k2_x = v + 0.5 * dt * k1_v
+
+        k3_v = self.acceleration(x + 0.5 * dt * k2_x, v + 0.5 * dt * k2_v)
+        k3_x = v + 0.5 * dt * k2_v
+
+        k4_v = self.acceleration(x + dt * k3_x, v + dt * k3_v)
+        k4_x = v + dt * k3_v
+
+        v_next = v + (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
+        x_next = x + (dt / 6.0) * (k1_x + 2 * k2_x + 2 * k3_x + k4_x)
+        return x_next, v_next
+
+    def forward(self, state, dt, solver="rk4"):
+        """
+        Performs one integration step of the second-order geodesic ODE.
+        state: [x, v] where x and v are [batch, latent_dim]
+        """
+        x, v = state
+        if solver == "euler":
+            return self._euler_step(x, v, dt)
+        return self._rk4_step(x, v, dt)
 
 
 class NeuralDecoder(nn.Module):
@@ -275,11 +303,12 @@ class InverseGeodesicModel(nn.Module):
     3. Neural decoder produces firing rates.
     -> Gradient-descent the whole thing
     """
-    def __init__(self, num_trials, latent_dim=2, n_neurons=300):
+    def __init__(self, num_trials, latent_dim=2, n_neurons=300, solver="rk4"):
         super().__init__()
         self.metric = MetricNetwork(latent_dim)
         self.dynamics = GeodesicDynamics(self.metric)
         self.decoder = NeuralDecoder(latent_dim, n_neurons)
+        self.solver = solver
 
         # Treat the initial states as learnable parameters, one per trial.
         self.x0 = nn.Parameter(torch.randn(num_trials, latent_dim))
@@ -308,7 +337,7 @@ class InverseGeodesicModel(nn.Module):
         # leading tensor dimension is only a compute batch.
         for _ in range(seq_len):
             latents.append(x)
-            x, v = self.dynamics((x, v), dt)
+            x, v = self.dynamics((x, v), dt, solver=self.solver)
 
         latents = torch.stack(latents, dim=1)  # [batch, seq_len, latent_dim]
 
@@ -337,27 +366,49 @@ class FreeDynamics(nn.Module):
             nn.Linear(hidden_dim, latent_dim),
         )
 
-    def forward(self, state, dt):
-        """
-        Performs one Euler integration step using unconstrained neural dynamics.
-        """
-        x, v = state
+    def acceleration(self, x, v):
         state_vec = torch.cat([x, v], dim=-1)  # Shape: [batch, latent_dim * 2]
+        return self.net(state_vec)
 
-        # Free acceleration prediction
-        a = self.net(state_vec)
-
-        # Euler integration
+    def _euler_step(self, x, v, dt):
+        a = self.acceleration(x, v)
         v_next = v + a * dt
         x_next = x + v * dt
         return x_next, v_next
 
+    def _rk4_step(self, x, v, dt):
+        k1_v = self.acceleration(x, v)
+        k1_x = v
+
+        k2_v = self.acceleration(x + 0.5 * dt * k1_x, v + 0.5 * dt * k1_v)
+        k2_x = v + 0.5 * dt * k1_v
+
+        k3_v = self.acceleration(x + 0.5 * dt * k2_x, v + 0.5 * dt * k2_v)
+        k3_x = v + 0.5 * dt * k2_v
+
+        k4_v = self.acceleration(x + dt * k3_x, v + dt * k3_v)
+        k4_x = v + dt * k3_v
+
+        v_next = v + (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
+        x_next = x + (dt / 6.0) * (k1_x + 2 * k2_x + 2 * k3_x + k4_x)
+        return x_next, v_next
+
+    def forward(self, state, dt, solver="rk4"):
+        """
+        Performs one integration step using unconstrained neural dynamics.
+        """
+        x, v = state
+        if solver == "euler":
+            return self._euler_step(x, v, dt)
+        return self._rk4_step(x, v, dt)
+
 
 class InverseFreeModel(nn.Module):
-    def __init__(self, num_trials, latent_dim=2, n_neurons=300):
+    def __init__(self, num_trials, latent_dim=2, n_neurons=300, solver="rk4"):
         super().__init__()
         self.dynamics = FreeDynamics(latent_dim)
         self.decoder = NeuralDecoder(latent_dim, n_neurons)
+        self.solver = solver
 
         # Learnable initial conditions, one per trial.
         self.x0 = nn.Parameter(torch.randn(num_trials, latent_dim))
@@ -381,7 +432,7 @@ class InverseFreeModel(nn.Module):
 
         for _ in range(seq_len):
             latents.append(x)
-            x, v = self.dynamics((x, v), dt)
+            x, v = self.dynamics((x, v), dt, solver=self.solver)
 
         latents = torch.stack(latents, dim=1)
         flat_latents = latents.reshape(-1, latents.shape[-1])
@@ -500,8 +551,8 @@ epochs = int(os.environ.get("SPHERE_EPOCHS", "60"))
 lr = float(os.environ.get("SPHERE_LR", "0.001"))
 
 # Init models
-model_geo = InverseGeodesicModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=N_neurons).to(device)
-model_free = InverseFreeModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=N_neurons).to(device)
+model_geo = InverseGeodesicModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=N_neurons, solver=model_solver).to(device)
+model_free = InverseFreeModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=N_neurons, solver=model_solver).to(device)
 
 params_geo = count_parameters(model_geo)
 params_free = count_parameters(model_free)
@@ -553,6 +604,7 @@ summary = {
         "epochs": epochs,
         "lr": lr,
         "device": str(device),
+        "model_solver": model_solver,
     },
     "geodesic": {"params": params_geo, "final_nll": nll_geo, "R2": r2_geo, "r": r_geo, "AIC": aic_geo, "BIC": bic_geo},
     "free": {"params": params_free, "final_nll": nll_free, "R2": r2_free, "r": r_free, "AIC": aic_free, "BIC": bic_free},

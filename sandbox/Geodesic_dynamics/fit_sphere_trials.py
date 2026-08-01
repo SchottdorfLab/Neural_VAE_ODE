@@ -177,11 +177,14 @@ class MetricNetwork(nn.Module):
         # Construct lower triangular matrix L
         L = torch.zeros(batch_size, self.latent_dim, self.latent_dim, device=x.device)
 
-        # For d=2, indices are: L11, L21, L22
-        # Exponentiate the diagonal to ensure positivity
-        L[:, 0, 0] = torch.exp(out[:, 0])
-        L[:, 1, 0] = out[:, 1]
-        L[:, 1, 1] = torch.exp(out[:, 2])
+        # Fill the Cholesky factor row by row. For d=2 this preserves the
+        # original ordering: L11, L21, L22.
+        idx = 0
+        for i in range(self.latent_dim):
+            for j in range(i + 1):
+                value = torch.exp(out[:, idx]) if i == j else out[:, idx]
+                L[:, i, j] = value
+                idx += 1
 
         # g = L * L^T + eps * I
         I = torch.eye(self.latent_dim, device=x.device).unsqueeze(0)
@@ -544,7 +547,7 @@ def plot_latents(true_z, geo_z, free_z):
 
 
 # Parameters
-latent_dim = 2
+latent_dim = int(os.environ.get("SPHERE_LATENT_DIM", "2"))
 n_timepoints = len(t_eval)
 num_obs = num_trials * N_neurons * n_timepoints
 epochs = int(os.environ.get("SPHERE_EPOCHS", "60"))
@@ -599,6 +602,7 @@ summary = {
         "num_trials": num_trials,
         "N_neurons": N_neurons,
         "n_timepoints": n_timepoints,
+        "latent_dim": latent_dim,
         "kappa": kappa,
         "speed": speed,
         "epochs": epochs,

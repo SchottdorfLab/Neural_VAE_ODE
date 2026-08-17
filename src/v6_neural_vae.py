@@ -48,6 +48,18 @@ if str(SCRIPT_DIR) not in sys.path:
 import v6_mind_lle as mind  # noqa: E402
 
 
+EVENT_DECODER_MODES = {
+    "sparse_event",
+    "event",
+    "hurdle",
+    "sparse_event_residual",
+    "event_residual",
+    "residual_event",
+}
+RESIDUAL_EVENT_DECODER_MODES = {"sparse_event_residual", "event_residual", "residual_event"}
+SILENCE_GATED_DECODER_MODES = {"silence_gated", "silence_gate"}
+
+
 def cfg_float(cfg: Dict[str, Any], key: str, default: float) -> float:
     return float(cfg.get(key, default))
 
@@ -92,18 +104,17 @@ class MindDistilledAE(nn.Module):
         self.encoder = self._mlp(feature_dim, latent_dim, hidden, layers, dropout)
         self.decoder = self._mlp(latent_dim, feature_dim, hidden, layers, dropout)
         self.event_logits: nn.Module | None = None
+        self.silence_logits: nn.Module | None = None
         self.event_amplitude: nn.Module | None = None
-        if self.raw_decoder_mode in {
-            "sparse_event",
-            "event",
-            "hurdle",
-            "sparse_event_residual",
-            "event_residual",
-            "residual_event",
-        }:
+        if self.raw_decoder_mode in EVENT_DECODER_MODES:
             if raw_dim is None:
                 raise ValueError("raw_dim is required for sparse_event raw decoding.")
             self.event_logits = self._mlp(latent_dim, raw_dim, hidden, layers, dropout)
+            self.event_amplitude = self._mlp(latent_dim, raw_dim, hidden, layers, dropout)
+        elif self.raw_decoder_mode in SILENCE_GATED_DECODER_MODES:
+            if raw_dim is None:
+                raise ValueError("raw_dim is required for silence-gated raw decoding.")
+            self.silence_logits = self._mlp(latent_dim, raw_dim, hidden, layers, dropout)
             self.event_amplitude = self._mlp(latent_dim, raw_dim, hidden, layers, dropout)
 
     @staticmethod
@@ -135,13 +146,26 @@ class MindDistilledAE(nn.Module):
         logits = self.event_logits(z)
         amplitude = F.softplus(self.event_amplitude(z))
         event = torch.sigmoid(logits) * amplitude
-        if self.raw_decoder_mode in {"sparse_event_residual", "event_residual", "residual_event"}:
+        if self.raw_decoder_mode in RESIDUAL_EVENT_DECODER_MODES:
             if base_raw is None:
                 raise ValueError("base_raw is required for sparse event residual decoding.")
             xhat = torch.clamp(base_raw + event, min=0.0)
         else:
             xhat = event
         return xhat, logits, amplitude
+
+    def raw_silence_reconstruction(
+        self,
+        z: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Decode silence probability and event amplitude from one shared latent state."""
+        if self.silence_logits is None or self.event_amplitude is None:
+            raise RuntimeError("raw_silence_reconstruction called without a silence-gated decoder.")
+        silence_logits = self.silence_logits(z)
+        silence_probability = torch.sigmoid(silence_logits)
+        amplitude = F.softplus(self.event_amplitude(z))
+        xhat = (1.0 - silence_probability) * amplitude
+        return xhat, silence_logits, amplitude
 
 
 def set_torch_seed(seed: int) -> None:
@@ -245,6 +269,100 @@ def sparse_event_loss(
         "raw": float(loss_recon.detach().cpu()),
         "event_bce": float(loss_bce.detach().cpu()),
         "event_amp": float(loss_amp.detach().cpu()),
+        "silence_bce": 0.0,
+        "silence_amp": 0.0,
+        "silence_rate": 0.0,
+    }
+
+
+def silence_gated_loss(
+    xhat: torch.Tensor,
+    silence_logits: torch.Tensor,
+    amplitude: torch.Tensor,
+    x: torch.Tensor,
+    w: torch.Tensor,
+    cfg: Dict[str, Any],
+    event_weight: torch.Tensor,
+    train_event_rate: torch.Tensor,
+) -> tuple[torch.Tensor, Dict[str, float]]:
+    """Train silence occurrence, positive amplitude, and their product jointly."""
+    threshold = cfg_float(cfg, "silence_threshold", cfg_float(cfg, "sparse_event_threshold", 0.0))
+    event_target = (x > threshold).to(x.dtype)
+    silence_target = 1.0 - event_target
+    expanded_w = w.expand_as(x)
+
+    loss_recon = torch.mean(expanded_w * (xhat - x) ** 2)
+    bce_elementwise = -(
+        silence_target * F.logsigmoid(silence_logits)
+        + event_weight * event_target * F.logsigmoid(-silence_logits)
+    )
+    loss_bce = torch.sum(expanded_w * bce_elementwise) / torch.clamp(torch.sum(expanded_w), min=1.0)
+
+    positive = event_target > 0
+    if bool(torch.any(positive)):
+        amp_error = (amplitude - x) ** 2
+        loss_amp = torch.mean(expanded_w[positive] * amp_error[positive])
+    else:
+        loss_amp = torch.zeros((), device=x.device)
+
+    event_probability = 1.0 - torch.sigmoid(silence_logits)
+    loss_rate = F.mse_loss(event_probability.mean(dim=0), train_event_rate)
+    loss = (
+        loss_recon
+        + cfg_float(cfg, "lambda_silence_bce", 0.1) * loss_bce
+        + cfg_float(cfg, "lambda_silence_amplitude", 0.1) * loss_amp
+        + cfg_float(cfg, "lambda_silence_rate", 1.0) * loss_rate
+    )
+    return loss, {
+        "raw": float(loss_recon.detach().cpu()),
+        "event_bce": 0.0,
+        "event_amp": 0.0,
+        "silence_bce": float(loss_bce.detach().cpu()),
+        "silence_amp": float(loss_amp.detach().cpu()),
+        "silence_rate": float(loss_rate.detach().cpu()),
+    }
+
+
+def compute_silence_gate_metrics(
+    x: np.ndarray,
+    xhat: np.ndarray,
+    silence_probability: np.ndarray,
+    amplitude: np.ndarray,
+    threshold: float = 0.0,
+    decision_threshold: float = 0.5,
+) -> Dict[str, float]:
+    """Summarize whether the gate suppresses silence and retains real events."""
+    x_flat = np.asarray(x, dtype=np.float64).reshape(-1)
+    xhat_flat = np.asarray(xhat, dtype=np.float64).reshape(-1)
+    q_flat = np.asarray(silence_probability, dtype=np.float64).reshape(-1)
+    amp_flat = np.asarray(amplitude, dtype=np.float64).reshape(-1)
+    if not (x_flat.size == xhat_flat.size == q_flat.size == amp_flat.size):
+        raise ValueError("Silence-gate metric arrays must have the same number of elements.")
+
+    event = x_flat > threshold
+    silent = ~event
+    event_probability = np.clip(1.0 - q_flat, 0.0, 1.0)
+    predicted_event = event_probability >= decision_threshold
+    tp = int(np.sum(predicted_event & event))
+    fp = int(np.sum(predicted_event & silent))
+    fn = int(np.sum((~predicted_event) & event))
+    precision = tp / max(1, tp + fp)
+    recall = tp / max(1, tp + fn)
+
+    def subset_rmse(values: np.ndarray, mask: np.ndarray) -> float:
+        return float(np.sqrt(np.mean(values[mask] ** 2))) if np.any(mask) else float("nan")
+
+    return {
+        "true_event_fraction": float(np.mean(event)),
+        "predicted_event_probability_mean": float(np.mean(event_probability)),
+        "event_probability_brier": float(np.mean((event_probability - event.astype(np.float64)) ** 2)),
+        "event_precision_at_0_5": float(precision),
+        "event_recall_at_0_5": float(recall),
+        "event_f1_at_0_5": float(2.0 * precision * recall / max(1e-12, precision + recall)),
+        "silent_prediction_mean": float(np.mean(xhat_flat[silent])) if np.any(silent) else float("nan"),
+        "silent_prediction_rmse": subset_rmse(xhat_flat, silent),
+        "event_reconstruction_rmse": subset_rmse(xhat_flat - x_flat, event),
+        "conditional_amplitude_rmse": subset_rmse(amp_flat - x_flat, event),
     }
 
 
@@ -718,22 +836,17 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
     feature_dim = f_train.shape[1]
     latent_dim = cfg_int(cfg, "latent_dim", 7)
     raw_decoder_mode = str(cfg.get("raw_decoder_mode", cfg.get("observation_model", "inverse_pca"))).lower()
-    sparse_event_raw = raw_decoder_mode in {
-        "sparse_event",
-        "event",
-        "hurdle",
-        "sparse_event_residual",
-        "event_residual",
-        "residual_event",
-    }
-    residual_event_raw = raw_decoder_mode in {"sparse_event_residual", "event_residual", "residual_event"}
+    sparse_event_raw = raw_decoder_mode in EVENT_DECODER_MODES
+    residual_event_raw = raw_decoder_mode in RESIDUAL_EVENT_DECODER_MODES
+    silence_gated_raw = raw_decoder_mode in SILENCE_GATED_DECODER_MODES
+    learned_raw_decoder = sparse_event_raw or silence_gated_raw
     model = MindDistilledAE(
         feature_dim=feature_dim,
         latent_dim=latent_dim,
         hidden=cfg_int(cfg, "hidden", 256),
         layers=cfg_int(cfg, "layers", cfg_int(cfg, "encoder_layers", 3)),
         dropout=cfg_float(cfg, "dropout", 0.0),
-        raw_dim=x_train.shape[1] if sparse_event_raw else None,
+        raw_dim=x_train.shape[1] if learned_raw_decoder else None,
         raw_decoder_mode=raw_decoder_mode,
     ).to(device)
 
@@ -770,6 +883,30 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         )
     else:
         event_pos_weight = torch.tensor(1.0, dtype=torch.float32, device=device)
+    if silence_gated_raw:
+        silence_threshold = cfg_float(cfg, "silence_threshold", cfg_float(cfg, "sparse_event_threshold", 0.0))
+        silence_event_target = x_train > silence_threshold
+        n_events = int(silence_event_target.sum())
+        n_entries = int(silence_event_target.size)
+        silence_event_weight_value = (n_entries - n_events) / max(1, n_events)
+        silence_event_weight_value = min(
+            silence_event_weight_value,
+            cfg_float(cfg, "silence_event_weight_max", 25.0),
+        )
+        silence_event_weight = torch.tensor(silence_event_weight_value, dtype=torch.float32, device=device)
+        train_event_rate = torch.tensor(
+            silence_event_target.mean(axis=0),
+            dtype=torch.float32,
+            device=device,
+        )
+        print(
+            "Silence-gated raw decoder: "
+            f"event_fraction={n_events / max(1, n_entries):.4f}, "
+            f"event_weight={silence_event_weight_value:.3g}, threshold={silence_threshold:g}"
+        )
+    else:
+        silence_event_weight = torch.tensor(1.0, dtype=torch.float32, device=device)
+        train_event_rate = torch.zeros(x_train.shape[1], dtype=torch.float32, device=device)
 
     def loss_on_batch(batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, Dict[str, float]]:
         if position_geometry_enabled:
@@ -782,7 +919,19 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         loss_z = F.mse_loss(zhat, zt)
         loss_teacher = F.mse_loss(fhat, ft)
         if lambda_raw > 0:
-            if sparse_event_raw:
+            if silence_gated_raw:
+                xhat, silence_logits, event_amplitude = model.raw_silence_reconstruction(zhat)
+                loss_raw, raw_parts = silence_gated_loss(
+                    xhat,
+                    silence_logits,
+                    event_amplitude,
+                    x,
+                    w,
+                    cfg,
+                    silence_event_weight,
+                    train_event_rate,
+                )
+            elif sparse_event_raw:
                 base_raw = inverse_features_torch(fhat, pca_components, pca_mean, norm_mu, norm_sd) if residual_event_raw else None
                 xhat, event_logits, event_amplitude = model.raw_event_reconstruction(zhat, base_raw)
                 loss_raw, raw_parts = sparse_event_loss(
@@ -797,10 +946,24 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
             else:
                 xhat = inverse_features_torch(fhat, pca_components, pca_mean, norm_mu, norm_sd)
                 loss_raw = torch.mean(w * (xhat - x) ** 2)
-                raw_parts = {"raw": float(loss_raw.detach().cpu()), "event_bce": 0.0, "event_amp": 0.0}
+                raw_parts = {
+                    "raw": float(loss_raw.detach().cpu()),
+                    "event_bce": 0.0,
+                    "event_amp": 0.0,
+                    "silence_bce": 0.0,
+                    "silence_amp": 0.0,
+                    "silence_rate": 0.0,
+                }
         else:
             loss_raw = torch.zeros((), device=device)
-            raw_parts = {"raw": 0.0, "event_bce": 0.0, "event_amp": 0.0}
+            raw_parts = {
+                "raw": 0.0,
+                "event_bce": 0.0,
+                "event_amp": 0.0,
+                "silence_bce": 0.0,
+                "silence_amp": 0.0,
+                "silence_rate": 0.0,
+            }
         if position_geometry_enabled and f_pos is not None and f_neg is not None and lambda_position > 0:
             z_pos = model.encoder(f_pos)
             z_neg = model.encoder(f_neg)
@@ -839,6 +1002,9 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
             "raw": 0.0,
             "event_bce": 0.0,
             "event_amp": 0.0,
+            "silence_bce": 0.0,
+            "silence_amp": 0.0,
+            "silence_rate": 0.0,
             "position_geo": 0.0,
             "position_d_pos": 0.0,
             "position_d_neg": 0.0,
@@ -875,6 +1041,7 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
                 f"[{epoch:03d}] train {train_loss:.5f} | val {val_loss:.5f} | "
                 f"feature {parts_avg['feature']:.5f} | z {parts_avg['z']:.5f} | teacher {parts_avg['teacher']:.5f} | "
                 f"raw {parts_avg['raw']:.5f} | event_bce {parts_avg['event_bce']:.5f} | "
+                f"silence_bce {parts_avg['silence_bce']:.5f} | silence_rate {parts_avg['silence_rate']:.5f} | "
                 f"pos_geo {parts_avg['position_geo']:.5f}"
             )
 
@@ -898,6 +1065,7 @@ def train_model(cfg: Dict[str, Any], data: Dict[str, Any], teacher: Dict[str, An
         "raw_decoder_mode": raw_decoder_mode,
         "sparse_event_raw": sparse_event_raw,
         "residual_event_raw": residual_event_raw,
+        "silence_gated_raw": silence_gated_raw,
         "position_geometry": position_geometry_meta,
     }
 
@@ -945,6 +1113,31 @@ def predict_sparse_raw(
     )
 
 
+def predict_silence_gated_raw(
+    model: MindDistilledAE,
+    features: np.ndarray,
+    device: torch.device,
+    batch_size: int = 4096,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    model.eval()
+    xhat_chunks = []
+    silence_chunks = []
+    amp_chunks = []
+    with torch.no_grad():
+        for start in range(0, features.shape[0], batch_size):
+            batch = torch.from_numpy(features[start:start + batch_size].astype(np.float32)).to(device)
+            _, z = model(batch)
+            xhat, silence_logits, amplitude = model.raw_silence_reconstruction(z)
+            xhat_chunks.append(xhat.cpu().numpy())
+            silence_chunks.append(torch.sigmoid(silence_logits).cpu().numpy())
+            amp_chunks.append(amplitude.cpu().numpy())
+    return (
+        np.concatenate(xhat_chunks, axis=0).astype(np.float32),
+        np.concatenate(silence_chunks, axis=0).astype(np.float32),
+        np.concatenate(amp_chunks, axis=0).astype(np.float32),
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/v6_mind_geometry.txt")
@@ -970,7 +1163,14 @@ def main() -> None:
     fhat_test, zhat_test = predict_features(model, data["f_test_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
 
     raw_decoder_mode = str(cfg.get("raw_decoder_mode", cfg.get("observation_model", "inverse_pca"))).lower()
-    if raw_decoder_mode in {"sparse_event", "event", "hurdle"}:
+    if raw_decoder_mode in SILENCE_GATED_DECODER_MODES:
+        xhat_train_flat, _, _ = predict_silence_gated_raw(
+            model, data["f_train_flat"], device, cfg_int(cfg, "predict_batch_size", 4096)
+        )
+        xhat_test_flat, _, _ = predict_silence_gated_raw(
+            model, data["f_test_flat"], device, cfg_int(cfg, "predict_batch_size", 4096)
+        )
+    elif raw_decoder_mode in {"sparse_event", "event", "hurdle"}:
         xhat_train_flat, _, _ = predict_sparse_raw(model, data["f_train_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
         xhat_test_flat, _, _ = predict_sparse_raw(model, data["f_test_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
     else:

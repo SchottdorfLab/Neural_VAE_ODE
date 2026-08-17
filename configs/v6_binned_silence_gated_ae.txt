@@ -1,0 +1,115 @@
+# Time-binned V6 geometric AE with a learned silence-gated raw decoder.
+# The shared latent state has three output paths:
+#   1. PCA feature reconstruction,
+#   2. per-neuron silence probability q,
+#   3. positive event amplitude a.
+# Raw activity is reconstructed exactly as xhat = (1 - q) * a.
+
+data_path = src/npz_e65_data/E65_data.npz
+out_dir = runs/v6_binned_silence_gated_ae_time_local
+seed = 42
+device = auto
+
+# Use elapsed time as the alignment coordinate for all new runs.
+trial_len_s = 12
+fps = 10
+min_frames = 10
+drop_first_trials = 10
+sequence_alignment = time
+normalize_time = true
+
+# Hold out complete trials.
+mind_style_eval_all = false
+mind_test_frac = 0.10
+mind_split_seed = 42
+
+# Preprocessing.
+filter_inactive_neurons = true
+inactive_neuron_threshold = 0.0
+filter_train_silent_neurons = false
+train_silent_threshold = 1e-7
+baseline_correct = false
+normalize_inputs = false
+normalize_eps = 1e-6
+use_pca = true
+pca_dim = 50
+pca_max_dim = 64
+
+# MIND geometry teacher.
+latent_dim = 7
+landmark_count = 750
+filter_silent_frames_for_manifold = false
+silent_frame_threshold = 0.0
+silent_frame_score = sum
+event_aware_landmarks = true
+landmark_activity_fraction = 0.15
+landmark_transition_fraction = 0.15
+landmark_event_pool_multiplier = 5.0
+landmark_activity_score = max
+landmark_transition_score = max_abs
+transition_k = 16
+transition_weight = 0.0
+transition_probability_mode = local
+transition_exclude_self = true
+use_graph_geodesics = true
+transition_temperature = 1.0
+graph_sym = min
+embedding_mode = sammon
+sammon_iters = 500
+sammon_lr = 0.01
+lle_k = 16
+lle_ridge = 0.001
+
+# Nonparametric MIND decoder remains a teacher/reference only.
+inverse_decoder = kernel
+inverse_k = 128
+kernel_bandwidth = 0.35
+decoder_target = feature
+
+# Neural deterministic AE.
+batch_size = 512
+epochs = 300
+lr = 0.001
+weight_decay = 0.00001
+hidden = 256
+layers = 2
+dropout = 0.0
+grad_clip = 5.0
+state_val_frac = 0.10
+early_stopping_patience = 50
+early_stopping_min_delta = 0.00001
+log_every = 25
+
+# Baseline feature/teacher losses.
+lambda_feature_recon = 1.0
+lambda_teacher_z = 0.0
+lambda_teacher_recon = 0.25
+lambda_raw_recon = 0.1
+event_weight_alpha = 5.0
+event_weight_mode = dx
+event_weight_percentile = 95.0
+
+# Silence-gated observation model.
+raw_decoder_mode = silence_gated
+prediction_decoder = silence_gated
+silence_threshold = 0.0
+silence_event_weight_max = 25.0
+silence_event_decision_threshold = 0.5
+lambda_silence_bce = 0.1
+lambda_silence_amplitude = 0.1
+lambda_silence_rate = 1.0
+
+# Preserve the decoder equation during evaluation; do not alter xhat afterward.
+postprocess_reconstruction = false
+
+# Include population-silent raw frames so negative-space performance is measured.
+raw_eval_filter_silent_frames = false
+raw_eval_plot_trial_index = 0
+raw_eval_plot_frame_start = 0
+raw_eval_plot_frame_end = 15
+raw_eval_plot_neuron_start = 0
+raw_eval_plot_neuron_end = 40
+
+# Diagnostics.
+event_metric_percentile = 99.0
+predict_batch_size = 4096

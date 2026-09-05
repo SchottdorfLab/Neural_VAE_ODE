@@ -1,20 +1,3 @@
-#!/usr/bin/env python3
-"""Multi-trial sphere fit with fixed 3D embedded sphere dynamics.
-
-This intentionally stays close to the original sphere sandbox script:
-- same spherical_geodesic equation
-- same Fibonacci tiling of place-field centers
-- same von-Mises-like place-field activity
-- same NeuralDecoder structure
-- same free-dynamics comparison
-
-The main change relative to fit_sphere_trials.py is that the geodesic model no
-longer learns the metric tensor. It represents latent state as a 3D point on
-the unit sphere, uses the ambient Euclidean metric I_3 on tangent vectors, and
-rolls out great-circle dynamics with a = -||v||^2 x. The learned pieces are
-only per-trial initial conditions and the shared neural decoder.
-"""
-
 import json
 import os
 import random
@@ -89,7 +72,7 @@ def simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa):
     return activity, theta_t, phi_t
 
 
-# Parameters are intentionally named like the original script where possible.
+
 random.seed(int(os.environ.get("SPHERE_SEED", "42")))
 np.random.seed(int(os.environ.get("SPHERE_SEED", "42")))
 torch.manual_seed(int(os.environ.get("SPHERE_SEED", "42")))
@@ -158,9 +141,6 @@ np.savez_compressed(
 if os.environ.get("SPHERE_GENERATE_ONLY", "").lower() in {"1", "true", "yes"}:
     print(f"Saved synthetic sphere trials to {out_dir / 'synthetic_sphere_trials.npz'}")
     raise SystemExit(0)
-
-
-# =============== Geodesic fit with true 3D sphere dynamics ===================#
 
 
 class TrueSphereMetric3D(nn.Module):

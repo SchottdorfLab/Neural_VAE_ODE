@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
-"""Multi-trial version of simulate_geodesic_sphere.py.
-
-This intentionally stays close to the original sphere sandbox script:
-- same spherical_geodesic equation
-- same Fibonacci tiling of place-field centers
-- same von-Mises-like place-field activity
-- same learned MetricNetwork / GeodesicDynamics / NeuralDecoder structure
-- same free-dynamics comparison
-
-The main change is that we simulate many sphere trajectories, each with a
-different initial condition, and fit all of them jointly with one shared
-geometry/decoder and per-trial x0/v0.
+"""
+Same things as the original simulate_geodesics.py script,
+but supports multiple runs, plus
 """
 
 import json
@@ -26,7 +17,6 @@ from scipy.integrate import solve_ivp
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
 
 def spherical_geodesic(t, y):
     """
@@ -45,8 +35,10 @@ def spherical_geodesic(t, y):
 
     return [dtheta, dphi, ddtheta, ddphi]
 
+ORIGINAL_Y0 = [np.pi / 2, 0.0, 0.5, 0.5]
 
-def random_initial_condition(speed=0.7):
+
+def random_initial_condition(speed=2**-0.5):
     """Different starting point and tangent direction for each simulated trial."""
     theta = random.uniform(0.25 * np.pi, 0.75 * np.pi)
     phi = random.uniform(0.0, 2.0 * np.pi)
@@ -54,6 +46,14 @@ def random_initial_condition(speed=0.7):
     dtheta = speed * np.cos(direction)
     dphi = speed * np.sin(direction) / max(np.sin(theta), 1e-3)
     return [theta, phi, dtheta, dphi]
+
+
+def initial_condition_for_trial(trial_idx, speed):
+    """Using Dr. Schottdorf's original y0 for trial 0"""
+    use_original_first = os.environ.get("SPHERE_ORIGINAL_FIRST_TRIAL", "1").lower() in {"1", "true", "yes"}
+    if trial_idx == 0 and use_original_first:
+        return list(ORIGINAL_Y0)
+    return random_initial_condition(speed=speed)
 
 
 def simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa):
@@ -76,10 +76,70 @@ def simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa):
     return activity, theta_t, phi_t
 
 
+def plot_generated_activity(activity, theta_t, phi_t, theta_centers, phi_centers, t_eval, out_path):
+    fig = plt.figure(figsize=(14, 6))
+
+    # Plot A: 3D Sphere, Trajectory, and Neuron Centers
+    ax1 = fig.add_subplot(131, projection="3d")
+
+    # Draw transparent sphere
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    ax1.plot_surface(
+        np.outer(np.cos(u), np.sin(v)),
+        np.outer(np.sin(u), np.sin(v)),
+        np.outer(np.ones(np.size(u)), np.cos(v)),
+        color="cyan",
+        alpha=0.1,
+        edgecolor="none",
+    )
+
+    # Convert trajectory to Cartesian
+    x_t = np.sin(theta_t) * np.cos(phi_t)
+    y_t = np.sin(theta_t) * np.sin(phi_t)
+    z_t = np.cos(theta_t)
+    ax1.plot(x_t, y_t, z_t, color="red", linewidth=3, label="Agent Trajectory")
+
+    # Convert neuron centers to Cartesian
+    x_c = np.sin(theta_centers) * np.cos(phi_centers)
+    y_c = np.sin(theta_centers) * np.sin(phi_centers)
+    z_c = np.cos(theta_centers)
+    ax1.scatter(x_c, y_c, z_c, color="black", s=10, alpha=0.6, label="Place Cell Centers")
+
+    ax1.set_title("Geodesic trajectory + place field centers")
+    ax1.legend()
+
+    ax2 = fig.add_subplot(132)  # Raster plot of Neural Activity
+    peak_times = np.argmax(activity, axis=1)
+    peak_idx = np.argsort(peak_times)
+    random.shuffle(peak_idx)
+    random_activity = activity[peak_idx, :]  # Random ordering of neurons
+
+    im = ax2.imshow(random_activity, aspect="auto", origin="lower", cmap="magma", extent=[t_eval[0], t_eval[-1], 0, activity.shape[0]])
+    ax2.set_xlabel("Time (t)")
+    ax2.set_ylabel("Neuron ID (Sorted by Peak Activation)")
+    ax2.set_title("Neural Population Activity")
+    plt.colorbar(im, ax=ax2, label="Normalized Firing Rate")
+
+    ax3 = fig.add_subplot(133)  # Sort neurons by their peak activity time to visualize the sequence
+    peak_idx = np.argsort(peak_times)
+    sorted_activity = activity[peak_idx, :]  # Order neurons by peak time. Shows the sequential activation of the place fields
+    im = ax3.imshow(sorted_activity, aspect="auto", origin="lower", cmap="magma", extent=[t_eval[0], t_eval[-1], 0, activity.shape[0]])
+    ax3.set_xlabel("Time (t)")
+    ax3.set_ylabel("Neuron ID (Sorted by Peak Activation)")
+    ax3.set_title("Neural Population Activity (sorted))")
+    plt.colorbar(im, ax=ax3, label="Normalized Firing Rate")
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=160, bbox_inches="tight")
+    plt.close(fig)
+
+
 # Parameters are intentionally named like the original script where possible.
-random.seed(int(os.environ.get("SPHERE_SEED", "42")))
-np.random.seed(int(os.environ.get("SPHERE_SEED", "42")))
-torch.manual_seed(int(os.environ.get("SPHERE_SEED", "42")))
+seed = int(os.environ.get("SPHERE_SEED", "42"))
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
 
 device_name = os.environ.get("GEODESIC_DEVICE")
 if device_name:
@@ -90,15 +150,17 @@ else:
     device = torch.device("cpu")
 print(f"Using device: {device}")
 
-num_trials = int(os.environ.get("SPHERE_N_TRIALS", "24"))
-N_neurons = int(os.environ.get("SPHERE_N_NEURONS", "96"))
+# Defaults mirror simulate_geodesic_sphere.py. Environment variables make the
+# multi-trial and 3D tests possible without changing the original constants.
+num_trials = int(os.environ.get("SPHERE_N_TRIALS", "1"))
+N_neurons = int(os.environ.get("SPHERE_N_NEURONS", "300"))
 kappa = float(os.environ.get("SPHERE_KAPPA", "1.5"))  # Tuning Width
-speed = float(os.environ.get("SPHERE_SPEED", "0.7"))
-t_span = (0, float(os.environ.get("SPHERE_T_MAX", str(4 * np.pi))))
-t_eval = np.linspace(t_span[0], t_span[1], int(os.environ.get("SPHERE_N_TIME", "80")))
+speed = float(os.environ.get("SPHERE_SPEED", str(2**-0.5)))
+t_span = (0, float(os.environ.get("SPHERE_T_MAX", str(4 * np.pi))))  # Integrate long enough to wrap around the sphere
+t_eval = np.linspace(t_span[0], t_span[1], int(os.environ.get("SPHERE_N_TIME", "600")))
 out_dir = Path(os.environ.get("SPHERE_OUT_DIR", "runs/geodesic_sphere_trials")).expanduser()
 out_dir.mkdir(parents=True, exist_ok=True)
-model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "rk4").strip().lower()
+model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "euler").strip().lower()
 if model_solver not in {"rk4", "euler"}:
     raise ValueError(f"Unknown SPHERE_MODEL_SOLVER={model_solver!r}; use 'rk4' or 'euler'.")
 
@@ -113,7 +175,7 @@ activities = []
 true_latents = []
 initial_conditions = []
 for trial_idx in range(num_trials):
-    y0 = random_initial_condition(speed=speed)
+    y0 = initial_condition_for_trial(trial_idx, speed=speed)
     activity, theta_t, phi_t = simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa)
     dataset_train.append({
         "idx": trial_idx,
@@ -123,6 +185,16 @@ for trial_idx in range(num_trials):
     activities.append(activity.T.astype(np.float32))
     true_latents.append(np.stack([theta_t, phi_t], axis=1).astype(np.float32))
     initial_conditions.append(np.asarray(y0, dtype=np.float32))
+    if trial_idx == 0:
+        plot_generated_activity(
+            activity,
+            theta_t,
+            phi_t,
+            theta_centers,
+            phi_centers,
+            t_eval,
+            out_dir / "sphere_generated_activity.png",
+        )
 
 activities = np.stack(activities, axis=0)
 true_latents = np.stack(true_latents, axis=0)
@@ -550,7 +622,7 @@ def plot_latents(true_z, geo_z, free_z):
 latent_dim = int(os.environ.get("SPHERE_LATENT_DIM", "2"))
 n_timepoints = len(t_eval)
 num_obs = num_trials * N_neurons * n_timepoints
-epochs = int(os.environ.get("SPHERE_EPOCHS", "60"))
+epochs = int(os.environ.get("SPHERE_EPOCHS", os.environ.get("GEODESIC_COMPARE_EPOCHS", "300")))
 lr = float(os.environ.get("SPHERE_LR", "0.001"))
 
 # Init models

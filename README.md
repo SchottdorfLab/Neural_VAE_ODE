@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## September 27th, 10:43pm:
+- Can't sleep, so we're coding. Switching theta to be pi/2 to only start from horizontal points.
+
 ## July 30th, 10:22pm:
 - Starting this up again. Watch out, world. 
 

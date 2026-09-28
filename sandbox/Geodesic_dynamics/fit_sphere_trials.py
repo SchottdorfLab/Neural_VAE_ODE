@@ -40,9 +40,11 @@ ORIGINAL_Y0 = [np.pi / 2, 0.0, 0.5, 0.5]
 
 def random_initial_condition(speed=2**-0.5):
     """Different starting point and tangent direction for each simulated trial."""
-    theta = random.uniform(0.25 * np.pi, 0.75 * np.pi)
+    # theta = random.uniform(0.25 * np.pi, 0.75 * np.pi)
+    theta = np.pi / 2
     phi = random.uniform(0.0, 2.0 * np.pi)
-    direction = random.uniform(0.0, 2.0 * np.pi)
+    direction = 0.0
+    # direction = random.uniform(0.0, 2.0 * np.pi)
     dtheta = speed * np.cos(direction)
     dphi = speed * np.sin(direction) / max(np.sin(theta), 1e-3)
     return [theta, phi, dtheta, dphi]

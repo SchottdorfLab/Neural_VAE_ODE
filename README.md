@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## September 27th, 10:54pm: 
+- To prove something is an immersion, meaning (I believe) the lower dimensional space isn't crushed/folded/losing directional dimensions locally, you have to compute the Jacobian matrix J of partial derivatives of the embedding functions. Looks like a matrix of partial derivatives. 
+
 ## September 27th, 10:43pm:
 - Can't sleep, so we're coding. Switching theta to be pi/2 to only start from horizontal points.
 

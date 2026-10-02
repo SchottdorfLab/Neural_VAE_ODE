@@ -1,6 +1,113 @@
 # Neural VAE
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
+## October 1st, 11:07pm:
+**RESULTS BASELINE FOR REGULAR 2D RUN, INCLUDING HELDOUT SET, WITH NO RESTRICTIONS ON COORDINATES BEING ON THE HEMISPHERE**
+
+(base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % MPLBACKEND=Agg \
+GEODESIC_DEVICE=cpu \ 
+SPHERE_OUT_DIR=runs/geodesic_sphere_test_30x600_e300_heldout_2d \
+SPHERE_LATENT_DIM=2 \
+SPHERE_N_TRIALS=30 \
+SPHERE_N_TIME=600 \
+SPHERE_N_NEURONS=300 \
+SPHERE_T_MAX=12.566370614359172 \
+SPHERE_SPEED=0.70710678 \
+SPHERE_KAPPA=1.5 \
+SPHERE_EPOCHS=300 \
+SPHERE_HELDOUT_FIT_EPOCHS=300 \
+SPHERE_LR=0.001 \
+SPHERE_HELDOUT_FIT_LR=0.001 \
+python -u sandbox/Geodesic_dynamics/fit_sphere_trials.py
+Using device: cpu
+Simulated 30 sphere trials: time=600, neurons=300
+Model solver: euler
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 9751844.00
+Epoch 010 | NLL Sum: 5920408.00
+Epoch 020 | NLL Sum: 4736007.50
+Epoch 030 | NLL Sum: 4344461.00
+Epoch 040 | NLL Sum: 4206372.00
+Epoch 050 | NLL Sum: 4126531.50
+Epoch 060 | NLL Sum: 4078760.50
+Epoch 070 | NLL Sum: 4042219.50
+Epoch 080 | NLL Sum: 4015066.25
+Epoch 090 | NLL Sum: 3993969.25
+Epoch 100 | NLL Sum: 3977534.00
+Epoch 110 | NLL Sum: 3965286.00
+Epoch 120 | NLL Sum: 3955210.00
+Epoch 130 | NLL Sum: 3947095.00
+Epoch 140 | NLL Sum: 3940043.50
+Epoch 150 | NLL Sum: 3933347.00
+Epoch 160 | NLL Sum: 3927058.50
+Epoch 170 | NLL Sum: 3921184.25
+Epoch 180 | NLL Sum: 3915567.75
+Epoch 190 | NLL Sum: 3910151.25
+Epoch 200 | NLL Sum: 3904931.50
+Epoch 210 | NLL Sum: 3899871.50
+Epoch 220 | NLL Sum: 3894906.00
+Epoch 230 | NLL Sum: 3889958.50
+Epoch 240 | NLL Sum: 3885054.75
+Epoch 250 | NLL Sum: 3880238.00
+Epoch 260 | NLL Sum: 3875549.50
+Epoch 270 | NLL Sum: 3870981.50
+Epoch 280 | NLL Sum: 3866496.50
+Epoch 290 | NLL Sum: 3862055.75
+--------------------
+Epoch 000 | NLL Sum: 6349079.00
+Epoch 010 | NLL Sum: 4835205.50
+Epoch 020 | NLL Sum: 4329653.00
+Epoch 030 | NLL Sum: 4094448.25
+Epoch 040 | NLL Sum: 4020880.00
+Epoch 050 | NLL Sum: 3994955.50
+Epoch 060 | NLL Sum: 3968468.75
+Epoch 070 | NLL Sum: 3932413.25
+Epoch 080 | NLL Sum: 3904931.00
+Epoch 090 | NLL Sum: 3882435.50
+Epoch 100 | NLL Sum: 3860399.50
+Epoch 110 | NLL Sum: 3843258.75
+Epoch 120 | NLL Sum: 3825878.25
+Epoch 130 | NLL Sum: 3814596.25
+Epoch 140 | NLL Sum: 3798867.50
+Epoch 150 | NLL Sum: 3788823.50
+Epoch 160 | NLL Sum: 3773659.50
+Epoch 170 | NLL Sum: 3764172.00
+Epoch 180 | NLL Sum: 3749703.25
+Epoch 190 | NLL Sum: 3738685.00
+Epoch 200 | NLL Sum: 3723143.75
+Epoch 210 | NLL Sum: 3711635.75
+Epoch 220 | NLL Sum: 3699492.00
+Epoch 230 | NLL Sum: 3692007.00
+Epoch 240 | NLL Sum: 3679936.75
+Epoch 250 | NLL Sum: 3669243.00
+Epoch 260 | NLL Sum: 3659957.50
+Epoch 270 | NLL Sum: 3692071.25
+Epoch 280 | NLL Sum: 3650903.00
+Epoch 290 | NLL Sum: 3644785.50
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Train NLL       | 3860387.00      | 3640115.25     
+Heldout NLL     | 988145.00       | 1013429.56     
+Train R2        | 0.0640          | 0.1667         
+Train r         | 0.2562          | 0.4085         
+Heldout R2      | 0.0115          | -0.0324        
+Heldout r       | 0.1567          | 0.1679         
+AIC             | 7762900.00      | 7387698.50     
+BIC             | 8042590.65      | 8101219.71     
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Geodesic
+Saved outputs to runs/geodesic_sphere_test_30x600_e300_heldout_2d
+(base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % 
+
 
 ## September 27th, 10:54pm: 
 - To prove something is an immersion, meaning (I believe) the lower dimensional space isn't crushed/folded/losing directional dimensions locally, you have to compute the Jacobian matrix J of partial derivatives of the embedding functions. Looks like a matrix of partial derivatives. 

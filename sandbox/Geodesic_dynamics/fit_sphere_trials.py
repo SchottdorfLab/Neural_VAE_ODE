@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
 
+# for the reconstruction graphs 
 TRUE_COLOR = "#12355B"
 RECON_COLOR = "#FF5A1F"
 SPHERE_COLOR = "#8E8E8E"
@@ -47,12 +48,12 @@ def spherical_geodesic(t, y):
 
 def random_initial_condition(speed=2**-0.5):
     """Different starting point and tangent direction for each simulated trial."""
-    # theta = random.uniform(0.25 * np.pi, 0.75 * np.pi)
-    theta = np.pi / 2 # to test only coordinates at the equator
+    theta = random.uniform(0.25 * np.pi, 0.75 * np.pi)
+    # theta = np.pi / 2 # to test only coordinates at the equator
     phi = random.uniform(0.0, 2.0 * np.pi)
     direction = random.uniform(0.0, 2.0 * np.pi)
-    dtheta = 0.0
-    #dtheta = speed * np.cos(direction)
+    # dtheta = 0.0
+    dtheta = speed * np.cos(direction)
     dphi = speed * np.sin(direction) / max(np.sin(theta), 1e-3)
     return [theta, phi, dtheta, dphi]
 

@@ -36,8 +36,6 @@ def spherical_geodesic(t, y):
 
     return [dtheta, dphi, ddtheta, ddphi]
 
-ORIGINAL_Y0 = [np.pi / 2, 0.0, 0.5, 0.5]
-
 
 def random_initial_condition(speed=2**-0.5):
     """Different starting point and tangent direction for each simulated trial."""
@@ -52,10 +50,6 @@ def random_initial_condition(speed=2**-0.5):
 
 
 def initial_condition_for_trial(trial_idx, speed):
-    """Using Dr. Schottdorf's original y0 for trial 0"""
-    use_original_first = os.environ.get("SPHERE_ORIGINAL_FIRST_TRIAL", "1").lower() in {"1", "true", "yes"}
-    if trial_idx == 0 and use_original_first:
-        return list(ORIGINAL_Y0)
     return random_initial_condition(speed=speed)
 
 
@@ -138,13 +132,12 @@ def plot_generated_activity(activity, theta_t, phi_t, theta_centers, phi_centers
     plt.close(fig)
 
 
-# Parameters are intentionally named like the original script where possible.
-seed = int(os.environ.get("SPHERE_SEED", "42"))
+seed = 42 # I'm just manually setting this here 
 random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 
-device_name = os.environ.get("GEODESIC_DEVICE")
+device_name = os.environ.get("DEVICE")
 if device_name:
     device = torch.device(device_name)
 elif torch.cuda.is_available():
@@ -157,7 +150,7 @@ print(f"Using device: {device}")
 # multi-trial and 3D tests possible without changing the original constants.
 num_trials = int(os.environ.get("SPHERE_N_TRIALS", "1"))
 N_neurons = int(os.environ.get("SPHERE_N_NEURONS", "300"))
-kappa = float(os.environ.get("SPHERE_KAPPA", "1.5"))  # Tuning Width
+kappa = 1.5  # Tuning Width
 speed = float(os.environ.get("SPHERE_SPEED", str(2**-0.5)))
 t_span = (0, float(os.environ.get("SPHERE_T_MAX", str(4 * np.pi))))  # Integrate long enough to wrap around the sphere
 t_eval = np.linspace(t_span[0], t_span[1], int(os.environ.get("SPHERE_N_TIME", "600")))
@@ -165,7 +158,7 @@ out_dir = Path(os.environ.get("SPHERE_OUT_DIR", "runs/geodesic_sphere_trials")).
 out_dir.mkdir(parents=True, exist_ok=True)
 model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "euler").strip().lower()
 if model_solver not in {"rk4", "euler"}:
-    raise ValueError(f"Unknown SPHERE_MODEL_SOLVER={model_solver!r}; use 'rk4' or 'euler'.")
+    raise ValueError(f"Unknown SPHERE_MODEL_SOLVER={model_solver!r}; use 'rk4' or 'euler' please!")
 
 # Tile the sphere with "place field"
 indices = np.arange(0, N_neurons, dtype=float) + 0.5

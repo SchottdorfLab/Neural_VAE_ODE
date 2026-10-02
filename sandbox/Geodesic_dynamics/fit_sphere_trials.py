@@ -12,12 +12,20 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 from scipy.integrate import solve_ivp
 import torch
 from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
+
+TRUE_COLOR = "#12355B"
+RECON_COLOR = "#FF5A1F"
+SPHERE_COLOR = "#8E8E8E"
+WIREFRAME_COLOR = "#5F5F5F"
+TRUE_LINEWIDTH = 3.4
+RECON_LINEWIDTH = 3.4
 
 def spherical_geodesic(t, y):
     """
@@ -42,9 +50,9 @@ def random_initial_condition(speed=2**-0.5):
     # theta = random.uniform(0.25 * np.pi, 0.75 * np.pi)
     theta = np.pi / 2 # to test only coordinates at the equator
     phi = random.uniform(0.0, 2.0 * np.pi)
-    direction = 0.0 # to test only horizontal trajectories
-    # direction = random.uniform(0.0, 2.0 * np.pi)
-    dtheta = speed * np.cos(direction)
+    direction = random.uniform(0.0, 2.0 * np.pi)
+    dtheta = 0.0
+    #dtheta = speed * np.cos(direction)
     dphi = speed * np.sin(direction) / max(np.sin(theta), 1e-3)
     return [theta, phi, dtheta, dphi]
 
@@ -669,6 +677,138 @@ def plot_latents(true_z, geo_z, free_z):
     plt.close(fig)
 
 
+def theta_phi_to_xyz(theta_phi):
+    theta = theta_phi[..., 0]
+    phi = theta_phi[..., 1]
+    return np.stack(
+        [
+            np.sin(theta) * np.cos(phi),
+            np.sin(theta) * np.sin(phi),
+            np.cos(theta),
+        ],
+        axis=-1,
+    )
+
+
+def centers_to_xyz(theta_centers_np, phi_centers_np):
+    return np.stack(
+        [
+            np.sin(theta_centers_np) * np.cos(phi_centers_np),
+            np.sin(theta_centers_np) * np.sin(phi_centers_np),
+            np.cos(theta_centers_np),
+        ],
+        axis=1,
+    )
+
+
+def rates_to_sphere_xyz(rates, theta_centers_np, phi_centers_np):
+    """Decode neural activity to a point on the unit sphere by population vector."""
+    centers_xyz = centers_to_xyz(theta_centers_np, phi_centers_np)
+    flat_rates = np.clip(rates.reshape(-1, rates.shape[-1]).astype(np.float64), 0.0, None)
+    xyz = flat_rates @ centers_xyz
+    norm = np.linalg.norm(xyz, axis=1, keepdims=True)
+    xyz = xyz / np.maximum(norm, 1e-12)
+    return xyz.reshape(*rates.shape[:-1], 3)
+
+
+def draw_sphere(ax):
+    u = np.linspace(0, 2 * np.pi, 96)
+    v = np.linspace(0, np.pi, 48)
+    xs = np.outer(np.cos(u), np.sin(v))
+    ys = np.outer(np.sin(u), np.sin(v))
+    zs = np.outer(np.ones_like(u), np.cos(v))
+    ax.plot_surface(xs, ys, zs, color=SPHERE_COLOR, alpha=0.26, linewidth=0, shade=False)
+    ax.plot_wireframe(xs, ys, zs, color=WIREFRAME_COLOR, alpha=0.12, linewidth=0.45, rstride=5, cstride=5)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    ax.set_box_aspect([1, 1, 1])
+    ax.set_xlim(-1.05, 1.05)
+    ax.set_ylim(-1.05, 1.05)
+    ax.set_zlim(-1.05, 1.05)
+    ax.view_init(elev=24, azim=38)
+
+
+def draw_prediction_paths(ax, true_theta_phi, pred_rates, theta_centers_np, phi_centers_np, max_trials):
+    true_xyz = theta_phi_to_xyz(true_theta_phi)
+    pred_xyz = rates_to_sphere_xyz(pred_rates, theta_centers_np, phi_centers_np)
+    n_trials = min(true_xyz.shape[0], pred_xyz.shape[0], max_trials)
+    for trial_idx in range(n_trials):
+        n_time = min(true_xyz[trial_idx].shape[0], pred_xyz[trial_idx].shape[0])
+        step = max(1, n_time // 260)
+        ax.plot(
+            true_xyz[trial_idx, :n_time:step, 0],
+            true_xyz[trial_idx, :n_time:step, 1],
+            true_xyz[trial_idx, :n_time:step, 2],
+            color=TRUE_COLOR,
+            lw=TRUE_LINEWIDTH,
+            alpha=0.88,
+        )
+        ax.plot(
+            pred_xyz[trial_idx, :n_time:step, 0],
+            pred_xyz[trial_idx, :n_time:step, 1],
+            pred_xyz[trial_idx, :n_time:step, 2],
+            color=RECON_COLOR,
+            lw=RECON_LINEWIDTH,
+            alpha=0.98,
+        )
+
+
+def plot_sphere_prediction_overlay(true_theta_phi, pred_rates, theta_centers_np, phi_centers_np, out_path, title, max_trials=12):
+    if true_theta_phi.shape[0] == 0 or pred_rates.shape[0] == 0:
+        return
+    fig = plt.figure(figsize=(10.5, 8.5))
+    ax = fig.add_subplot(111, projection="3d")
+    draw_sphere(ax)
+    draw_prediction_paths(ax, true_theta_phi, pred_rates, theta_centers_np, phi_centers_np, max_trials)
+    ax.set_title(title, pad=18)
+    ax.legend(
+        handles=[
+            Line2D([0], [0], color=TRUE_COLOR, lw=TRUE_LINEWIDTH, label="true path"),
+            Line2D([0], [0], color=RECON_COLOR, lw=RECON_LINEWIDTH, label="predicted path"),
+        ],
+        loc="upper left",
+        bbox_to_anchor=(0.02, 0.98),
+    )
+    fig.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_sphere_prediction_comparison(
+    true_theta_phi,
+    rates_geo_pred_np,
+    rates_free_pred_np,
+    theta_centers_np,
+    phi_centers_np,
+    out_path,
+    split_label,
+    max_trials=12,
+):
+    if true_theta_phi.shape[0] == 0:
+        return
+    fig = plt.figure(figsize=(15, 7.5))
+    panels = [
+        ("Geodesic prediction", rates_geo_pred_np),
+        ("Free prediction", rates_free_pred_np),
+    ]
+    for panel_idx, (title, pred_rates) in enumerate(panels, start=1):
+        ax = fig.add_subplot(1, 2, panel_idx, projection="3d")
+        draw_sphere(ax)
+        draw_prediction_paths(ax, true_theta_phi, pred_rates, theta_centers_np, phi_centers_np, max_trials)
+        ax.set_title(f"{title} ({split_label})", pad=16)
+    fig.legend(
+        handles=[
+            Line2D([0], [0], color=TRUE_COLOR, lw=TRUE_LINEWIDTH, label="true path"),
+            Line2D([0], [0], color=RECON_COLOR, lw=RECON_LINEWIDTH, label="predicted path"),
+        ],
+        loc="upper center",
+        ncol=2,
+        bbox_to_anchor=(0.5, 0.98),
+    )
+    fig.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
 # Parameters
 latent_dim = int(os.environ.get("SPHERE_LATENT_DIM", "2"))
 n_timepoints = len(t_eval)
@@ -696,6 +836,8 @@ rates_geo_pred, latents_geo = predict_all(model_geo, train_dataset, t_eval)
 rates_free_pred, latents_free = predict_all(model_free, train_dataset, t_eval)
 train_rates = rates_numpy(train_dataset)
 heldout_rates = rates_numpy(heldout_dataset)
+train_trial_indices = np.asarray([trial["idx"] for trial in train_dataset], dtype=np.int64)
+heldout_trial_indices = np.asarray([trial["idx"] for trial in heldout_dataset], dtype=np.int64)
 r_geo, r2_geo = corr_and_r2(train_rates, rates_geo_pred)
 r_free, r2_free = corr_and_r2(train_rates, rates_free_pred)
 
@@ -745,6 +887,66 @@ print(f"Preferred Model by BIC: {best_bic}")
 
 plot_model_heatmap(train_rates, rates_geo_pred, rates_free_pred, dataset_idx=0, num_neurons=50)
 plot_latents(true_latents, latents_geo, latents_free)
+overlay_max_trials = int(os.environ.get("SPHERE_OVERLAY_MAX_TRIALS", "12"))
+train_true_latents = true_latents[train_trial_indices]
+plot_sphere_prediction_overlay(
+    train_true_latents,
+    rates_geo_pred,
+    theta_centers,
+    phi_centers,
+    out_dir / "sphere_reconstruction_3d_overlay_geodesic.png",
+    "True vs Predicted Sphere Trajectories (geodesic)",
+    max_trials=overlay_max_trials,
+)
+plot_sphere_prediction_overlay(
+    train_true_latents,
+    rates_free_pred,
+    theta_centers,
+    phi_centers,
+    out_dir / "sphere_reconstruction_3d_overlay_free.png",
+    "True vs Predicted Sphere Trajectories (free)",
+    max_trials=overlay_max_trials,
+)
+plot_sphere_prediction_comparison(
+    train_true_latents,
+    rates_geo_pred,
+    rates_free_pred,
+    theta_centers,
+    phi_centers,
+    out_dir / "sphere_reconstruction_3d_overlay_all.png",
+    "train",
+    max_trials=overlay_max_trials,
+)
+if len(heldout_dataset) > 0:
+    heldout_true_latents = true_latents[heldout_trial_indices]
+    plot_sphere_prediction_overlay(
+        heldout_true_latents,
+        rates_geo_heldout,
+        theta_centers,
+        phi_centers,
+        out_dir / "sphere_heldout_reconstruction_3d_overlay_geodesic.png",
+        "True vs Predicted Sphere Trajectories (heldout geodesic)",
+        max_trials=overlay_max_trials,
+    )
+    plot_sphere_prediction_overlay(
+        heldout_true_latents,
+        rates_free_heldout,
+        theta_centers,
+        phi_centers,
+        out_dir / "sphere_heldout_reconstruction_3d_overlay_free.png",
+        "True vs Predicted Sphere Trajectories (heldout free)",
+        max_trials=overlay_max_trials,
+    )
+    plot_sphere_prediction_comparison(
+        heldout_true_latents,
+        rates_geo_heldout,
+        rates_free_heldout,
+        theta_centers,
+        phi_centers,
+        out_dir / "sphere_heldout_reconstruction_3d_overlay_all.png",
+        "heldout",
+        max_trials=overlay_max_trials,
+    )
 
 summary = {
     "config": {
@@ -799,12 +1001,24 @@ summary = {
 np.savez_compressed(
     out_dir / "fit_outputs.npz",
     activities=activities.astype(np.float32),
+    train_rates=train_rates.astype(np.float32),
+    heldout_rates=heldout_rates.astype(np.float32),
+    train_trial_indices=train_trial_indices,
+    heldout_trial_indices=heldout_trial_indices,
     rates_geo_pred=rates_geo_pred.astype(np.float32),
     rates_free_pred=rates_free_pred.astype(np.float32),
+    rates_geo_heldout=rates_geo_heldout.astype(np.float32),
+    rates_free_heldout=rates_free_heldout.astype(np.float32),
     true_latents=true_latents.astype(np.float32),
     latents_geo=latents_geo.astype(np.float32),
     latents_free=latents_free.astype(np.float32),
+    latents_geo_heldout=latents_geo_heldout.astype(np.float32),
+    latents_free_heldout=latents_free_heldout.astype(np.float32),
+    theta_centers=theta_centers.astype(np.float32),
+    phi_centers=phi_centers.astype(np.float32),
     loss_geo=np.asarray(loss_geo, dtype=np.float32),
     loss_free=np.asarray(loss_free, dtype=np.float32),
+    heldout_loss_geo=np.asarray(heldout_loss_geo, dtype=np.float32),
+    heldout_loss_free=np.asarray(heldout_loss_free, dtype=np.float32),
 )
 print(f"Saved outputs to {out_dir}")

@@ -4,6 +4,7 @@
 
 ## October 1st, 11:33pm:
 **RESULTS BASELINE FOR REGULAR 2D RUN, INCLUDING HELDOUT SET, WITH RESTRICTIONS ON COORDINATES BEING ON THE HEMISPHERE**
+```
 (base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % MPLBACKEND=Agg \
 GEODESIC_DEVICE=cpu \
 SPHERE_OUT_DIR=runs/geodesic_sphere_test_30x600_e300_heldout_2d \
@@ -105,11 +106,12 @@ BIC             | 7782334.65      | 6991560.71
 
 Preferred Model by AIC: Free Dynamics
 Preferred Model by BIC: Free Dynamics
-
+```
 
 ## October 1st, 11:07pm:
 **RESULTS BASELINE FOR REGULAR 2D RUN, INCLUDING HELDOUT SET, WITH NO RESTRICTIONS ON COORDINATES BEING ON THE HEMISPHERE**
 
+```
 (base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % MPLBACKEND=Agg \
 GEODESIC_DEVICE=cpu \ 
 SPHERE_OUT_DIR=runs/geodesic_sphere_test_30x600_e300_heldout_2d \
@@ -213,7 +215,7 @@ Preferred Model by AIC: Free Dynamics
 Preferred Model by BIC: Geodesic
 Saved outputs to runs/geodesic_sphere_test_30x600_e300_heldout_2d
 (base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % 
-
+```
 
 ## September 27th, 10:54pm: 
 - To prove something is an immersion, meaning (I believe) the lower dimensional space isn't crushed/folded/losing directional dimensions locally, you have to compute the Jacobian matrix J of partial derivatives of the embedding functions. Looks like a matrix of partial derivatives. 

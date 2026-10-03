@@ -1,4 +1,4 @@
-# Neural VAE
+# Neural VAE Notes
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 

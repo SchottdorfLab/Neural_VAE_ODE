@@ -2,6 +2,227 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## October 1st, 11:33pm:
+**RESULTS BASELINE FOR REGULAR 2D RUN, INCLUDING HELDOUT SET, WITH RESTRICTIONS ON COORDINATES BEING ON THE HEMISPHERE**
+```
+(base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % MPLBACKEND=Agg \
+GEODESIC_DEVICE=cpu \
+SPHERE_OUT_DIR=runs/geodesic_sphere_test_30x600_e300_heldout_2d \
+SPHERE_LATENT_DIM=2 \
+SPHERE_N_TRIALS=30 \
+SPHERE_N_TIME=600 \
+SPHERE_N_NEURONS=300 \
+SPHERE_T_MAX=12.566370614359172 \
+SPHERE_SPEED=0.70710678 \
+SPHERE_KAPPA=1.5 \
+SPHERE_EPOCHS=300 \
+SPHERE_HELDOUT_FIT_EPOCHS=300 \
+SPHERE_LR=0.001 \
+SPHERE_HELDOUT_FIT_LR=0.001 \
+python -u sandbox/Geodesic_dynamics/fit_sphere_trials.py
+Using device: cpu
+Simulated 30 sphere trials: time=600, neurons=300
+Model solver: euler
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 9905015.00
+Epoch 010 | NLL Sum: 5962896.00
+Epoch 020 | NLL Sum: 4724001.00
+Epoch 030 | NLL Sum: 4307910.00
+Epoch 040 | NLL Sum: 4162062.00
+Epoch 050 | NLL Sum: 4073986.00
+Epoch 060 | NLL Sum: 4014653.00
+Epoch 070 | NLL Sum: 3972809.00
+Epoch 080 | NLL Sum: 3940382.75
+Epoch 090 | NLL Sum: 3913806.50
+Epoch 100 | NLL Sum: 3890470.50
+Epoch 110 | NLL Sum: 3868881.50
+Epoch 120 | NLL Sum: 3854599.75
+Epoch 130 | NLL Sum: 3879459.75
+Epoch 140 | NLL Sum: 3852389.00
+Epoch 150 | NLL Sum: 3843515.00
+Epoch 160 | NLL Sum: 3831524.00
+Epoch 170 | NLL Sum: 3826042.50
+Epoch 180 | NLL Sum: 3821877.50
+Epoch 190 | NLL Sum: 3844022.50
+Epoch 200 | NLL Sum: 3811350.75
+Epoch 210 | NLL Sum: 3824825.75
+Epoch 220 | NLL Sum: 3815417.50
+Epoch 230 | NLL Sum: 3802314.50
+Epoch 240 | NLL Sum: 3787661.00
+Epoch 250 | NLL Sum: 3774933.25
+Epoch 260 | NLL Sum: 3763475.00
+Epoch 270 | NLL Sum: 3753273.25
+Epoch 280 | NLL Sum: 3743416.50
+Epoch 290 | NLL Sum: 3733988.50
+--------------------
+Epoch 000 | NLL Sum: 6381789.00
+Epoch 010 | NLL Sum: 4872976.00
+Epoch 020 | NLL Sum: 4370117.50
+Epoch 030 | NLL Sum: 4090397.50
+Epoch 040 | NLL Sum: 3964697.25
+Epoch 050 | NLL Sum: 3916066.50
+Epoch 060 | NLL Sum: 3873158.00
+Epoch 070 | NLL Sum: 3714359.50
+Epoch 080 | NLL Sum: 3474774.75
+Epoch 090 | NLL Sum: 3357714.50
+Epoch 100 | NLL Sum: 3262694.50
+Epoch 110 | NLL Sum: 3243991.25
+Epoch 120 | NLL Sum: 3244887.00
+Epoch 130 | NLL Sum: 3201785.50
+Epoch 140 | NLL Sum: 3191748.00
+Epoch 150 | NLL Sum: 3198459.50
+Epoch 160 | NLL Sum: 3156867.50
+Epoch 170 | NLL Sum: 3150969.75
+Epoch 180 | NLL Sum: 3170053.50
+Epoch 190 | NLL Sum: 3124962.50
+Epoch 200 | NLL Sum: 3120826.00
+Epoch 210 | NLL Sum: 3151230.25
+Epoch 220 | NLL Sum: 3100698.25
+Epoch 230 | NLL Sum: 3096706.00
+Epoch 240 | NLL Sum: 3142237.75
+Epoch 250 | NLL Sum: 3080639.00
+Epoch 260 | NLL Sum: 3076323.00
+Epoch 270 | NLL Sum: 3131553.50
+Epoch 280 | NLL Sum: 3063125.00
+Epoch 290 | NLL Sum: 3061632.50
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Train NLL       | 3730259.00      | 3085285.75     
+Heldout NLL     | 943729.88       | 781531.88      
+Train R2        | 0.1234          | 0.4451         
+Train r         | 0.3554          | 0.6682         
+Heldout R2      | 0.1026          | 0.4342         
+Heldout r       | 0.3264          | 0.6604         
+AIC             | 7502644.00      | 6278039.50     
+BIC             | 7782334.65      | 6991560.71     
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Free Dynamics
+```
+
+## October 1st, 11:07pm:
+**RESULTS BASELINE FOR REGULAR 2D RUN, INCLUDING HELDOUT SET, WITH NO RESTRICTIONS ON COORDINATES BEING ON THE HEMISPHERE**
+
+```
+(base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % MPLBACKEND=Agg \
+GEODESIC_DEVICE=cpu \ 
+SPHERE_OUT_DIR=runs/geodesic_sphere_test_30x600_e300_heldout_2d \
+SPHERE_LATENT_DIM=2 \
+SPHERE_N_TRIALS=30 \
+SPHERE_N_TIME=600 \
+SPHERE_N_NEURONS=300 \
+SPHERE_T_MAX=12.566370614359172 \
+SPHERE_SPEED=0.70710678 \
+SPHERE_KAPPA=1.5 \
+SPHERE_EPOCHS=300 \
+SPHERE_HELDOUT_FIT_EPOCHS=300 \
+SPHERE_LR=0.001 \
+SPHERE_HELDOUT_FIT_LR=0.001 \
+python -u sandbox/Geodesic_dynamics/fit_sphere_trials.py
+Using device: cpu
+Simulated 30 sphere trials: time=600, neurons=300
+Model solver: euler
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 9751844.00
+Epoch 010 | NLL Sum: 5920408.00
+Epoch 020 | NLL Sum: 4736007.50
+Epoch 030 | NLL Sum: 4344461.00
+Epoch 040 | NLL Sum: 4206372.00
+Epoch 050 | NLL Sum: 4126531.50
+Epoch 060 | NLL Sum: 4078760.50
+Epoch 070 | NLL Sum: 4042219.50
+Epoch 080 | NLL Sum: 4015066.25
+Epoch 090 | NLL Sum: 3993969.25
+Epoch 100 | NLL Sum: 3977534.00
+Epoch 110 | NLL Sum: 3965286.00
+Epoch 120 | NLL Sum: 3955210.00
+Epoch 130 | NLL Sum: 3947095.00
+Epoch 140 | NLL Sum: 3940043.50
+Epoch 150 | NLL Sum: 3933347.00
+Epoch 160 | NLL Sum: 3927058.50
+Epoch 170 | NLL Sum: 3921184.25
+Epoch 180 | NLL Sum: 3915567.75
+Epoch 190 | NLL Sum: 3910151.25
+Epoch 200 | NLL Sum: 3904931.50
+Epoch 210 | NLL Sum: 3899871.50
+Epoch 220 | NLL Sum: 3894906.00
+Epoch 230 | NLL Sum: 3889958.50
+Epoch 240 | NLL Sum: 3885054.75
+Epoch 250 | NLL Sum: 3880238.00
+Epoch 260 | NLL Sum: 3875549.50
+Epoch 270 | NLL Sum: 3870981.50
+Epoch 280 | NLL Sum: 3866496.50
+Epoch 290 | NLL Sum: 3862055.75
+--------------------
+Epoch 000 | NLL Sum: 6349079.00
+Epoch 010 | NLL Sum: 4835205.50
+Epoch 020 | NLL Sum: 4329653.00
+Epoch 030 | NLL Sum: 4094448.25
+Epoch 040 | NLL Sum: 4020880.00
+Epoch 050 | NLL Sum: 3994955.50
+Epoch 060 | NLL Sum: 3968468.75
+Epoch 070 | NLL Sum: 3932413.25
+Epoch 080 | NLL Sum: 3904931.00
+Epoch 090 | NLL Sum: 3882435.50
+Epoch 100 | NLL Sum: 3860399.50
+Epoch 110 | NLL Sum: 3843258.75
+Epoch 120 | NLL Sum: 3825878.25
+Epoch 130 | NLL Sum: 3814596.25
+Epoch 140 | NLL Sum: 3798867.50
+Epoch 150 | NLL Sum: 3788823.50
+Epoch 160 | NLL Sum: 3773659.50
+Epoch 170 | NLL Sum: 3764172.00
+Epoch 180 | NLL Sum: 3749703.25
+Epoch 190 | NLL Sum: 3738685.00
+Epoch 200 | NLL Sum: 3723143.75
+Epoch 210 | NLL Sum: 3711635.75
+Epoch 220 | NLL Sum: 3699492.00
+Epoch 230 | NLL Sum: 3692007.00
+Epoch 240 | NLL Sum: 3679936.75
+Epoch 250 | NLL Sum: 3669243.00
+Epoch 260 | NLL Sum: 3659957.50
+Epoch 270 | NLL Sum: 3692071.25
+Epoch 280 | NLL Sum: 3650903.00
+Epoch 290 | NLL Sum: 3644785.50
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Train NLL       | 3860387.00      | 3640115.25     
+Heldout NLL     | 988145.00       | 1013429.56     
+Train R2        | 0.0640          | 0.1667         
+Train r         | 0.2562          | 0.4085         
+Heldout R2      | 0.0115          | -0.0324        
+Heldout r       | 0.1567          | 0.1679         
+AIC             | 7762900.00      | 7387698.50     
+BIC             | 8042590.65      | 8101219.71     
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Geodesic
+Saved outputs to runs/geodesic_sphere_test_30x600_e300_heldout_2d
+(base) kathleenhiggins@Kathleens-Laptop-3 Neural_VAE_ODE % 
+```
+
+## September 27th, 10:54pm: 
+- To prove something is an immersion, meaning (I believe) the lower dimensional space isn't crushed/folded/losing directional dimensions locally, you have to compute the Jacobian matrix J of partial derivatives of the embedding functions. Looks like a matrix of partial derivatives. 
+
+## September 27th, 10:43pm:
+- Can't sleep, so we're coding. Switching theta to be pi/2 to only start from horizontal points.
+
 ## July 30th, 10:22pm:
 - Starting this up again. Watch out, world. 
 

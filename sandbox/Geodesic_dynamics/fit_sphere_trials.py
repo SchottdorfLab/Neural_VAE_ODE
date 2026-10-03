@@ -155,8 +155,8 @@ else:
     device = torch.device("cpu")
 print(f"Using device: {device}")
 
-# Defaults mirror simulate_geodesic_sphere.py. Environment variables make the
-# multi-trial and 3D tests possible without changing the original constants.
+# The defaults here are the same as simulate_geodesic_sphere.py, they just make multi-trial and 3d tests possible 
+# without changing the original constants.
 num_trials = int(os.environ.get("SPHERE_N_TRIALS", "1"))
 N_neurons = int(os.environ.get("SPHERE_N_NEURONS", "300"))
 kappa = 1.5  # Tuning Width
@@ -997,7 +997,7 @@ summary = {
     "preferred_by_AIC": best_aic,
     "preferred_by_BIC": best_bic,
 }
-
+# writing to a directory here so I can look back through the previous runs 
 (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 np.savez_compressed(
     out_dir / "fit_outputs.npz",

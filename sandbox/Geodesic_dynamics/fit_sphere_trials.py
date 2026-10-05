@@ -20,6 +20,10 @@ from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
 
+TORCH_DTYPE = torch.float64
+NP_DTYPE = np.float64
+torch.set_default_dtype(TORCH_DTYPE)
+
 # for the reconstruction graphs 
 TRUE_COLOR = "#12355B"
 RECON_COLOR = "#FF5A1F"
@@ -153,7 +157,13 @@ elif torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
+if device.type == "mps":
+    raise RuntimeError(
+        "fit_sphere_trials.py uses float64, which PyTorch MPS does not support. "
+        "Set DEVICE=cpu locally or DEVICE=cuda on a CUDA system."
+    )
 print(f"Using device: {device}")
+print(f"Using dtype: {TORCH_DTYPE}")
 
 # The defaults here are the same as simulate_geodesic_sphere.py, they just make multi-trial and 3d tests possible 
 # without changing the original constants.
@@ -184,12 +194,12 @@ for trial_idx in range(num_trials):
     activity, theta_t, phi_t = simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa)
     dataset_train.append({
         "idx": trial_idx,
-        "rates": torch.tensor(activity.T, dtype=torch.float32, device=device),
+        "rates": torch.tensor(activity.T, dtype=TORCH_DTYPE, device=device),
         "seq_len": len(t_eval),
     })
-    activities.append(activity.T.astype(np.float32))
-    true_latents.append(np.stack([theta_t, phi_t], axis=1).astype(np.float32))
-    initial_conditions.append(np.asarray(y0, dtype=np.float32))
+    activities.append(activity.T.astype(NP_DTYPE))
+    true_latents.append(np.stack([theta_t, phi_t], axis=1).astype(NP_DTYPE))
+    initial_conditions.append(np.asarray(y0, dtype=NP_DTYPE))
     if trial_idx == 0:
         plot_generated_activity(
             activity,
@@ -200,8 +210,13 @@ for trial_idx in range(num_trials):
             t_eval,
             out_dir / "sphere_generated_activity.png",
         )
-if len(dataset_train) > 1:
-    train_size = int(0.8*len(dataset_train))
+heldout_frac = float(os.environ.get("SPHERE_HELDOUT_FRAC", "0.2"))
+if not 0.0 <= heldout_frac < 1.0:
+    raise ValueError("SPHERE_HELDOUT_FRAC must be in [0, 1).")
+
+if len(dataset_train) > 1 and heldout_frac > 0.0:
+    train_size = int((1.0 - heldout_frac) * len(dataset_train))
+    train_size = max(1, train_size)
     heldout_size = len(dataset_train) - train_size
 else:
     train_size = len(dataset_train)
@@ -225,9 +240,9 @@ np.savez_compressed(
     activities=activities,
     true_latents=true_latents,
     initial_conditions=initial_conditions,
-    theta_centers=theta_centers.astype(np.float32),
-    phi_centers=phi_centers.astype(np.float32),
-    t_eval=t_eval.astype(np.float32),
+    theta_centers=theta_centers.astype(NP_DTYPE),
+    phi_centers=phi_centers.astype(NP_DTYPE),
+    t_eval=t_eval.astype(NP_DTYPE),
 )
 
 if os.environ.get("SPHERE_GENERATE_ONLY", "").lower() in {"1", "true", "yes"}:
@@ -265,7 +280,13 @@ class MetricNetwork(nn.Module):
         out = self.net(x)
 
         # Construct lower triangular matrix L
-        L = torch.zeros(batch_size, self.latent_dim, self.latent_dim, device=x.device)
+        L = torch.zeros(
+            batch_size,
+            self.latent_dim,
+            self.latent_dim,
+            device=x.device,
+            dtype=x.dtype,
+        )
 
         # Fill the Cholesky factor row by row. For d=2 this preserves the
         # original ordering: L11, L21, L22.
@@ -277,7 +298,7 @@ class MetricNetwork(nn.Module):
                 idx += 1
 
         # g = L * L^T + eps * I
-        I = torch.eye(self.latent_dim, device=x.device).unsqueeze(0)
+        I = torch.eye(self.latent_dim, device=x.device, dtype=x.dtype).unsqueeze(0)
         g = torch.bmm(L, L.transpose(1, 2)) + self.eps * I
         return g
 
@@ -296,7 +317,7 @@ class GeodesicDynamics(nn.Module):
         batch_size, d, _ = g.shape
 
         # Step 1. Compute spatial derivatives of the metric tensor (dg_ij / dx_k)
-        dg = torch.zeros(batch_size, d, d, d, device=x.device)
+        dg = torch.zeros(batch_size, d, d, d, device=x.device, dtype=x.dtype)
         for i in range(d):
             for j in range(d):
                 # Gradients of g_{ij} with respect to all x
@@ -312,7 +333,7 @@ class GeodesicDynamics(nn.Module):
         g_inv = torch.inverse(g)
 
         # 3. Construct Christoffel symbols
-        Gamma = torch.zeros(batch_size, d, d, d, device=x.device)
+        Gamma = torch.zeros(batch_size, d, d, d, device=x.device, dtype=x.dtype)
         for k in range(d):
             for m in range(d):
                 for n in range(d):
@@ -537,7 +558,7 @@ class InverseFreeModel(nn.Module):
 
 
 def train_and_evaluate(model, dataset, t_eval_np, epochs=300, lr=1e-3):
-    t_eval_torch = torch.tensor(t_eval_np, dtype=torch.float32, device=device)
+    t_eval_torch = torch.tensor(t_eval_np, dtype=TORCH_DTYPE, device=device)
     trial_indices = torch.tensor([trial["idx"] for trial in dataset], dtype=torch.long, device=device)
     target_rates = torch.stack([trial["rates"] for trial in dataset], dim=0)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -573,7 +594,7 @@ def fit_heldout_initial_conditions(model, dataset, t_eval_np, epochs=300, lr=1e-
     if len(dataset) == 0:
         return None
 
-    t_eval_torch = torch.tensor(t_eval_np, dtype=torch.float32, device=device)
+    t_eval_torch = torch.tensor(t_eval_np, dtype=TORCH_DTYPE, device=device)
     trial_indices = torch.tensor([trial["idx"] for trial in dataset], dtype=torch.long, device=device)
     target_rates = torch.stack([trial["rates"] for trial in dataset], dim=0)
     previous_requires_grad = {name: p.requires_grad for name, p in model.named_parameters()}
@@ -615,7 +636,7 @@ def count_parameters(model):
 
 
 def predict_all(model, dataset, t_eval_np):
-    t_eval_torch = torch.tensor(t_eval_np, dtype=torch.float32, device=device)
+    t_eval_torch = torch.tensor(t_eval_np, dtype=TORCH_DTYPE, device=device)
     trial_indices = torch.tensor([trial["idx"] for trial in dataset], dtype=torch.long, device=device)
     pred_latents, pred_rates = model(trial_indices, t_eval_torch)
     return pred_rates.detach().cpu().numpy(), pred_latents.detach().cpu().numpy()
@@ -623,7 +644,7 @@ def predict_all(model, dataset, t_eval_np):
 
 def rates_numpy(dataset):
     if len(dataset) == 0:
-        return np.empty((0, len(t_eval), N_neurons), dtype=np.float32)
+        return np.empty((0, len(t_eval), N_neurons), dtype=NP_DTYPE)
     return torch.stack([trial["rates"] for trial in dataset], dim=0).detach().cpu().numpy()
 
 
@@ -820,8 +841,18 @@ heldout_fit_epochs = int(os.environ.get("SPHERE_HELDOUT_FIT_EPOCHS", str(epochs)
 heldout_fit_lr = float(os.environ.get("SPHERE_HELDOUT_FIT_LR", str(lr)))
 
 # Init models
-model_geo = InverseGeodesicModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=N_neurons, solver=model_solver).to(device)
-model_free = InverseFreeModel(num_trials=num_trials, latent_dim=latent_dim, n_neurons=N_neurons, solver=model_solver).to(device)
+model_geo = InverseGeodesicModel(
+    num_trials=num_trials,
+    latent_dim=latent_dim,
+    n_neurons=N_neurons,
+    solver=model_solver,
+).to(device=device, dtype=TORCH_DTYPE)
+model_free = InverseFreeModel(
+    num_trials=num_trials,
+    latent_dim=latent_dim,
+    n_neurons=N_neurons,
+    solver=model_solver,
+).to(device=device, dtype=TORCH_DTYPE)
 
 params_geo = count_parameters(model_geo)
 params_free = count_parameters(model_free)
@@ -856,8 +887,8 @@ if len(heldout_dataset) > 0:
 else:
     heldout_nll_geo = heldout_nll_free = np.nan
     heldout_loss_geo = heldout_loss_free = []
-    rates_geo_heldout = rates_free_heldout = np.empty((0, n_timepoints, N_neurons), dtype=np.float32)
-    latents_geo_heldout = latents_free_heldout = np.empty((0, n_timepoints, latent_dim), dtype=np.float32)
+    rates_geo_heldout = rates_free_heldout = np.empty((0, n_timepoints, N_neurons), dtype=NP_DTYPE)
+    latents_geo_heldout = latents_free_heldout = np.empty((0, n_timepoints, latent_dim), dtype=NP_DTYPE)
     r_geo_heldout = r2_geo_heldout = np.nan
     r_free_heldout = r2_free_heldout = np.nan
 
@@ -954,6 +985,7 @@ summary = {
         "num_trials": num_trials,
         "num_train_trials": len(train_dataset),
         "num_heldout_trials": len(heldout_dataset),
+        "heldout_frac": heldout_frac,
         "heldout_fit_epochs": heldout_fit_epochs,
         "heldout_fit_lr": heldout_fit_lr,
         "N_neurons": N_neurons,
@@ -964,6 +996,7 @@ summary = {
         "epochs": epochs,
         "lr": lr,
         "device": str(device),
+        "dtype": str(TORCH_DTYPE),
         "model_solver": model_solver,
     },
     "geodesic": {
@@ -999,27 +1032,37 @@ summary = {
 }
 # writing to a directory here so I can look back through the previous runs 
 (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+torch.save(
+    {
+        "config": summary["config"],
+        "geodesic_state_dict": model_geo.state_dict(),
+        "free_state_dict": model_free.state_dict(),
+        "train_trial_indices": train_trial_indices,
+        "heldout_trial_indices": heldout_trial_indices,
+    },
+    out_dir / "model_checkpoint.pt",
+)
 np.savez_compressed(
     out_dir / "fit_outputs.npz",
-    activities=activities.astype(np.float32),
-    train_rates=train_rates.astype(np.float32),
-    heldout_rates=heldout_rates.astype(np.float32),
+    activities=activities.astype(NP_DTYPE),
+    train_rates=train_rates.astype(NP_DTYPE),
+    heldout_rates=heldout_rates.astype(NP_DTYPE),
     train_trial_indices=train_trial_indices,
     heldout_trial_indices=heldout_trial_indices,
-    rates_geo_pred=rates_geo_pred.astype(np.float32),
-    rates_free_pred=rates_free_pred.astype(np.float32),
-    rates_geo_heldout=rates_geo_heldout.astype(np.float32),
-    rates_free_heldout=rates_free_heldout.astype(np.float32),
-    true_latents=true_latents.astype(np.float32),
-    latents_geo=latents_geo.astype(np.float32),
-    latents_free=latents_free.astype(np.float32),
-    latents_geo_heldout=latents_geo_heldout.astype(np.float32),
-    latents_free_heldout=latents_free_heldout.astype(np.float32),
-    theta_centers=theta_centers.astype(np.float32),
-    phi_centers=phi_centers.astype(np.float32),
-    loss_geo=np.asarray(loss_geo, dtype=np.float32),
-    loss_free=np.asarray(loss_free, dtype=np.float32),
-    heldout_loss_geo=np.asarray(heldout_loss_geo, dtype=np.float32),
-    heldout_loss_free=np.asarray(heldout_loss_free, dtype=np.float32),
+    rates_geo_pred=rates_geo_pred.astype(NP_DTYPE),
+    rates_free_pred=rates_free_pred.astype(NP_DTYPE),
+    rates_geo_heldout=rates_geo_heldout.astype(NP_DTYPE),
+    rates_free_heldout=rates_free_heldout.astype(NP_DTYPE),
+    true_latents=true_latents.astype(NP_DTYPE),
+    latents_geo=latents_geo.astype(NP_DTYPE),
+    latents_free=latents_free.astype(NP_DTYPE),
+    latents_geo_heldout=latents_geo_heldout.astype(NP_DTYPE),
+    latents_free_heldout=latents_free_heldout.astype(NP_DTYPE),
+    theta_centers=theta_centers.astype(NP_DTYPE),
+    phi_centers=phi_centers.astype(NP_DTYPE),
+    loss_geo=np.asarray(loss_geo, dtype=NP_DTYPE),
+    loss_free=np.asarray(loss_free, dtype=NP_DTYPE),
+    heldout_loss_geo=np.asarray(heldout_loss_geo, dtype=NP_DTYPE),
+    heldout_loss_free=np.asarray(heldout_loss_free, dtype=NP_DTYPE),
 )
 print(f"Saved outputs to {out_dir}")

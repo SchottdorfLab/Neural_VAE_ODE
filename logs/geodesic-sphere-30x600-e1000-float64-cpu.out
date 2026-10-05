@@ -1,0 +1,17 @@
+Using device: cpu
+Using dtype: torch.float64
+Simulated 30 sphere trials: time=600, neurons=300
+Model solver: euler
+Geodesic Model Parameters: 21063
+Free Dynamics Model Parameters: 53734
+
+Epoch 000 | NLL Sum: 8678065.80
+Epoch 010 | NLL Sum: 6520496.96
+Epoch 020 | NLL Sum: 5752836.93
+Epoch 030 | NLL Sum: 5435526.42
+Epoch 040 | NLL Sum: 5259038.12
+Epoch 050 | NLL Sum: 5140334.82
+Epoch 060 | NLL Sum: 5061612.83
+Epoch 070 | NLL Sum: 5014401.30
+Epoch 080 | NLL Sum: 4990995.89
+Epoch 090 | NLL Sum: 4982629.22

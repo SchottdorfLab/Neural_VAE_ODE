@@ -8,3 +8,6 @@ Free Dynamics Model Parameters: 54243
 
 Epoch 000 | NLL Sum: 6650861.72
 Epoch 010 | NLL Sum: 5173891.28
+Epoch 020 | NLL Sum: 4547826.54
+Epoch 030 | NLL Sum: 4287114.41
+Epoch 040 | NLL Sum: 4156592.27

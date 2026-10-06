@@ -175,7 +175,7 @@ t_span = (0, float(os.environ.get("SPHERE_T_MAX", str(4 * np.pi))))  # Integrate
 t_eval = np.linspace(t_span[0], t_span[1], int(os.environ.get("SPHERE_N_TIME", "600")))
 out_dir = Path(os.environ.get("SPHERE_OUT_DIR", "runs/geodesic_sphere_trials")).expanduser()
 out_dir.mkdir(parents=True, exist_ok=True)
-model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "euler").strip().lower()
+model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "rk4").strip().lower()
 if model_solver not in {"rk4", "euler"}:
     raise ValueError(f"Unknown SPHERE_MODEL_SOLVER={model_solver!r}; use 'rk4' or 'euler' please!")
 

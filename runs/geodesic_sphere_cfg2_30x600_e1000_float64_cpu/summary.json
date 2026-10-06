@@ -1,0 +1,50 @@
+{
+  "config": {
+    "num_trials": 30,
+    "num_train_trials": 30,
+    "num_heldout_trials": 0,
+    "heldout_frac": 0.0,
+    "heldout_fit_epochs": 1000,
+    "heldout_fit_lr": 0.001,
+    "N_neurons": 300,
+    "n_timepoints": 600,
+    "latent_dim": 2,
+    "kappa": 1.5,
+    "speed": 0.70710678,
+    "epochs": 1000,
+    "lr": 0.001,
+    "device": "cpu",
+    "dtype": "torch.float64",
+    "model_solver": "euler"
+  },
+  "geodesic": {
+    "params": 21063,
+    "final_nll": 4498007.760583932,
+    "train_nll": 4498007.760583932,
+    "heldout_nll": NaN,
+    "R2": 0.19018742902169028,
+    "r": 0.43641051517206736,
+    "train_R2": 0.19018742902169028,
+    "train_r": 0.43641051517206736,
+    "heldout_R2": NaN,
+    "heldout_r": NaN,
+    "AIC": 9038141.521167863,
+    "BIC": 9322532.241209315
+  },
+  "free": {
+    "params": 53734,
+    "final_nll": 4378498.189547741,
+    "train_nll": 4378498.189547741,
+    "heldout_nll": NaN,
+    "R2": 0.2362477012681775,
+    "r": 0.48624963437378654,
+    "train_R2": 0.2362477012681775,
+    "train_r": 0.48624963437378654,
+    "heldout_R2": NaN,
+    "heldout_r": NaN,
+    "AIC": 8864464.379095482,
+    "BIC": 9589975.984788276
+  },
+  "preferred_by_AIC": "Free Dynamics",
+  "preferred_by_BIC": "Geodesic"
+}

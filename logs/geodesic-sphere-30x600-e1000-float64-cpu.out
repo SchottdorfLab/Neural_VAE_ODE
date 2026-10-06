@@ -144,3 +144,85 @@ Epoch 340 | NLL Sum: 4589336.53
 Epoch 350 | NLL Sum: 4742822.35
 Epoch 360 | NLL Sum: 4867596.88
 Epoch 370 | NLL Sum: 4673800.14
+Epoch 380 | NLL Sum: 4607704.42
+Epoch 390 | NLL Sum: 4623863.39
+Epoch 400 | NLL Sum: 4569642.25
+Epoch 410 | NLL Sum: 4862469.90
+Epoch 420 | NLL Sum: 4634225.28
+Epoch 430 | NLL Sum: 4582393.06
+Epoch 440 | NLL Sum: 4559021.38
+Epoch 450 | NLL Sum: 4611935.13
+Epoch 460 | NLL Sum: 4657116.64
+Epoch 470 | NLL Sum: 4697893.60
+Epoch 480 | NLL Sum: 4628951.69
+Epoch 490 | NLL Sum: 4582967.50
+Epoch 500 | NLL Sum: 4563796.96
+Epoch 510 | NLL Sum: 4593116.99
+Epoch 520 | NLL Sum: 4591154.49
+Epoch 530 | NLL Sum: 4611122.83
+Epoch 540 | NLL Sum: 4544735.92
+Epoch 550 | NLL Sum: 4543285.38
+Epoch 560 | NLL Sum: 4639481.29
+Epoch 570 | NLL Sum: 4539985.61
+Epoch 580 | NLL Sum: 4567755.96
+Epoch 590 | NLL Sum: 4515441.09
+Epoch 600 | NLL Sum: 4502104.96
+Epoch 610 | NLL Sum: 4493752.71
+Epoch 620 | NLL Sum: 4560682.91
+Epoch 630 | NLL Sum: 4519414.65
+Epoch 640 | NLL Sum: 4592990.39
+Epoch 650 | NLL Sum: 4524933.02
+Epoch 660 | NLL Sum: 4517395.99
+Epoch 670 | NLL Sum: 4524176.98
+Epoch 680 | NLL Sum: 4488554.49
+Epoch 690 | NLL Sum: 4502430.90
+Epoch 700 | NLL Sum: 4487192.86
+Epoch 710 | NLL Sum: 4475714.79
+Epoch 720 | NLL Sum: 4517202.95
+Epoch 730 | NLL Sum: 4500353.12
+Epoch 740 | NLL Sum: 4487850.16
+Epoch 750 | NLL Sum: 4492783.71
+Epoch 760 | NLL Sum: 4489003.35
+Epoch 770 | NLL Sum: 4462296.98
+Epoch 780 | NLL Sum: 4447184.35
+Epoch 790 | NLL Sum: 4446690.54
+Epoch 800 | NLL Sum: 4458952.84
+Epoch 810 | NLL Sum: 4466207.82
+Epoch 820 | NLL Sum: 4430859.31
+Epoch 830 | NLL Sum: 4418993.75
+Epoch 840 | NLL Sum: 4428638.79
+Epoch 850 | NLL Sum: 4415921.23
+Epoch 860 | NLL Sum: 4401634.15
+Epoch 870 | NLL Sum: 4412434.42
+Epoch 880 | NLL Sum: 4406879.60
+Epoch 890 | NLL Sum: 4405327.06
+Epoch 900 | NLL Sum: 4401707.90
+Epoch 910 | NLL Sum: 4391837.06
+Epoch 920 | NLL Sum: 4405283.68
+Epoch 930 | NLL Sum: 4380252.03
+Epoch 940 | NLL Sum: 4403657.87
+Epoch 950 | NLL Sum: 4381500.44
+Epoch 960 | NLL Sum: 4381782.32
+Epoch 970 | NLL Sum: 4392119.70
+Epoch 980 | NLL Sum: 4373413.27
+Epoch 990 | NLL Sum: 4388613.38
+
+=============================================
+            MODEL COMPARISON RESULTS 
+=============================================
+Metric          | Geodesic Model  | Free Model     
+------------------------------------------------
+Parameters (k)  | 21063           | 53734          
+Train NLL       | 4498007.76      | 4378498.19     
+Heldout NLL     | nan             | nan            
+Train R2        | 0.1902          | 0.2362         
+Train r         | 0.4364          | 0.4862         
+Heldout R2      | nan             | nan            
+Heldout r       | nan             | nan            
+AIC             | 9038141.52      | 8864464.38     
+BIC             | 9322532.24      | 9589975.98     
+=============================================
+
+Preferred Model by AIC: Free Dynamics
+Preferred Model by BIC: Geodesic
+Saved outputs to runs/geodesic_sphere_cfg2_30x600_e1000_float64_cpu

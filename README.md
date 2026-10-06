@@ -2,6 +2,32 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+# October 5th, 8:55pm:
+- Added the code from Dr. Schottdorf in JAX
+- The JAX code works in 2D, but I'm not sure whether it will work on the same data that I gave it. 
+- Also, his JAX code works in float64. Would that cause a significant impact for me?
+- In a small 2d run of the OG code:
+```
+| Model | Float32 R² | Float64 R² | Change |
+|---|---:|---:|---:|
+| Geodesic | 0.1392 | 0.1902 | +0.0510 |
+| Free dynamics | 0.2223 | 0.2362 | +0.0139 |
+```
+It used:
+30 trajectories
+600 timepoints
+300 simulated place cells
+2D latent space
+Learned unconstrained metric
+Euler integration
+1,000 epochs
+All 30 trials used for training
+
+So, it appears that there wasn't a major difference for float64. 
+
+- Currently, I'm running two longer scripts with float64 in 2d and 3d to see what happens on a larger scale.
+- To see if the dataset makes things difficult, and thus a simpler dataset makes things easier for JAX, I've given JAX the same trajectories as the original fit_sphere_trials.py.
+
 ## October 1st, 11:33pm:
 **RESULTS BASELINE FOR REGULAR 2D RUN, INCLUDING HELDOUT SET, WITH RESTRICTIONS ON COORDINATES BEING ON THE HEMISPHERE**
 ```

@@ -589,14 +589,24 @@ def train_and_evaluate(model, dataset, t_eval_np, epochs=300, lr=1e-3):
     return model, loss_history, float(nll_sum.detach().cpu())
 
 
-def fit_heldout_initial_conditions(model, dataset, t_eval_np, epochs=300, lr=1e-3):
-    """Fit only heldout trial initial conditions while shared dynamics/decoder stay fixed."""
+def fit_heldout_initial_conditions(
+    model,
+    dataset,
+    t_eval_np,
+    context_steps,
+    epochs=300,
+    lr=1e-3,
+):
+    """Fit heldout initial conditions using only an early context prefix."""
     if len(dataset) == 0:
         return None
 
-    t_eval_torch = torch.tensor(t_eval_np, dtype=TORCH_DTYPE, device=device)
+    t_eval_torch = torch.tensor(t_eval_np[:context_steps], dtype=TORCH_DTYPE, device=device)
     trial_indices = torch.tensor([trial["idx"] for trial in dataset], dtype=torch.long, device=device)
-    target_rates = torch.stack([trial["rates"] for trial in dataset], dim=0)
+    target_rates = torch.stack(
+        [trial["rates"][:context_steps] for trial in dataset],
+        dim=0,
+    )
     previous_requires_grad = {name: p.requires_grad for name, p in model.named_parameters()}
 
     for name, p in model.named_parameters():
@@ -654,6 +664,16 @@ def corr_and_r2(y_true, y_pred):
     r = np.corrcoef(yt, yp)[0, 1]
     r2 = 1.0 - np.sum((yt - yp) ** 2) / np.sum((yt - yt.mean()) ** 2)
     return float(r), float(r2)
+
+
+def poisson_nll_sum(y_true, y_pred):
+    """Match torch PoissonNLLLoss(log_input=False, reduction='sum')."""
+    return float(
+        np.sum(
+            y_pred - y_true * np.log(y_pred + 1e-8),
+            dtype=np.float64,
+        )
+    )
 
 
 def plot_model_heatmap(true_rates, rates_geo_pred, rates_free_pred, dataset_idx=0, num_neurons=50):
@@ -839,6 +859,19 @@ epochs = int(os.environ.get("SPHERE_EPOCHS", os.environ.get("GEODESIC_COMPARE_EP
 lr = float(os.environ.get("SPHERE_LR", "0.001"))
 heldout_fit_epochs = int(os.environ.get("SPHERE_HELDOUT_FIT_EPOCHS", str(epochs)))
 heldout_fit_lr = float(os.environ.get("SPHERE_HELDOUT_FIT_LR", str(lr)))
+heldout_context_steps = int(os.environ.get("SPHERE_HELDOUT_CONTEXT_STEPS", "2"))
+if len(heldout_dataset) > 0 and not 2 <= heldout_context_steps < n_timepoints:
+    raise ValueError(
+        "SPHERE_HELDOUT_CONTEXT_STEPS must be at least 2 and smaller than "
+        f"SPHERE_N_TIME ({n_timepoints})."
+    )
+heldout_scored_steps = max(0, n_timepoints - heldout_context_steps)
+if len(heldout_dataset) > 0:
+    print(
+        "Heldout protocol: fit initial conditions on the first "
+        f"{heldout_context_steps} frames; score the remaining "
+        f"{heldout_scored_steps} frames."
+    )
 
 # Init models
 model_geo = InverseGeodesicModel(
@@ -874,23 +907,45 @@ r_geo, r2_geo = corr_and_r2(train_rates, rates_geo_pred)
 r_free, r2_free = corr_and_r2(train_rates, rates_free_pred)
 
 if len(heldout_dataset) > 0:
-    heldout_nll_geo, heldout_loss_geo = fit_heldout_initial_conditions(
-        model_geo, heldout_dataset, t_eval, epochs=heldout_fit_epochs, lr=heldout_fit_lr
+    heldout_context_nll_geo, heldout_context_loss_geo = fit_heldout_initial_conditions(
+        model_geo,
+        heldout_dataset,
+        t_eval,
+        context_steps=heldout_context_steps,
+        epochs=heldout_fit_epochs,
+        lr=heldout_fit_lr,
     )
-    heldout_nll_free, heldout_loss_free = fit_heldout_initial_conditions(
-        model_free, heldout_dataset, t_eval, epochs=heldout_fit_epochs, lr=heldout_fit_lr
+    heldout_context_nll_free, heldout_context_loss_free = fit_heldout_initial_conditions(
+        model_free,
+        heldout_dataset,
+        t_eval,
+        context_steps=heldout_context_steps,
+        epochs=heldout_fit_epochs,
+        lr=heldout_fit_lr,
     )
     rates_geo_heldout, latents_geo_heldout = predict_all(model_geo, heldout_dataset, t_eval)
     rates_free_heldout, latents_free_heldout = predict_all(model_free, heldout_dataset, t_eval)
-    r_geo_heldout, r2_geo_heldout = corr_and_r2(heldout_rates, rates_geo_heldout)
-    r_free_heldout, r2_free_heldout = corr_and_r2(heldout_rates, rates_free_heldout)
+    heldout_eval_rates = heldout_rates[:, heldout_context_steps:]
+    rates_geo_heldout_eval = rates_geo_heldout[:, heldout_context_steps:]
+    rates_free_heldout_eval = rates_free_heldout[:, heldout_context_steps:]
+    forecast_nll_geo = poisson_nll_sum(heldout_eval_rates, rates_geo_heldout_eval)
+    forecast_nll_free = poisson_nll_sum(heldout_eval_rates, rates_free_heldout_eval)
+    forecast_r_geo, forecast_r2_geo = corr_and_r2(
+        heldout_eval_rates,
+        rates_geo_heldout_eval,
+    )
+    forecast_r_free, forecast_r2_free = corr_and_r2(
+        heldout_eval_rates,
+        rates_free_heldout_eval,
+    )
 else:
-    heldout_nll_geo = heldout_nll_free = np.nan
-    heldout_loss_geo = heldout_loss_free = []
+    heldout_context_nll_geo = heldout_context_nll_free = np.nan
+    forecast_nll_geo = forecast_nll_free = np.nan
+    heldout_context_loss_geo = heldout_context_loss_free = []
     rates_geo_heldout = rates_free_heldout = np.empty((0, n_timepoints, N_neurons), dtype=NP_DTYPE)
     latents_geo_heldout = latents_free_heldout = np.empty((0, n_timepoints, latent_dim), dtype=NP_DTYPE)
-    r_geo_heldout = r2_geo_heldout = np.nan
-    r_free_heldout = r2_free_heldout = np.nan
+    forecast_r_geo = forecast_r2_geo = np.nan
+    forecast_r_free = forecast_r2_free = np.nan
 
 # Get AIC/BIC
 aic_geo, bic_geo = calculate_ic(nll_geo, params_geo, num_obs)
@@ -903,11 +958,12 @@ print(f"{'Metric':<15} | {'Geodesic Model':<15} | {'Free Model':<15}")
 print("-" * 48)
 print(f"{'Parameters (k)':<15} | {params_geo:<15} | {params_free:<15}")
 print(f"{'Train NLL':<15} | {nll_geo:<15.2f} | {nll_free:<15.2f}")
-print(f"{'Heldout NLL':<15} | {heldout_nll_geo:<15.2f} | {heldout_nll_free:<15.2f}")
+print(f"{'Context NLL':<15} | {heldout_context_nll_geo:<15.2f} | {heldout_context_nll_free:<15.2f}")
+print(f"{'Forecast NLL':<15} | {forecast_nll_geo:<15.2f} | {forecast_nll_free:<15.2f}")
 print(f"{'Train R2':<15} | {r2_geo:<15.4f} | {r2_free:<15.4f}")
 print(f"{'Train r':<15} | {r_geo:<15.4f} | {r_free:<15.4f}")
-print(f"{'Heldout R2':<15} | {r2_geo_heldout:<15.4f} | {r2_free_heldout:<15.4f}")
-print(f"{'Heldout r':<15} | {r_geo_heldout:<15.4f} | {r_free_heldout:<15.4f}")
+print(f"{'Forecast R2':<15} | {forecast_r2_geo:<15.4f} | {forecast_r2_free:<15.4f}")
+print(f"{'Forecast r':<15} | {forecast_r_geo:<15.4f} | {forecast_r_free:<15.4f}")
 print(f"{'AIC':<15} | {aic_geo:<15.2f} | {aic_free:<15.2f}")
 print(f"{'BIC':<15} | {bic_geo:<15.2f} | {bic_free:<15.2f}")
 print("=" * 45)
@@ -951,13 +1007,16 @@ plot_sphere_prediction_comparison(
 )
 if len(heldout_dataset) > 0:
     heldout_true_latents = true_latents[heldout_trial_indices]
+    heldout_plot_label = (
+        f"heldout forecast; {heldout_context_steps} context frames"
+    )
     plot_sphere_prediction_overlay(
         heldout_true_latents,
         rates_geo_heldout,
         theta_centers,
         phi_centers,
         out_dir / "sphere_heldout_reconstruction_3d_overlay_geodesic.png",
-        "True vs Predicted Sphere Trajectories (heldout geodesic)",
+        f"True vs Predicted Sphere Trajectories (geodesic; {heldout_plot_label})",
         max_trials=overlay_max_trials,
     )
     plot_sphere_prediction_overlay(
@@ -966,7 +1025,7 @@ if len(heldout_dataset) > 0:
         theta_centers,
         phi_centers,
         out_dir / "sphere_heldout_reconstruction_3d_overlay_free.png",
-        "True vs Predicted Sphere Trajectories (heldout free)",
+        f"True vs Predicted Sphere Trajectories (free; {heldout_plot_label})",
         max_trials=overlay_max_trials,
     )
     plot_sphere_prediction_comparison(
@@ -976,7 +1035,7 @@ if len(heldout_dataset) > 0:
         theta_centers,
         phi_centers,
         out_dir / "sphere_heldout_reconstruction_3d_overlay_all.png",
-        "heldout",
+        heldout_plot_label,
         max_trials=overlay_max_trials,
     )
 
@@ -986,6 +1045,9 @@ summary = {
         "num_train_trials": len(train_dataset),
         "num_heldout_trials": len(heldout_dataset),
         "heldout_frac": heldout_frac,
+        "heldout_evaluation": "prefix_fit_suffix_forecast",
+        "heldout_context_steps": heldout_context_steps,
+        "heldout_scored_steps": heldout_scored_steps,
         "heldout_fit_epochs": heldout_fit_epochs,
         "heldout_fit_lr": heldout_fit_lr,
         "N_neurons": N_neurons,
@@ -1003,13 +1065,14 @@ summary = {
         "params": params_geo,
         "final_nll": nll_geo,
         "train_nll": nll_geo,
-        "heldout_nll": heldout_nll_geo,
+        "context_nll": heldout_context_nll_geo,
+        "forecast_nll": forecast_nll_geo,
         "R2": r2_geo,
         "r": r_geo,
         "train_R2": r2_geo,
         "train_r": r_geo,
-        "heldout_R2": r2_geo_heldout,
-        "heldout_r": r_geo_heldout,
+        "forecast_R2": forecast_r2_geo,
+        "forecast_r": forecast_r_geo,
         "AIC": aic_geo,
         "BIC": bic_geo,
     },
@@ -1017,13 +1080,14 @@ summary = {
         "params": params_free,
         "final_nll": nll_free,
         "train_nll": nll_free,
-        "heldout_nll": heldout_nll_free,
+        "context_nll": heldout_context_nll_free,
+        "forecast_nll": forecast_nll_free,
         "R2": r2_free,
         "r": r_free,
         "train_R2": r2_free,
         "train_r": r_free,
-        "heldout_R2": r2_free_heldout,
-        "heldout_r": r_free_heldout,
+        "forecast_R2": forecast_r2_free,
+        "forecast_r": forecast_r_free,
         "AIC": aic_free,
         "BIC": bic_free,
     },
@@ -1049,6 +1113,7 @@ np.savez_compressed(
     heldout_rates=heldout_rates.astype(NP_DTYPE),
     train_trial_indices=train_trial_indices,
     heldout_trial_indices=heldout_trial_indices,
+    heldout_context_steps=np.asarray(heldout_context_steps, dtype=np.int64),
     rates_geo_pred=rates_geo_pred.astype(NP_DTYPE),
     rates_free_pred=rates_free_pred.astype(NP_DTYPE),
     rates_geo_heldout=rates_geo_heldout.astype(NP_DTYPE),
@@ -1062,7 +1127,7 @@ np.savez_compressed(
     phi_centers=phi_centers.astype(NP_DTYPE),
     loss_geo=np.asarray(loss_geo, dtype=NP_DTYPE),
     loss_free=np.asarray(loss_free, dtype=NP_DTYPE),
-    heldout_loss_geo=np.asarray(heldout_loss_geo, dtype=NP_DTYPE),
-    heldout_loss_free=np.asarray(heldout_loss_free, dtype=NP_DTYPE),
+    heldout_context_loss_geo=np.asarray(heldout_context_loss_geo, dtype=NP_DTYPE),
+    heldout_context_loss_free=np.asarray(heldout_context_loss_free, dtype=NP_DTYPE),
 )
 print(f"Saved outputs to {out_dir}")

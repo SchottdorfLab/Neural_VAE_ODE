@@ -1,0 +1,14 @@
+Loading the exact sphere-trials data from runs/geodesic_sphere_learned_metric_3d_6x80_e3000/synthetic_sphere_trials.npz...
+Train activity: (6, 80, 96); heldout activity: none
+Time range: 0.000000 to 12.566371; dt=0.159067988
+Activity range: 0.223159 to 4.481633
+Initializing Neural Geodesic Flow Model...
+Starting Optimization...
+Epoch 0000 | Reconstruction MSE Loss: 102.90097
+
+[!] NaN encountered at Epoch 0021. Stopping training.
+
+Optimization ran for 2.23 seconds.
+Train R2: nan | Train r: nan
+Train MSE: nan
+Saved outputs to runs/jax_best_fit_sphere_data_6x80_e3000

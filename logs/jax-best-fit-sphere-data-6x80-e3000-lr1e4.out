@@ -1,0 +1,42 @@
+Loading the exact sphere-trials data from runs/geodesic_sphere_learned_metric_3d_6x80_e3000/synthetic_sphere_trials.npz...
+Train activity: (6, 80, 96); heldout activity: none
+Time range: 0.000000 to 12.566371; dt=0.159067988
+Activity range: 0.223159 to 4.481633
+Initializing Neural Geodesic Flow Model...
+Starting Optimization...
+Epoch 0000 | Reconstruction MSE Loss: 102.90097
+Epoch 0100 | Reconstruction MSE Loss: 1.52347
+Epoch 0200 | Reconstruction MSE Loss: 1.30572
+Epoch 0300 | Reconstruction MSE Loss: 1.16030
+Epoch 0400 | Reconstruction MSE Loss: 1.08231
+Epoch 0500 | Reconstruction MSE Loss: 0.99883
+Epoch 0600 | Reconstruction MSE Loss: 0.96578
+Epoch 0700 | Reconstruction MSE Loss: 0.92817
+Epoch 0800 | Reconstruction MSE Loss: 0.91556
+Epoch 0900 | Reconstruction MSE Loss: 0.89587
+Epoch 1000 | Reconstruction MSE Loss: 0.89684
+Epoch 1100 | Reconstruction MSE Loss: 0.88203
+Epoch 1200 | Reconstruction MSE Loss: 0.86650
+Epoch 1300 | Reconstruction MSE Loss: 0.86518
+Epoch 1400 | Reconstruction MSE Loss: 0.85943
+Epoch 1500 | Reconstruction MSE Loss: 0.86562
+Epoch 1600 | Reconstruction MSE Loss: 0.84528
+Epoch 1700 | Reconstruction MSE Loss: 0.84526
+Epoch 1800 | Reconstruction MSE Loss: 0.85960
+Epoch 1900 | Reconstruction MSE Loss: 0.83360
+Epoch 2000 | Reconstruction MSE Loss: 0.84762
+Epoch 2100 | Reconstruction MSE Loss: 0.82628
+Epoch 2200 | Reconstruction MSE Loss: 0.82321
+Epoch 2300 | Reconstruction MSE Loss: 0.81376
+Epoch 2400 | Reconstruction MSE Loss: 0.80562
+Epoch 2500 | Reconstruction MSE Loss: 0.79805
+Epoch 2600 | Reconstruction MSE Loss: 0.78372
+Epoch 2700 | Reconstruction MSE Loss: 0.77366
+Epoch 2800 | Reconstruction MSE Loss: 0.76410
+Epoch 2900 | Reconstruction MSE Loss: 0.75502
+Epoch 2999 | Reconstruction MSE Loss: 0.74980
+
+Optimization ran for 121.63 seconds.
+Train R2: 0.434057 | Train r: 0.658914
+Train MSE: 0.74936807
+Saved outputs to runs/jax_best_fit_sphere_data_6x80_e3000_lr1e4

@@ -20,8 +20,15 @@ from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
 
-TORCH_DTYPE = torch.float64
-NP_DTYPE = np.float64
+dtype_name = os.environ.get("SPHERE_DTYPE", "float64").strip().lower()
+if dtype_name == "float32":
+    TORCH_DTYPE = torch.float32
+    NP_DTYPE = np.float32
+elif dtype_name == "float64":
+    TORCH_DTYPE = torch.float64
+    NP_DTYPE = np.float64
+else:
+    raise ValueError("SPHERE_DTYPE must be 'float32' or 'float64'.")
 torch.set_default_dtype(TORCH_DTYPE)
 
 # for the reconstruction graphs 
@@ -157,7 +164,7 @@ elif torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-if device.type == "mps":
+if device.type == "mps" and TORCH_DTYPE == torch.float64:
     raise RuntimeError(
         "fit_sphere_trials.py uses float64, which PyTorch MPS does not support. "
         "Set DEVICE=cpu locally or DEVICE=cuda on a CUDA system."
@@ -566,7 +573,10 @@ def train_and_evaluate(model, dataset, t_eval_np, epochs=300, lr=1e-3):
     # We need the SUM of the negative log-likelihood for exact AIC/BIC scaling. I messed this up
     loss_fn = nn.PoissonNLLLoss(log_input=False, reduction="sum")
 
-    loss_history = []
+    nll_history = []
+    mse_history = []
+    r2_history = []
+    target_ss_total = torch.sum((target_rates - target_rates.mean()) ** 2)
 
     for epoch in range(epochs):
         optimizer.zero_grad()
@@ -580,13 +590,27 @@ def train_and_evaluate(model, dataset, t_eval_np, epochs=300, lr=1e-3):
         nll_sum.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
+        with torch.no_grad():
+            squared_error = (pred_rates.detach() - target_rates) ** 2
+            mse = squared_error.mean()
+            r2 = 1.0 - squared_error.sum() / target_ss_total
+
         optimizer.step()
-        loss_history.append(float(nll_sum.detach().cpu()))
+        nll_value = float(nll_sum.detach().cpu())
+        mse_value = float(mse.detach().cpu())
+        r2_value = float(r2.detach().cpu())
+        nll_history.append(nll_value)
+        mse_history.append(mse_value)
+        r2_history.append(r2_value)
 
-        if epoch % int(os.environ.get("SPHERE_LOG_EVERY", "10")) == 0:
-            print(f"Epoch {epoch:03d} | NLL Sum: {float(nll_sum.detach().cpu()):.2f}")
+        log_every = int(os.environ.get("SPHERE_LOG_EVERY", "10"))
+        if epoch % log_every == 0 or epoch == epochs - 1:
+            print(
+                f"Epoch {epoch:03d} | NLL Sum: {nll_value:.2f} "
+                f"| MSE: {mse_value:.8f} | R2: {r2_value:.6f}"
+            )
 
-    return model, loss_history, float(nll_sum.detach().cpu())
+    return model, nll_history, mse_history, r2_history, nll_value
 
 
 def fit_heldout_initial_conditions(
@@ -893,9 +917,21 @@ print(f"Geodesic Model Parameters: {params_geo}")
 print(f"Free Dynamics Model Parameters: {params_free}\n")
 
 # Train models
-model_geo, loss_geo, nll_geo = train_and_evaluate(model_geo, train_dataset, t_eval, epochs=epochs, lr=lr)
+model_geo, loss_geo, mse_history_geo, r2_history_geo, nll_geo = train_and_evaluate(
+    model_geo,
+    train_dataset,
+    t_eval,
+    epochs=epochs,
+    lr=lr,
+)
 print("-" * 20)
-model_free, loss_free, nll_free = train_and_evaluate(model_free, train_dataset, t_eval, epochs=epochs, lr=lr)
+model_free, loss_free, mse_history_free, r2_history_free, nll_free = train_and_evaluate(
+    model_free,
+    train_dataset,
+    t_eval,
+    epochs=epochs,
+    lr=lr,
+)
 
 rates_geo_pred, latents_geo = predict_all(model_geo, train_dataset, t_eval)
 rates_free_pred, latents_free = predict_all(model_free, train_dataset, t_eval)
@@ -905,6 +941,8 @@ train_trial_indices = np.asarray([trial["idx"] for trial in train_dataset], dtyp
 heldout_trial_indices = np.asarray([trial["idx"] for trial in heldout_dataset], dtype=np.int64)
 r_geo, r2_geo = corr_and_r2(train_rates, rates_geo_pred)
 r_free, r2_free = corr_and_r2(train_rates, rates_free_pred)
+train_mse_geo = float(np.mean((train_rates - rates_geo_pred) ** 2))
+train_mse_free = float(np.mean((train_rates - rates_free_pred) ** 2))
 
 if len(heldout_dataset) > 0:
     heldout_context_nll_geo, heldout_context_loss_geo = fit_heldout_initial_conditions(
@@ -960,6 +998,7 @@ print(f"{'Parameters (k)':<15} | {params_geo:<15} | {params_free:<15}")
 print(f"{'Train NLL':<15} | {nll_geo:<15.2f} | {nll_free:<15.2f}")
 print(f"{'Context NLL':<15} | {heldout_context_nll_geo:<15.2f} | {heldout_context_nll_free:<15.2f}")
 print(f"{'Forecast NLL':<15} | {forecast_nll_geo:<15.2f} | {forecast_nll_free:<15.2f}")
+print(f"{'Train MSE':<15} | {train_mse_geo:<15.8f} | {train_mse_free:<15.8f}")
 print(f"{'Train R2':<15} | {r2_geo:<15.4f} | {r2_free:<15.4f}")
 print(f"{'Train r':<15} | {r_geo:<15.4f} | {r_free:<15.4f}")
 print(f"{'Forecast R2':<15} | {forecast_r2_geo:<15.4f} | {forecast_r2_free:<15.4f}")
@@ -1065,6 +1104,7 @@ summary = {
         "params": params_geo,
         "final_nll": nll_geo,
         "train_nll": nll_geo,
+        "train_MSE": train_mse_geo,
         "context_nll": heldout_context_nll_geo,
         "forecast_nll": forecast_nll_geo,
         "R2": r2_geo,
@@ -1080,6 +1120,7 @@ summary = {
         "params": params_free,
         "final_nll": nll_free,
         "train_nll": nll_free,
+        "train_MSE": train_mse_free,
         "context_nll": heldout_context_nll_free,
         "forecast_nll": forecast_nll_free,
         "R2": r2_free,
@@ -1127,6 +1168,12 @@ np.savez_compressed(
     phi_centers=phi_centers.astype(NP_DTYPE),
     loss_geo=np.asarray(loss_geo, dtype=NP_DTYPE),
     loss_free=np.asarray(loss_free, dtype=NP_DTYPE),
+    nll_history_geo=np.asarray(loss_geo, dtype=NP_DTYPE),
+    nll_history_free=np.asarray(loss_free, dtype=NP_DTYPE),
+    mse_history_geo=np.asarray(mse_history_geo, dtype=NP_DTYPE),
+    mse_history_free=np.asarray(mse_history_free, dtype=NP_DTYPE),
+    r2_history_geo=np.asarray(r2_history_geo, dtype=NP_DTYPE),
+    r2_history_free=np.asarray(r2_history_free, dtype=NP_DTYPE),
     heldout_context_loss_geo=np.asarray(heldout_context_loss_geo, dtype=NP_DTYPE),
     heldout_context_loss_free=np.asarray(heldout_context_loss_free, dtype=NP_DTYPE),
 )

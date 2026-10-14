@@ -1,0 +1,8 @@
+Using device: cpu
+Using dtype: torch.float32
+Simulated 6 sphere trials: time=80, neurons=96
+Model solver: rk4
+Geodesic Model Parameters: 7914
+Free Dynamics Model Parameters: 40839
+
+Epoch 000 | NLL Sum: 74517.25 | MSE: 2.27975726 | R2: -0.721353

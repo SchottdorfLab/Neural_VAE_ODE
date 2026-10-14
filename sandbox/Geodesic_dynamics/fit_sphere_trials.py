@@ -20,13 +20,13 @@ from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
 
-dtype_name = os.environ.get("SPHERE_DTYPE", "float64").strip().lower()
+dtype_name = os.environ.get("SPHERE_DTYPE", "float32").strip().lower()
 if dtype_name == "float32":
     TORCH_DTYPE = torch.float32
     NP_DTYPE = np.float32
-elif dtype_name == "float64":
-    TORCH_DTYPE = torch.float64
-    NP_DTYPE = np.float64
+elif dtype_name == "float32":
+    TORCH_DTYPE = torch.float32
+    NP_DTYPE = np.float32
 else:
     raise ValueError("SPHERE_DTYPE must be 'float32' or 'float64'.")
 torch.set_default_dtype(TORCH_DTYPE)
@@ -185,38 +185,76 @@ out_dir.mkdir(parents=True, exist_ok=True)
 model_solver = os.environ.get("SPHERE_MODEL_SOLVER", "rk4").strip().lower()
 if model_solver not in {"rk4", "euler"}:
     raise ValueError(f"Unknown SPHERE_MODEL_SOLVER={model_solver!r}; use 'rk4' or 'euler' please!")
+sphere_data_path = os.environ.get("SPHERE_DATA_PATH", "").strip()
 
-# Tile the sphere with "place field"
-indices = np.arange(0, N_neurons, dtype=float) + 0.5
-phi_centers = np.pi * (1 + 5**0.5) * indices
-theta_centers = np.arccos(1 - 2 * indices / N_neurons)
+if sphere_data_path:
+    # Replay an archived simulation exactly instead of regenerating it. This is
+    # useful for one-to-one model comparisons because it avoids changes in the
+    # random-number sequence introduced by unrelated plotting or setup code.
+    source_path = Path(sphere_data_path).expanduser()
+    with np.load(source_path) as source:
+        activities = np.asarray(source["activities"], dtype=NP_DTYPE)
+        true_latents = np.asarray(source["true_latents"], dtype=NP_DTYPE)
+        initial_conditions = np.asarray(source["initial_conditions"], dtype=NP_DTYPE)
+        theta_centers = np.asarray(source["theta_centers"], dtype=NP_DTYPE)
+        phi_centers = np.asarray(source["phi_centers"], dtype=NP_DTYPE)
+        t_eval = np.asarray(source["t_eval"], dtype=NP_DTYPE)
+    num_trials, n_timepoints_loaded, N_neurons = activities.shape
+    if true_latents.shape[:2] != (num_trials, n_timepoints_loaded):
+        raise ValueError("Loaded true_latents do not match loaded activities.")
+    dataset_train = [
+        {
+            "idx": trial_idx,
+            "rates": torch.tensor(activities[trial_idx], dtype=TORCH_DTYPE, device=device),
+            "seq_len": len(t_eval),
+        }
+        for trial_idx in range(num_trials)
+    ]
+    plot_generated_activity(
+        activities[0].T,
+        true_latents[0, :, 0],
+        true_latents[0, :, 1],
+        theta_centers,
+        phi_centers,
+        t_eval,
+        out_dir / "sphere_generated_activity.png",
+    )
+    print(f"Loaded archived sphere trials from {source_path}")
+else:
+    # Tile the sphere with "place field"
+    indices = np.arange(0, N_neurons, dtype=float) + 0.5
+    phi_centers = np.pi * (1 + 5**0.5) * indices
+    theta_centers = np.arccos(1 - 2 * indices / N_neurons)
 
-# Simulate many trials, all sharing the same place fields.
-dataset_train = []
-activities = []
-true_latents = []
-initial_conditions = []
-for trial_idx in range(num_trials):
-    y0 = initial_condition_for_trial(trial_idx, speed=speed)
-    activity, theta_t, phi_t = simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa)
-    dataset_train.append({
-        "idx": trial_idx,
-        "rates": torch.tensor(activity.T, dtype=TORCH_DTYPE, device=device),
-        "seq_len": len(t_eval),
-    })
-    activities.append(activity.T.astype(NP_DTYPE))
-    true_latents.append(np.stack([theta_t, phi_t], axis=1).astype(NP_DTYPE))
-    initial_conditions.append(np.asarray(y0, dtype=NP_DTYPE))
-    if trial_idx == 0:
-        plot_generated_activity(
-            activity,
-            theta_t,
-            phi_t,
-            theta_centers,
-            phi_centers,
-            t_eval,
-            out_dir / "sphere_generated_activity.png",
-        )
+    # Simulate many trials, all sharing the same place fields.
+    dataset_train = []
+    activities = []
+    true_latents = []
+    initial_conditions = []
+    for trial_idx in range(num_trials):
+        y0 = initial_condition_for_trial(trial_idx, speed=speed)
+        activity, theta_t, phi_t = simulate_one_trial(y0, t_eval, theta_centers, phi_centers, kappa)
+        dataset_train.append({
+            "idx": trial_idx,
+            "rates": torch.tensor(activity.T, dtype=TORCH_DTYPE, device=device),
+            "seq_len": len(t_eval),
+        })
+        activities.append(activity.T.astype(NP_DTYPE))
+        true_latents.append(np.stack([theta_t, phi_t], axis=1).astype(NP_DTYPE))
+        initial_conditions.append(np.asarray(y0, dtype=NP_DTYPE))
+        if trial_idx == 0:
+            plot_generated_activity(
+                activity,
+                theta_t,
+                phi_t,
+                theta_centers,
+                phi_centers,
+                t_eval,
+                out_dir / "sphere_generated_activity.png",
+            )
+    activities = np.stack(activities, axis=0)
+    true_latents = np.stack(true_latents, axis=0)
+    initial_conditions = np.stack(initial_conditions, axis=0)
 heldout_frac = float(os.environ.get("SPHERE_HELDOUT_FRAC", "0.2"))
 if not 0.0 <= heldout_frac < 1.0:
     raise ValueError("SPHERE_HELDOUT_FRAC must be in [0, 1).")
@@ -236,11 +274,7 @@ else:
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 heldout_loader = DataLoader(heldout_dataset, batch_size = 32, shuffle = False)
 
-activities = np.stack(activities, axis=0)
-true_latents = np.stack(true_latents, axis=0)
-initial_conditions = np.stack(initial_conditions, axis=0)
-
-print(f"Simulated {num_trials} sphere trials: time={len(t_eval)}, neurons={N_neurons}")
+print(f"Prepared {num_trials} sphere trials: time={len(t_eval)}, neurons={N_neurons}")
 print(f"Model solver: {model_solver}")
 np.savez_compressed(
     out_dir / "synthetic_sphere_trials.npz",
@@ -695,7 +729,7 @@ def poisson_nll_sum(y_true, y_pred):
     return float(
         np.sum(
             y_pred - y_true * np.log(y_pred + 1e-8),
-            dtype=np.float64,
+            dtype=np.float32,
         )
     )
 
@@ -770,7 +804,7 @@ def centers_to_xyz(theta_centers_np, phi_centers_np):
 def rates_to_sphere_xyz(rates, theta_centers_np, phi_centers_np):
     """Decode neural activity to a point on the unit sphere by population vector."""
     centers_xyz = centers_to_xyz(theta_centers_np, phi_centers_np)
-    flat_rates = np.clip(rates.reshape(-1, rates.shape[-1]).astype(np.float64), 0.0, None)
+    flat_rates = np.clip(rates.reshape(-1, rates.shape[-1]).astype(np.float32), 0.0, None)
     xyz = flat_rates @ centers_xyz
     norm = np.linalg.norm(xyz, axis=1, keepdims=True)
     xyz = xyz / np.maximum(norm, 1e-12)
@@ -883,7 +917,7 @@ epochs = int(os.environ.get("SPHERE_EPOCHS", os.environ.get("GEODESIC_COMPARE_EP
 lr = float(os.environ.get("SPHERE_LR", "0.001"))
 heldout_fit_epochs = int(os.environ.get("SPHERE_HELDOUT_FIT_EPOCHS", str(epochs)))
 heldout_fit_lr = float(os.environ.get("SPHERE_HELDOUT_FIT_LR", str(lr)))
-heldout_context_steps = int(os.environ.get("SPHERE_HELDOUT_CONTEXT_STEPS", "2"))
+heldout_context_steps = int(os.environ.get("SPHERE_HELDOUT_CONTEXT_STEPS", "10"))
 if len(heldout_dataset) > 0 and not 2 <= heldout_context_steps < n_timepoints:
     raise ValueError(
         "SPHERE_HELDOUT_CONTEXT_STEPS must be at least 2 and smaller than "

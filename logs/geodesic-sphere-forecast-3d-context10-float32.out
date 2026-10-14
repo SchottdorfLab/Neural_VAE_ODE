@@ -1,0 +1,10 @@
+Using device: cpu
+Using dtype: torch.float32
+Prepared 30 sphere trials: time=600, neurons=300
+Model solver: euler
+Heldout protocol: fit initial conditions on the first 10 frames; score the remaining 590 frames.
+Geodesic Model Parameters: 21318
+Free Dynamics Model Parameters: 54243
+
+Epoch 000 | NLL Sum: 6931573.50 | MSE: 2.28928924 | R2: -0.728733
+Epoch 010 | NLL Sum: 5171529.50 | MSE: 1.80318177 | R2: -0.361654

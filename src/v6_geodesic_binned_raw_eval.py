@@ -84,6 +84,31 @@ def uses_start_encoder(cfg: Dict[str, Any]) -> bool:
     return initial_condition_mode(cfg) in {"start", "start_point", "start_encoder", "initial_state", "future"}
 
 
+def dynamics_mode(cfg: Dict[str, Any]) -> str:
+    return str(cfg.get("geodesic_dynamics_mode", "geodesic")).lower().strip()
+
+
+def apply_decoder_activation(fhat: torch.Tensor, cfg: Dict[str, Any]) -> torch.Tensor:
+    mode = str(cfg.get("decoder_output_activation", "identity")).lower().strip()
+    if mode in {"identity", "none", "linear"}:
+        return fhat
+    if mode in {"softplus", "positive", "rate"}:
+        return F.softplus(fhat)
+    if mode in {"relu", "nonnegative"}:
+        return F.relu(fhat)
+    raise ValueError(f"Unknown decoder_output_activation={mode!r}")
+
+
+def feature_reconstruction_loss(fhat: torch.Tensor, target: torch.Tensor, cfg: Dict[str, Any]) -> torch.Tensor:
+    mode = str(cfg.get("feature_loss", cfg.get("reconstruction_loss", "mse"))).lower().strip()
+    if mode in {"mse", "l2"}:
+        return F.mse_loss(fhat, target)
+    if mode in {"poisson", "poisson_nll", "nll"}:
+        eps = cfg_float(cfg, "poisson_rate_eps", 1e-8)
+        return F.poisson_nll_loss(torch.clamp(fhat, min=eps), target, log_input=False, reduction="mean")
+    raise ValueError(f"Unknown feature_loss={mode!r}")
+
+
 class MetricNetwork(nn.Module):
     """Positive-definite latent metric g(z) = L(z)L(z)^T + eps I."""
 
@@ -189,6 +214,59 @@ class GeodesicDynamics(nn.Module):
         return z_next, v_next
 
 
+class FreeDynamics(nn.Module):
+    """Unconstrained second-order latent dynamics a = f(z, v, sensory)."""
+
+    def __init__(
+        self,
+        latent_dim: int,
+        sensory_dim: int,
+        hidden_dim: int = 128,
+        layers: int = 3,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        self.latent_dim = int(latent_dim)
+        in_dim = 2 * self.latent_dim + max(1, int(sensory_dim))
+        blocks: list[nn.Module] = []
+        dim = in_dim
+        for _ in range(max(1, int(layers))):
+            blocks.append(nn.Linear(dim, int(hidden_dim)))
+            blocks.append(nn.Tanh())
+            if dropout > 0:
+                blocks.append(nn.Dropout(float(dropout)))
+            dim = int(hidden_dim)
+        blocks.append(nn.Linear(dim, self.latent_dim))
+        self.net = nn.Sequential(*blocks)
+
+    def acceleration(self, z: torch.Tensor, v: torch.Tensor, sensory_t: torch.Tensor) -> torch.Tensor:
+        state = torch.cat([z, v, sensory_t], dim=-1)
+        return self.net(state)
+
+    def forward(
+        self,
+        z: torch.Tensor,
+        v: torch.Tensor,
+        dt: torch.Tensor,
+        sensory_t: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        k1_v = self.acceleration(z, v, sensory_t)
+        k1_z = v
+
+        k2_v = self.acceleration(z + 0.5 * dt * k1_z, v + 0.5 * dt * k1_v, sensory_t)
+        k2_z = v + 0.5 * dt * k1_v
+
+        k3_v = self.acceleration(z + 0.5 * dt * k2_z, v + 0.5 * dt * k2_v, sensory_t)
+        k3_z = v + 0.5 * dt * k2_v
+
+        k4_v = self.acceleration(z + dt * k3_z, v + dt * k3_v, sensory_t)
+        k4_z = v + dt * k3_v
+
+        v_next = v + (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
+        z_next = z + (dt / 6.0) * (k1_z + 2 * k2_z + 2 * k3_z + k4_z)
+        return z_next, v_next
+
+
 class GeodesicMindAE(nn.Module):
     """Per-trial geodesic latent trajectory plus feature decoder."""
 
@@ -205,6 +283,9 @@ class GeodesicMindAE(nn.Module):
         metric_eps: float,
         init_scale: float,
         friction_init: float,
+        dynamics_kind: str,
+        free_hidden: int,
+        free_layers: int,
         log_tau_init: float,
         log_tau_min: float,
         log_tau_max: float,
@@ -213,8 +294,15 @@ class GeodesicMindAE(nn.Module):
         self.latent_dim = int(latent_dim)
         self.log_tau_min = float(log_tau_min)
         self.log_tau_max = float(log_tau_max)
-        self.metric = MetricNetwork(latent_dim, metric_hidden, metric_eps)
-        self.dynamics = GeodesicDynamics(self.metric, sensory_dim, friction_init)
+        self.dynamics_kind = str(dynamics_kind).lower()
+        if self.dynamics_kind in {"free", "free_dynamics", "unconstrained"}:
+            self.metric = None
+            self.dynamics = FreeDynamics(latent_dim, sensory_dim, free_hidden, free_layers, dropout)
+        elif self.dynamics_kind in {"geodesic", "metric", "riemannian"}:
+            self.metric = MetricNetwork(latent_dim, metric_hidden, metric_eps)
+            self.dynamics = GeodesicDynamics(self.metric, sensory_dim, friction_init)
+        else:
+            raise ValueError(f"Unknown geodesic_dynamics_mode={dynamics_kind!r}")
         self.decoder = self._mlp(latent_dim, feature_dim, hidden, layers, dropout)
         self.z0 = nn.Parameter(torch.randn(num_trials, latent_dim) * float(init_scale))
         self.v0 = nn.Parameter(torch.randn(num_trials, latent_dim) * float(init_scale))
@@ -270,6 +358,9 @@ class StartConditionGeodesicMindAE(nn.Module):
         metric_hidden: int,
         metric_eps: float,
         friction_init: float,
+        dynamics_kind: str,
+        free_hidden: int,
+        free_layers: int,
         log_tau_init: float,
         log_tau_min: float,
         log_tau_max: float,
@@ -280,8 +371,15 @@ class StartConditionGeodesicMindAE(nn.Module):
         self.latent_dim = int(latent_dim)
         self.log_tau_min = float(log_tau_min)
         self.log_tau_max = float(log_tau_max)
-        self.metric = MetricNetwork(latent_dim, metric_hidden, metric_eps)
-        self.dynamics = GeodesicDynamics(self.metric, sensory_dim, friction_init)
+        self.dynamics_kind = str(dynamics_kind).lower()
+        if self.dynamics_kind in {"free", "free_dynamics", "unconstrained"}:
+            self.metric = None
+            self.dynamics = FreeDynamics(latent_dim, sensory_dim, free_hidden, free_layers, dropout)
+        elif self.dynamics_kind in {"geodesic", "metric", "riemannian"}:
+            self.metric = MetricNetwork(latent_dim, metric_hidden, metric_eps)
+            self.dynamics = GeodesicDynamics(self.metric, sensory_dim, friction_init)
+        else:
+            raise ValueError(f"Unknown geodesic_dynamics_mode={dynamics_kind!r}")
         self.decoder = GeodesicMindAE._mlp(latent_dim, feature_dim, hidden, layers, dropout)
         self.start_encoder = GeodesicMindAE._mlp(feature_dim, 2 * latent_dim, start_hidden, start_layers, dropout)
         self.log_tau = nn.Parameter(torch.tensor(float(log_tau_init)))
@@ -440,6 +538,9 @@ def make_model(cfg: Dict[str, Any], fit: Dict[str, Any], device: torch.device) -
         metric_hidden=cfg_int(cfg, "geodesic_metric_hidden", 32),
         metric_eps=cfg_float(cfg, "geodesic_metric_eps", 1e-4),
         friction_init=cfg_float(cfg, "geodesic_friction_init", -2.0),
+        dynamics_kind=dynamics_mode(cfg),
+        free_hidden=cfg_int(cfg, "free_dynamics_hidden", 128),
+        free_layers=cfg_int(cfg, "free_dynamics_layers", 3),
         log_tau_init=cfg_float(cfg, "geodesic_log_tau_init", 0.0),
         log_tau_min=cfg_float(cfg, "geodesic_log_tau_min", -5.0),
         log_tau_max=cfg_float(cfg, "geodesic_log_tau_max", 2.0),
@@ -518,7 +619,8 @@ def train_geodesic_model(
 
     print(
         "Training GeodesicMindAE: "
-        f"mode={initial_condition_mode(cfg)}, fit_trials={fit_trial_count}, seq_len={fit['seq_len']}, "
+        f"mode={initial_condition_mode(cfg)}, dynamics={dynamics_mode(cfg)}, "
+        f"fit_trials={fit_trial_count}, seq_len={fit['seq_len']}, "
         f"feature_dim={fit['feature_dim']}, latent_dim={cfg_int(cfg, 'latent_dim', 7)}, "
         f"sensory_dim={fit['sensory_fit'].shape[-1]}, trial_batch={batch_size}"
     )
@@ -549,7 +651,8 @@ def train_geodesic_model(
                 fhat, zseq = model(rows, sensory_fit[rows], f_fit[rows, 0, :], dt_physical)
             else:
                 fhat, zseq = model(rows, sensory_fit[rows], dt_physical)
-            loss_feature = F.mse_loss(fhat, f_fit[rows])
+            fhat = apply_decoder_activation(fhat, cfg)
+            loss_feature = feature_reconstruction_loss(fhat, f_fit[rows], cfg)
             loss_teacher = F.mse_loss(fhat, teacher_fit[rows])
             loss_z = F.mse_loss(zseq, z_teacher_fit[rows])
             if lambda_raw > 0:
@@ -593,7 +696,11 @@ def train_geodesic_model(
             "epoch": int(epoch),
             "loss": float(avg),
             "log_tau": float(model.log_tau.detach().cpu()),
-            "friction": float(torch.exp(model.dynamics.log_friction.detach()).cpu()),
+            "friction": (
+                float(torch.exp(model.dynamics.log_friction.detach()).cpu())
+                if hasattr(model.dynamics, "log_friction")
+                else None
+            ),
             **parts_avg,
         }
         history.append(row)
@@ -623,12 +730,14 @@ def train_geodesic_model(
         "best_loss": float(best_loss),
         "fit_all_trials": cfg_bool(cfg, "geodesic_fit_all_trials", True) and not strict_heldout,
         "initial_condition_mode": initial_condition_mode(cfg),
+        "dynamics_mode": dynamics_mode(cfg),
         "strict_heldout": strict_heldout,
     }
 
 
 def predict_geodesic_features(
     model: nn.Module,
+    cfg: Dict[str, Any],
     sensory: np.ndarray,
     device: torch.device,
     batch_size: int,
@@ -656,6 +765,7 @@ def predict_geodesic_features(
                     fhat, zseq = model(rows, sensory_t, start_t, dt_physical)
                 else:
                     fhat, zseq = model(rows, sensory_t, dt_physical)
+                fhat = apply_decoder_activation(fhat, cfg)
             f_chunks.append(fhat.detach().cpu().numpy())
             z_chunks.append(zseq.detach().cpu().numpy())
     finally:
@@ -688,6 +798,7 @@ def evaluate_and_save(
     pred_batch = cfg_int(cfg, "geodesic_predict_trial_batch_size", cfg_int(cfg, "geodesic_trial_batch_size", 8))
     fhat_fit, z_fit = predict_geodesic_features(
         model,
+        cfg,
         fit["sensory_fit"],
         device,
         pred_batch,
@@ -842,19 +953,25 @@ def evaluate_and_save(
         "r": raw_test_metrics["r"],
         "strict_heldout": bool(train_meta.get("strict_heldout", False)),
         "evaluation_label": eval_label,
+        "dynamics_mode": dynamics_mode(cfg),
     }
     torch.save(final_metrics, out_dir / "final_metrics.pt")
     metadata = {
         "script": Path(__file__).name,
         "config_path": str(Path(args.config).resolve()),
         "data_path": str(data["data_path"]),
-        "model_type": "geodesic_v6_start_encoder" if isinstance(model, StartConditionGeodesicMindAE) else "geodesic_v6_dr_style",
+        "model_type": (
+            f"v6_{dynamics_mode(cfg)}_dynamics_start_encoder"
+            if isinstance(model, StartConditionGeodesicMindAE)
+            else f"v6_{dynamics_mode(cfg)}_dynamics_fitted_initial_conditions"
+        ),
         "initial_conditions": (
             "first_feature_state_to_z0_v0_start_encoder"
             if isinstance(model, StartConditionGeodesicMindAE)
             else "fit_per_trial_z0_v0_for_train_and_heldout"
         ),
         "strict_heldout": bool(train_meta.get("strict_heldout", False)),
+        "dynamics_mode": dynamics_mode(cfg),
         "data_mode": "position_binned_train_raw_frame_eval",
         "train_alignment": str(cfg.get("sequence_alignment", "position")),
         "sequence_length": int(data["x_train_proc"].shape[1]),
@@ -880,13 +997,13 @@ def evaluate_and_save(
         "training": train_meta,
         "metrics": final_metrics,
         "method_note": (
-            "Start-encoder geodesic v6: the model receives only the first PCA feature state for each "
-            "trial, maps it to z0/v0, then rolls the whole trajectory forward with shared geodesic RK4 "
-            "dynamics and a shared decoder. Heldout metrics are strict future-prediction diagnostics."
+            f"Start-encoder v6 latent dynamics AE: the model receives only the first PCA feature state for each "
+            f"trial, maps it to z0/v0, then rolls the whole trajectory forward with shared {dynamics_mode(cfg)} RK4 "
+            f"dynamics and a shared decoder. Heldout metrics are strict future-prediction diagnostics."
             if isinstance(model, StartConditionGeodesicMindAE)
             else (
-                "Dr-style geodesic v6: each trial has fitted latent z0/v0; the shared metric, "
-                "time scale, friction, sensory force, and decoder are fit across all trials. "
+                f"Dr-style v6 latent dynamics AE: each trial has fitted latent z0/v0; the shared {dynamics_mode(cfg)} "
+                "dynamics, time scale, optional sensory force, and decoder are fit across all trials. "
                 "Because heldout trials also have fitted initial conditions, heldout-fit "
                 "metrics are reconstruction diagnostics rather than strict trial-generalization metrics."
             )

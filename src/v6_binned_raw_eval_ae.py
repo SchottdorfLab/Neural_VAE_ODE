@@ -289,8 +289,32 @@ def main() -> None:
     fhat_test, zhat_test = neural.predict_features(model, data["f_test_flat"], device, cfg_int(cfg, "predict_batch_size", 4096))
 
     prediction_decoder = str(cfg.get("prediction_decoder", "neural")).lower()
+    raw_decoder_mode = str(cfg.get("raw_decoder_mode", cfg.get("observation_model", "inverse_pca"))).lower()
     prediction_meta: Dict[str, Any] = {"decoder": prediction_decoder}
-    if prediction_decoder in {"local_kernel", "kernel", "mind_local", "local"}:
+    silence_q_train_flat: np.ndarray | None = None
+    silence_q_test_flat: np.ndarray | None = None
+    silence_amp_train_flat: np.ndarray | None = None
+    silence_amp_test_flat: np.ndarray | None = None
+    use_silence_decoder = prediction_decoder in neural.SILENCE_GATED_DECODER_MODES or (
+        prediction_decoder in {"neural", "mlp", "global", "global_neural"}
+        and raw_decoder_mode in neural.SILENCE_GATED_DECODER_MODES
+    )
+    if use_silence_decoder:
+        print("Using learned silence-gated raw decoder: xhat = (1 - q_silence) * amplitude")
+        xhat_train_flat, silence_q_train_flat, silence_amp_train_flat = neural.predict_silence_gated_raw(
+            model,
+            data["f_train_flat"],
+            device,
+            cfg_int(cfg, "predict_batch_size", 4096),
+        )
+        xhat_test_flat, silence_q_test_flat, silence_amp_test_flat = neural.predict_silence_gated_raw(
+            model,
+            data["f_test_flat"],
+            device,
+            cfg_int(cfg, "predict_batch_size", 4096),
+        )
+        prediction_meta.update({"decoder": "silence_gated", "raw_decoder_mode": raw_decoder_mode})
+    elif prediction_decoder in {"local_kernel", "kernel", "mind_local", "local"}:
         target = str(cfg.get("local_prediction_target", cfg.get("decoder_target", "feature"))).lower()
         k = cfg_int(cfg, "local_prediction_k", cfg_int(cfg, "inverse_k", 128))
         bandwidth = cfg_float(cfg, "local_prediction_bandwidth", cfg_float(cfg, "kernel_bandwidth", 0.35))
@@ -362,6 +386,25 @@ def main() -> None:
     xhat_train = xhat_train_flat.reshape(x_train_shape)
     xhat_test = xhat_test_flat.reshape(x_test_shape)
 
+    binned_silence_metrics: Dict[str, float] | None = None
+    silence_q_train: np.ndarray | None = None
+    silence_q_test: np.ndarray | None = None
+    silence_amp_train: np.ndarray | None = None
+    silence_amp_test: np.ndarray | None = None
+    if silence_q_test_flat is not None and silence_amp_test_flat is not None:
+        silence_q_train = silence_q_train_flat.reshape(x_train_shape)
+        silence_q_test = silence_q_test_flat.reshape(x_test_shape)
+        silence_amp_train = silence_amp_train_flat.reshape(x_train_shape)
+        silence_amp_test = silence_amp_test_flat.reshape(x_test_shape)
+        binned_silence_metrics = neural.compute_silence_gate_metrics(
+            data["x_test_proc"],
+            xhat_test,
+            silence_q_test,
+            silence_amp_test,
+            threshold=cfg_float(cfg, "silence_threshold", 0.0),
+            decision_threshold=cfg_float(cfg, "silence_event_decision_threshold", 0.5),
+        )
+
     binned_train_metrics = mind.corr_and_r2(data["x_train_proc"], xhat_train)
     binned_train_metrics.update(mind.summarize_trial_mind_r2(data["x_train_proc"], xhat_train))
     binned_test_metrics = mind.corr_and_r2(data["x_test_proc"], xhat_test)
@@ -389,6 +432,49 @@ def main() -> None:
     xhat_train_raw = xhat_train_raw_flat[None, :, :]
     xhat_test_raw = xhat_test_raw_flat[None, :, :]
 
+    raw_silence_metrics: Dict[str, float] | None = None
+    silence_q_train_raw: np.ndarray | None = None
+    silence_q_test_raw: np.ndarray | None = None
+    silence_amp_train_raw: np.ndarray | None = None
+    silence_amp_test_raw: np.ndarray | None = None
+    if silence_q_train is not None and silence_q_test is not None and silence_amp_train is not None and silence_amp_test is not None:
+        silence_q_train_raw = map_binned_predictions_to_raw_frames(
+            silence_q_train,
+            train_trial_ids,
+            raw_eval["train_frame_trial_ids"],
+            raw_eval["train_frame_axis"],
+            bin_axis,
+        )[None, :, :]
+        silence_q_test_raw = map_binned_predictions_to_raw_frames(
+            silence_q_test,
+            test_trial_ids,
+            raw_eval["test_frame_trial_ids"],
+            raw_eval["test_frame_axis"],
+            bin_axis,
+        )[None, :, :]
+        silence_amp_train_raw = map_binned_predictions_to_raw_frames(
+            silence_amp_train,
+            train_trial_ids,
+            raw_eval["train_frame_trial_ids"],
+            raw_eval["train_frame_axis"],
+            bin_axis,
+        )[None, :, :]
+        silence_amp_test_raw = map_binned_predictions_to_raw_frames(
+            silence_amp_test,
+            test_trial_ids,
+            raw_eval["test_frame_trial_ids"],
+            raw_eval["test_frame_axis"],
+            bin_axis,
+        )[None, :, :]
+        raw_silence_metrics = neural.compute_silence_gate_metrics(
+            raw_eval["test_x"],
+            xhat_test_raw,
+            silence_q_test_raw,
+            silence_amp_test_raw,
+            threshold=cfg_float(cfg, "silence_threshold", 0.0),
+            decision_threshold=cfg_float(cfg, "silence_event_decision_threshold", 0.5),
+        )
+
     raw_train_metrics = mind.corr_and_r2(raw_eval["train_x"], xhat_train_raw)
     raw_train_metrics.update(mind.summarize_frame_trial_mind_r2(
         raw_eval["train_x"], xhat_train_raw, raw_eval["train_frame_trial_ids"], raw_eval["train_trial_ids"]
@@ -411,30 +497,51 @@ def main() -> None:
         f"Raw mapped event capture top1 {raw_event_metrics['top_1_percent_event_capture']:.4f} | "
         f"dyn ratio {raw_event_metrics['pred_dynamics_std_over_true_dynamics_std']:.4f}"
     )
+    if raw_silence_metrics is not None:
+        print(
+            f"Raw silence gate: true event rate {raw_silence_metrics['true_event_fraction']:.4f} | "
+            f"predicted event probability {raw_silence_metrics['predicted_event_probability_mean']:.4f} | "
+            f"silent RMSE {raw_silence_metrics['silent_prediction_rmse']:.4f} | "
+            f"event RMSE {raw_silence_metrics['event_reconstruction_rmse']:.4f}"
+        )
 
     torch.save({"model_state": model.state_dict(), "config": jsonable(cfg), "train_meta": jsonable(train_meta)}, out_dir / "model.pt")
-    np.savez_compressed(
-        out_dir / "analysis_cache_best.npz",
-        x_true=raw_eval["test_x"].astype(np.float32),
-        x_pred=xhat_test_raw.astype(np.float32),
-        x_binned_true=data["x_test_proc"].astype(np.float32),
-        x_binned_pred=xhat_test.astype(np.float32),
-        x_train_true=raw_eval["train_x"].astype(np.float32),
-        x_train_pred=xhat_train_raw.astype(np.float32),
-        z_test=zhat_test.reshape(x_test_shape[0], x_test_shape[1], -1).astype(np.float32),
-        z_train=zhat_train.reshape(x_train_shape[0], x_train_shape[1], -1).astype(np.float32),
-        train_trial_ids=train_trial_ids,
-        test_trial_ids=test_trial_ids,
-        train_frame_trial_ids=raw_eval["train_frame_trial_ids"],
-        test_frame_trial_ids=raw_eval["test_frame_trial_ids"],
-        train_frame_time=raw_eval["train_frame_time"],
-        test_frame_time=raw_eval["test_frame_time"],
-        train_frame_position=raw_eval["train_frame_position"],
-        test_frame_position=raw_eval["test_frame_position"],
-        train_frame_axis=raw_eval["train_frame_axis"],
-        test_frame_axis=raw_eval["test_frame_axis"],
-        metrics_json=np.asarray(json.dumps(jsonable({"binned": binned_test_metrics, "raw_mapped": raw_test_metrics}))),
-    )
+    cache = {
+        "x_true": raw_eval["test_x"].astype(np.float32),
+        "x_pred": xhat_test_raw.astype(np.float32),
+        "x_binned_true": data["x_test_proc"].astype(np.float32),
+        "x_binned_pred": xhat_test.astype(np.float32),
+        "x_train_true": raw_eval["train_x"].astype(np.float32),
+        "x_train_pred": xhat_train_raw.astype(np.float32),
+        "z_test": zhat_test.reshape(x_test_shape[0], x_test_shape[1], -1).astype(np.float32),
+        "z_train": zhat_train.reshape(x_train_shape[0], x_train_shape[1], -1).astype(np.float32),
+        "train_trial_ids": train_trial_ids,
+        "test_trial_ids": test_trial_ids,
+        "train_frame_trial_ids": raw_eval["train_frame_trial_ids"],
+        "test_frame_trial_ids": raw_eval["test_frame_trial_ids"],
+        "train_frame_time": raw_eval["train_frame_time"],
+        "test_frame_time": raw_eval["test_frame_time"],
+        "train_frame_position": raw_eval["train_frame_position"],
+        "test_frame_position": raw_eval["test_frame_position"],
+        "train_frame_axis": raw_eval["train_frame_axis"],
+        "test_frame_axis": raw_eval["test_frame_axis"],
+        "metrics_json": np.asarray(json.dumps(jsonable({
+            "binned": binned_test_metrics,
+            "raw_mapped": raw_test_metrics,
+            "binned_silence_gate": binned_silence_metrics,
+            "raw_silence_gate": raw_silence_metrics,
+        }))),
+    }
+    if silence_q_test is not None and silence_amp_test is not None:
+        cache.update({
+            "silence_probability_binned": silence_q_test.astype(np.float32),
+            "event_probability_binned": (1.0 - silence_q_test).astype(np.float32),
+            "event_amplitude_binned": silence_amp_test.astype(np.float32),
+            "silence_probability_raw": silence_q_test_raw.astype(np.float32),
+            "event_probability_raw": (1.0 - silence_q_test_raw).astype(np.float32),
+            "event_amplitude_raw": silence_amp_test_raw.astype(np.float32),
+        })
+    np.savez_compressed(out_dir / "analysis_cache_best.npz", **cache)
     save_raw_mapped_heatmap(
         raw_eval["test_x"],
         xhat_test_raw,
@@ -463,6 +570,8 @@ def main() -> None:
         "raw_mapped_train": raw_train_metrics,
         "raw_mapped_heldout": raw_test_metrics,
         "raw_mapped_events": raw_event_metrics,
+        "binned_silence_gate": binned_silence_metrics,
+        "raw_silence_gate": raw_silence_metrics,
         "R2": raw_test_metrics["R2"],
         "r": raw_test_metrics["r"],
     }

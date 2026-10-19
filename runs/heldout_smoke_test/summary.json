@@ -1,0 +1,57 @@
+{
+  "config": {
+    "num_trials": 4,
+    "num_train_trials": 3,
+    "num_heldout_trials": 1,
+    "train_trial_ids": [
+      0,
+      1,
+      2
+    ],
+    "heldout_trial_ids": [
+      3
+    ],
+    "heldout_frac": 0.25,
+    "heldout_fit_epochs": 2,
+    "heldout_fit_lr": 0.001,
+    "N_neurons": 20,
+    "n_timepoints": 20,
+    "latent_dim": 2,
+    "kappa": 1.5,
+    "speed": 0.7071067811865476,
+    "epochs": 2,
+    "lr": 0.001,
+    "device": "cpu",
+    "model_solver": "euler"
+  },
+  "geodesic": {
+    "params": 2755,
+    "final_nll": 1744.6337890625,
+    "train_nll": 1744.6337890625,
+    "heldout_nll": 669.1357421875,
+    "R2": -0.5191285610198975,
+    "r": 0.03854423338100446,
+    "train_R2": -0.5191285610198975,
+    "train_r": 0.03854423338100446,
+    "heldout_R2": -0.7904536724090576,
+    "heldout_r": 0.04019458086891976,
+    "AIC": 8999.267578125,
+    "BIC": 23022.42926068813
+  },
+  "free": {
+    "params": 35426,
+    "final_nll": 1481.3282470703125,
+    "train_nll": 1481.3282470703125,
+    "heldout_nll": 482.728759765625,
+    "R2": -0.3606375455856323,
+    "r": 0.050220411613343216,
+    "train_R2": -0.3606375455856323,
+    "train_r": 0.050220411613343216,
+    "heldout_R2": -0.3807779550552368,
+    "heldout_r": 0.0024557612253340564,
+    "AIC": 73814.65649414062,
+    "BIC": 254135.71847834444
+  },
+  "preferred_by_AIC": "Geodesic",
+  "preferred_by_BIC": "Geodesic"
+}

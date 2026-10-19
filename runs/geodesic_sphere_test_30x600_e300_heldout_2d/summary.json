@@ -1,0 +1,48 @@
+{
+  "config": {
+    "num_trials": 30,
+    "num_train_trials": 24,
+    "num_heldout_trials": 6,
+    "heldout_fit_epochs": 300,
+    "heldout_fit_lr": 0.001,
+    "N_neurons": 300,
+    "n_timepoints": 600,
+    "latent_dim": 2,
+    "kappa": 1.5,
+    "speed": 0.70710678,
+    "epochs": 3000,
+    "lr": 0.001,
+    "device": "cpu",
+    "model_solver": "euler"
+  },
+  "geodesic": {
+    "params": 21063,
+    "final_nll": 2861752.75,
+    "train_nll": 2861752.75,
+    "heldout_nll": 1026557.0625,
+    "R2": 0.5778896808624268,
+    "r": 0.760915676165154,
+    "train_R2": 0.5778896808624268,
+    "train_r": 0.760915676165154,
+    "heldout_R2": -0.02157008647918701,
+    "heldout_r": 0.2567250495248213,
+    "AIC": 5765631.5,
+    "BIC": 6045322.14742012
+  },
+  "free": {
+    "params": 53734,
+    "final_nll": 2967902.0,
+    "train_nll": 2967902.0,
+    "heldout_nll": 1113871.75,
+    "R2": 0.5159368515014648,
+    "r": 0.7185076920014125,
+    "train_R2": 0.5159368515014648,
+    "train_r": 0.7185076920014125,
+    "heldout_R2": -0.1726897954940796,
+    "heldout_r": 0.20180392050632526,
+    "AIC": 6043272.0,
+    "BIC": 6756793.210106477
+  },
+  "preferred_by_AIC": "Geodesic",
+  "preferred_by_BIC": "Geodesic"
+}

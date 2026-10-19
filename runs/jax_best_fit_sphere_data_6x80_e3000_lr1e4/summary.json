@@ -1,0 +1,19 @@
+{
+  "config": {
+    "data_path": "runs/geodesic_sphere_learned_metric_3d_6x80_e3000/synthetic_sphere_trials.npz",
+    "num_trials": 6,
+    "n_timepoints": 80,
+    "N_neurons": 96,
+    "latent_dim": 2,
+    "epochs": 3000,
+    "lr": 0.0001,
+    "dtype": "jax.float64",
+    "model_solver": "rk4",
+    "heldout_frac": 0.0
+  },
+  "jax_geodesic": {
+    "train_MSE": 0.7493680729066532,
+    "train_R2": 0.43405735579670834,
+    "train_r": 0.6589140583375377
+  }
+}

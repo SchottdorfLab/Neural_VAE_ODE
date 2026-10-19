@@ -1,0 +1,49 @@
+{
+  "config": {
+    "num_trials": 6,
+    "num_train_trials": 6,
+    "num_heldout_trials": 0,
+    "heldout_frac": 0.0,
+    "heldout_fit_epochs": 20,
+    "heldout_fit_lr": 0.001,
+    "N_neurons": 96,
+    "n_timepoints": 80,
+    "latent_dim": 3,
+    "kappa": 1.5,
+    "speed": 0.7,
+    "epochs": 20,
+    "lr": 0.001,
+    "device": "cpu",
+    "model_solver": "rk4"
+  },
+  "geodesic": {
+    "params": 7914,
+    "final_nll": 47263.609375,
+    "train_nll": 47263.609375,
+    "heldout_nll": NaN,
+    "R2": -0.14062392711639404,
+    "r": 0.036946675030545585,
+    "train_R2": -0.14062392711639404,
+    "train_r": 0.036946675030545585,
+    "heldout_R2": NaN,
+    "heldout_r": NaN,
+    "AIC": 110355.21875,
+    "BIC": 179508.81356355638
+  },
+  "free": {
+    "params": 40839,
+    "final_nll": 46171.5859375,
+    "train_nll": 46171.5859375,
+    "heldout_nll": NaN,
+    "R2": -0.11438536643981934,
+    "r": 0.004189499832994764,
+    "train_R2": -0.11438536643981934,
+    "train_r": 0.004189499832994764,
+    "heldout_R2": NaN,
+    "heldout_r": NaN,
+    "AIC": 174021.171875,
+    "BIC": 530877.8383636062
+  },
+  "preferred_by_AIC": "Geodesic",
+  "preferred_by_BIC": "Geodesic"
+}

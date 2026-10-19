@@ -25,7 +25,7 @@ RECON_COLOR = "#FF5A1F"
 SPHERE_COLOR = "#8E8E8E"
 WIREFRAME_COLOR = "#5F5F5F"
 TRUE_LINEWIDTH = 3.4
-RECON_LINEWIDTH = 0.6
+RECON_LINEWIDTH = 1.6
 
 
 def first_key(data: np.lib.npyio.NpzFile, names: Iterable[str]) -> np.ndarray:

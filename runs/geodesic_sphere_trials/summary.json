@@ -1,0 +1,32 @@
+{
+  "config": {
+    "num_trials": 1,
+    "N_neurons": 300,
+    "n_timepoints": 600,
+    "latent_dim": 2,
+    "kappa": 1.5,
+    "speed": 0.7071067811865476,
+    "epochs": 300,
+    "lr": 0.001,
+    "device": "cpu",
+    "model_solver": "euler"
+  },
+  "geodesic": {
+    "params": 20947,
+    "final_nll": 120020.9140625,
+    "R2": 0.5576471090316772,
+    "r": 0.7478302134971269,
+    "AIC": 281935.828125,
+    "BIC": 493515.44510943606
+  },
+  "free": {
+    "params": 53618,
+    "final_nll": 89846.9140625,
+    "R2": 0.9467663764953613,
+    "r": 0.9740138087989986,
+    "AIC": 286929.828125,
+    "BIC": 828509.8111044955
+  },
+  "preferred_by_AIC": "Geodesic",
+  "preferred_by_BIC": "Geodesic"
+}

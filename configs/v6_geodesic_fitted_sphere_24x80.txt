@@ -81,6 +81,7 @@ early_stopping_min_delta = 0.00001
 log_every = 10
 
 geodesic_initial_condition_mode = fitted
+geodesic_dynamics_mode = geodesic
 geodesic_fit_all_trials = true
 geodesic_trial_batch_size = 8
 geodesic_predict_trial_batch_size = 8

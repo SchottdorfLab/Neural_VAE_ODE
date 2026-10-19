@@ -28,6 +28,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.decomposition import PCA
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -211,6 +214,92 @@ def transition_deltas(
         deltas[:-1] = values[1:] - values[:-1]
         valid[:-1] = True
     return deltas, valid
+
+
+def build_temporal_triplets(
+    frame_trial_ids: np.ndarray,
+    positive_lag: int,
+    negative_min_lag: int,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, Dict[str, Any]]:
+    """Pair each frame with a nearby future frame and a far frame in its trial."""
+    ids = np.asarray(frame_trial_ids).reshape(-1)
+    positive_lag = max(1, int(positive_lag))
+    negative_min_lag = max(positive_lag + 1, int(negative_min_lag))
+    pos_idx = np.arange(ids.size, dtype=np.int64)
+    neg_idx = np.arange(ids.size, dtype=np.int64)
+    valid = np.zeros(ids.size, dtype=np.float32)
+    rng = np.random.default_rng(seed)
+
+    for trial_id in np.unique(ids):
+        trial_idx = np.flatnonzero(ids == trial_id)
+        if trial_idx.size <= positive_lag:
+            continue
+        offsets = np.arange(trial_idx.size)
+        for local_i in range(trial_idx.size - positive_lag):
+            far = np.flatnonzero(np.abs(offsets - local_i) >= negative_min_lag)
+            if far.size == 0:
+                continue
+            anchor = int(trial_idx[local_i])
+            pos_idx[anchor] = int(trial_idx[local_i + positive_lag])
+            neg_idx[anchor] = int(trial_idx[int(rng.choice(far))])
+            valid[anchor] = 1.0
+
+    return pos_idx, neg_idx, valid[:, None], {
+        "positive_lag_frames": int(positive_lag),
+        "negative_min_lag_frames": int(negative_min_lag),
+        "valid_triplets": int(valid.sum()),
+        "total_frames": int(ids.size),
+        "valid_fraction": float(valid.mean()) if valid.size else 0.0,
+        "same_trial_only": True,
+    }
+
+
+def temporal_triplet_loss(
+    z_anchor: torch.Tensor,
+    z_positive: torch.Tensor,
+    z_negative: torch.Tensor,
+    valid_mask: torch.Tensor,
+    cfg: Dict[str, Any],
+) -> tuple[torch.Tensor, Dict[str, float]]:
+    if cfg_bool(cfg, "temporal_geometry_normalize_z", True):
+        z_anchor = F.normalize(z_anchor, dim=1)
+        z_positive = F.normalize(z_positive, dim=1)
+        z_negative = F.normalize(z_negative, dim=1)
+    d_positive = torch.sum((z_anchor - z_positive) ** 2, dim=1)
+    d_negative = torch.sum((z_anchor - z_negative) ** 2, dim=1)
+    margin = cfg_float(cfg, "temporal_geometry_margin", 0.2)
+    per_state = F.relu(d_positive - d_negative + margin)
+    mask = valid_mask.reshape(-1)
+    denom = torch.clamp(mask.sum(), min=1.0)
+    loss = torch.sum(per_state * mask) / denom
+    return loss, {
+        "temporal_triplet": float(loss.detach().cpu()),
+        "temporal_d_positive": float(torch.sum(d_positive * mask).detach().cpu() / denom.detach().cpu()),
+        "temporal_d_negative": float(torch.sum(d_negative * mask).detach().cpu() / denom.detach().cpu()),
+    }
+
+
+def mind_pairwise_geometry_loss(
+    z_pred: torch.Tensor,
+    z_mind: torch.Tensor,
+    epsilon: float = 1e-4,
+) -> torch.Tensor:
+    """Scale-invariant Sammon loss against transition-derived MIND coordinates."""
+    if z_pred.shape[0] < 2:
+        return torch.zeros((), device=z_pred.device)
+    d_pred = torch.cdist(z_pred, z_pred)
+    d_target = torch.cdist(z_mind, z_mind).detach()
+    mask = torch.triu(torch.ones_like(d_target, dtype=torch.bool), diagonal=1)
+    mask &= d_target > epsilon
+    if not bool(torch.any(mask)):
+        return torch.zeros((), device=z_pred.device)
+    pred_values = d_pred[mask]
+    target_values = d_target[mask]
+    pred_values = pred_values / torch.clamp(pred_values.mean(), min=epsilon)
+    target_values = target_values / torch.clamp(target_values.mean(), min=epsilon)
+    weights = 1.0 / (target_values + epsilon)
+    return torch.sum(weights * (pred_values - target_values) ** 2) / torch.sum(weights)
 
 
 class TransitionMindDistilledAE(nn.Module):
@@ -575,6 +664,27 @@ def train_model(
     f_next_train = (f_train + delta_f_train).astype(np.float32)
     x_next_train = (x_train + delta_x_train).astype(np.float32)
     next_mask_train = valid_next_train.astype(np.float32)[:, None]
+    temporal_pos_idx, temporal_neg_idx, temporal_mask, temporal_geometry_meta = build_temporal_triplets(
+        data["raw_split_meta"]["train_frame_trial_ids"],
+        positive_lag=cfg_int(cfg, "temporal_positive_lag", 1),
+        negative_min_lag=cfg_int(cfg, "temporal_negative_min_lag", 10),
+        seed=cfg_int(cfg, "seed", 42) + 1701,
+    )
+    lambda_temporal_geometry = cfg_float(cfg, "lambda_temporal_geometry", 0.0)
+    lambda_mind_geometry = cfg_float(cfg, "lambda_mind_geometry", 0.0)
+    if lambda_temporal_geometry > 0:
+        print(
+            "Trial-aware temporal geometry: "
+            f"lambda={lambda_temporal_geometry:g}, "
+            f"positive lag={temporal_geometry_meta['positive_lag_frames']} frame, "
+            f"negative lag>={temporal_geometry_meta['negative_min_lag_frames']} frames, "
+            f"triplets={temporal_geometry_meta['valid_triplets']}"
+        )
+    if lambda_mind_geometry > 0:
+        print(
+            "Transition-derived MIND geometry loss: "
+            f"lambda={lambda_mind_geometry:g}, pairwise Sammon form"
+        )
 
     n = f_train.shape[0]
     rng = np.random.default_rng(cfg_int(cfg, "seed", 42) + 17)
@@ -644,6 +754,9 @@ def train_model(
         "f_next": torch.from_numpy(f_next_train),
         "x_next": torch.from_numpy(x_next_train),
         "next_mask": torch.from_numpy(next_mask_train),
+        "f_temporal_pos": torch.from_numpy(f_train[temporal_pos_idx]),
+        "f_temporal_neg": torch.from_numpy(f_train[temporal_neg_idx]),
+        "temporal_mask": torch.from_numpy(temporal_mask),
     }
 
     def subset(indices: np.ndarray) -> TensorDataset:
@@ -690,7 +803,19 @@ def train_model(
     lambda_next_raw = cfg_float(cfg, "lambda_next_raw", 0.0)
 
     def loss_on_batch(batch: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, Dict[str, float]]:
-        f, zt, ft, x, w, f_next, x_next, next_mask = (b.to(device) for b in batch)
+        (
+            f,
+            zt,
+            ft,
+            x,
+            w,
+            f_next,
+            x_next,
+            next_mask,
+            f_temporal_pos,
+            f_temporal_neg,
+            temporal_valid,
+        ) = (b.to(device) for b in batch)
         out = model(f)
         if len(out) == 3:
             fhat, zhat, fnext_hat = out
@@ -716,6 +841,31 @@ def train_model(
             loss_next_raw = (((xnext_hat - x_next) ** 2) * next_mask).sum() / next_raw_denom
         else:
             loss_next_raw = torch.zeros((), device=device)
+        if lambda_temporal_geometry > 0:
+            z_temporal_pos = model.encoder(f_temporal_pos)
+            z_temporal_neg = model.encoder(f_temporal_neg)
+            loss_temporal, temporal_parts = temporal_triplet_loss(
+                zhat,
+                z_temporal_pos,
+                z_temporal_neg,
+                temporal_valid,
+                cfg,
+            )
+        else:
+            loss_temporal = torch.zeros((), device=device)
+            temporal_parts = {
+                "temporal_triplet": 0.0,
+                "temporal_d_positive": 0.0,
+                "temporal_d_negative": 0.0,
+            }
+        if lambda_mind_geometry > 0:
+            loss_mind_geometry = mind_pairwise_geometry_loss(
+                zhat,
+                zt,
+                epsilon=cfg_float(cfg, "mind_geometry_epsilon", 1e-4),
+            )
+        else:
+            loss_mind_geometry = torch.zeros((), device=device)
         loss = (
             lambda_feature * loss_feature
             + lambda_z * loss_z
@@ -723,6 +873,8 @@ def train_model(
             + lambda_raw * loss_raw
             + lambda_next * loss_next
             + lambda_next_raw * loss_next_raw
+            + lambda_temporal_geometry * loss_temporal
+            + lambda_mind_geometry * loss_mind_geometry
         )
         return loss, {
             "feature": float(loss_feature.detach().cpu()),
@@ -731,6 +883,8 @@ def train_model(
             "raw": float(loss_raw.detach().cpu()),
             "next": float(loss_next.detach().cpu()),
             "next_raw": float(loss_next_raw.detach().cpu()),
+            "mind_geometry": float(loss_mind_geometry.detach().cpu()),
+            **temporal_parts,
         }
 
     best_state = None
@@ -742,7 +896,18 @@ def train_model(
         model.train()
         train_loss = 0.0
         nb = 0
-        part_sum = {"feature": 0.0, "z": 0.0, "teacher": 0.0, "raw": 0.0, "next": 0.0, "next_raw": 0.0}
+        part_sum = {
+            "feature": 0.0,
+            "z": 0.0,
+            "teacher": 0.0,
+            "raw": 0.0,
+            "next": 0.0,
+            "next_raw": 0.0,
+            "mind_geometry": 0.0,
+            "temporal_triplet": 0.0,
+            "temporal_d_positive": 0.0,
+            "temporal_d_negative": 0.0,
+        }
         for batch in train_loader:
             opt.zero_grad(set_to_none=True)
             loss, parts = loss_on_batch(batch)
@@ -774,7 +939,8 @@ def train_model(
                 f"[{epoch:03d}] train {train_loss:.5f} | val {val_loss:.5f} | "
                 f"feature {parts_avg['feature']:.5f} | z {parts_avg['z']:.5f} | "
                 f"teacher {parts_avg['teacher']:.5f} | raw {parts_avg['raw']:.5f} | "
-                f"next {parts_avg['next']:.5f} | next_raw {parts_avg['next_raw']:.5f}"
+                f"next {parts_avg['next']:.5f} | mind_geo {parts_avg['mind_geometry']:.5f} | "
+                f"time_geo {parts_avg['temporal_triplet']:.5f}"
             )
 
         if val_loss < best_val - cfg_float(cfg, "early_stopping_min_delta", 1e-5):
@@ -790,7 +956,23 @@ def train_model(
 
     if best_state is not None:
         model.load_state_dict(best_state)
-    return model, {"history": history, "best_epoch": best_epoch, "best_val_loss": best_val, "validation_split": val_split_meta}
+    return model, {
+        "history": history,
+        "best_epoch": best_epoch,
+        "best_val_loss": best_val,
+        "validation_split": val_split_meta,
+        "temporal_geometry": temporal_geometry_meta,
+        "loss_weights": {
+            "feature_reconstruction": float(lambda_feature),
+            "raw_reconstruction": float(lambda_raw),
+            "next_feature": float(lambda_next),
+            "next_raw": float(lambda_next_raw),
+            "teacher_coordinates": float(lambda_z),
+            "teacher_reconstruction": float(lambda_teacher),
+            "temporal_triplet": float(lambda_temporal_geometry),
+            "mind_geometry": float(lambda_mind_geometry),
+        },
+    }
 
 
 def predict_model_outputs(
@@ -824,6 +1006,7 @@ def predict_model_outputs(
 
 def next_prediction_metrics(
     fnext_pred: np.ndarray | None,
+    fcurrent_pred: np.ndarray,
     f_true: np.ndarray,
     x_true: np.ndarray,
     frame_trial_ids: np.ndarray,
@@ -831,6 +1014,7 @@ def next_prediction_metrics(
     norm_mu: np.ndarray | None,
     norm_sd: np.ndarray | None,
     respect_trial_boundaries: bool = True,
+    shuffle_seed: int = 42,
 ) -> Dict[str, Any]:
     if fnext_pred is None:
         return {}
@@ -843,12 +1027,179 @@ def next_prediction_metrics(
     x_next_pred = neural.inverse_features_numpy(fnext_pred, pca, norm_mu, norm_sd)
     feature_err = fnext_pred[valid] - f_next_true[valid]
     raw_metrics = mind.corr_and_r2(x_next_true[valid], x_next_pred[valid])
+    persistence_feature_mse = float(np.mean((f_true[valid] - f_next_true[valid]) ** 2))
+    persistence_metrics = mind.corr_and_r2(x_next_true[valid], x_true[valid])
+    latent_persistence_raw = neural.inverse_features_numpy(fcurrent_pred, pca, norm_mu, norm_sd)
+    latent_persistence_metrics = mind.corr_and_r2(x_next_true[valid], latent_persistence_raw[valid])
+
+    valid_indices = np.flatnonzero(valid)
+    shuffled_indices = valid_indices.copy()
+    rng = np.random.default_rng(shuffle_seed)
+    ids = np.asarray(frame_trial_ids).reshape(-1)
+    for trial_id in np.unique(ids[valid_indices]):
+        local = np.flatnonzero(ids[valid_indices] == trial_id)
+        shuffled_indices[local] = shuffled_indices[local][rng.permutation(local.size)]
+    shuffled_metrics = mind.corr_and_r2(x_next_true[valid], x_next_pred[shuffled_indices])
     return {
         "n_valid_next": int(valid.sum()),
         "next_feature_mse": float(np.mean(feature_err ** 2)),
         "next_raw_r": raw_metrics["r"],
         "next_raw_R2": raw_metrics["R2"],
+        "persistence_feature_mse": persistence_feature_mse,
+        "persistence_raw_r": persistence_metrics["r"],
+        "persistence_raw_R2": persistence_metrics["R2"],
+        "next_R2_gain_over_persistence": float(raw_metrics["R2"] - persistence_metrics["R2"]),
+        "latent_persistence_raw_r": latent_persistence_metrics["r"],
+        "latent_persistence_raw_R2": latent_persistence_metrics["R2"],
+        "next_R2_gain_over_latent_persistence": float(
+            raw_metrics["R2"] - latent_persistence_metrics["R2"]
+        ),
+        "time_shuffled_prediction_raw_r": shuffled_metrics["r"],
+        "time_shuffled_prediction_raw_R2": shuffled_metrics["R2"],
+        "next_R2_gain_over_time_shuffle": float(raw_metrics["R2"] - shuffled_metrics["R2"]),
     }
+
+
+def normalized_trial_progress(frame_trial_ids: np.ndarray, frame_time: np.ndarray) -> np.ndarray:
+    """Return elapsed-time progress in [0, 1] separately within each trial."""
+    ids = np.asarray(frame_trial_ids).reshape(-1)
+    times = np.asarray(frame_time, dtype=np.float64).reshape(-1)
+    if ids.size != times.size:
+        raise ValueError("frame_trial_ids and frame_time must have the same length")
+    progress = np.zeros(ids.size, dtype=np.float32)
+    for trial_id in np.unique(ids):
+        idx = np.flatnonzero(ids == trial_id)
+        local_time = times[idx] - times[idx][0]
+        duration = float(local_time[-1]) if idx.size > 1 else 0.0
+        if np.isfinite(duration) and duration > 0:
+            progress[idx] = (local_time / duration).astype(np.float32)
+        elif idx.size > 1:
+            progress[idx] = np.linspace(0.0, 1.0, idx.size, dtype=np.float32)
+    return progress
+
+
+def regression_probe(
+    train_features: np.ndarray,
+    train_target: np.ndarray,
+    test_features: np.ndarray,
+    test_target: np.ndarray,
+    alpha: float,
+) -> Dict[str, float]:
+    model = make_pipeline(StandardScaler(), Ridge(alpha=float(alpha)))
+    model.fit(train_features, train_target)
+    pred = np.asarray(model.predict(test_features), dtype=np.float64)
+    target = np.asarray(test_target, dtype=np.float64)
+    residual = float(np.sum((target - pred) ** 2))
+    total = float(np.sum((target - target.mean()) ** 2))
+    r2 = 1.0 - residual / total if total > 0 else float("nan")
+    r = float(np.corrcoef(target, pred)[0, 1]) if target.size > 1 and np.std(pred) > 0 else float("nan")
+    return {"R2": float(r2), "r": r, "rmse": float(np.sqrt(np.mean((target - pred) ** 2)))}
+
+
+def temporal_probe_metrics(
+    z_train: np.ndarray,
+    z_test: np.ndarray,
+    f_train: np.ndarray,
+    f_test: np.ndarray,
+    z_teacher_train: np.ndarray,
+    z_teacher_test: np.ndarray,
+    raw_meta: Dict[str, Any],
+    cfg: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Test whether a state alone identifies within-trial elapsed-time progress."""
+    train_progress = normalized_trial_progress(
+        raw_meta["train_frame_trial_ids"], raw_meta["train_frame_time"]
+    )
+    test_progress = normalized_trial_progress(
+        raw_meta["test_frame_trial_ids"], raw_meta["test_frame_time"]
+    )
+    alpha = cfg_float(cfg, "temporal_probe_ridge", 1.0)
+    rng = np.random.default_rng(cfg_int(cfg, "seed", 42) + 2901)
+    shuffled_progress = train_progress[rng.permutation(train_progress.size)]
+    return {
+        "target": "within-trial elapsed-time progress [0,1]",
+        "position_used": False,
+        "absolute_time_fed_to_model": False,
+        "latent": regression_probe(z_train, train_progress, z_test, test_progress, alpha),
+        "pca_feature": regression_probe(f_train, train_progress, f_test, test_progress, alpha),
+        "mind_teacher": regression_probe(
+            z_teacher_train, train_progress, z_teacher_test, test_progress, alpha
+        ),
+        "shuffled_train_time_control": regression_probe(
+            z_train, shuffled_progress, z_test, test_progress, alpha
+        ),
+    }
+
+
+def latent_temporal_distance_metrics(
+    z: np.ndarray,
+    frame_trial_ids: np.ndarray,
+    negative_min_lag: int,
+    seed: int,
+) -> Dict[str, float]:
+    """Compare heldout latent distances for adjacent and far-apart frames."""
+    ids = np.asarray(frame_trial_ids).reshape(-1)
+    pos_idx, neg_idx, valid_mask, _ = build_temporal_triplets(
+        ids,
+        positive_lag=1,
+        negative_min_lag=negative_min_lag,
+        seed=seed,
+    )
+    valid = valid_mask.reshape(-1) > 0
+    if not np.any(valid):
+        return {"n_pairs": 0}
+    z = np.asarray(z, dtype=np.float64)
+    adjacent = np.linalg.norm(z[valid] - z[pos_idx[valid]], axis=1)
+    far = np.linalg.norm(z[valid] - z[neg_idx[valid]], axis=1)
+    return {
+        "n_pairs": int(valid.sum()),
+        "adjacent_distance_mean": float(np.mean(adjacent)),
+        "far_distance_mean": float(np.mean(far)),
+        "adjacent_over_far_distance": float(np.mean(adjacent) / max(np.mean(far), 1e-12)),
+        "fraction_adjacent_closer_than_far": float(np.mean(adjacent < far)),
+    }
+
+
+def save_temporal_latent_plot(
+    z_train: np.ndarray,
+    z_test: np.ndarray,
+    raw_meta: Dict[str, Any],
+    out_path: Path,
+) -> None:
+    """Project learned latents to 3D and color heldout trajectories by elapsed progress."""
+    import matplotlib.pyplot as plt
+
+    n_components = min(3, z_train.shape[1])
+    projection = PCA(n_components=n_components, random_state=0, svd_solver="full")
+    projection.fit(z_train)
+    z_plot = projection.transform(z_test)
+    if n_components < 3:
+        z_plot = np.pad(z_plot, ((0, 0), (0, 3 - n_components)))
+    ids = np.asarray(raw_meta["test_frame_trial_ids"]).reshape(-1)
+    progress = normalized_trial_progress(ids, raw_meta["test_frame_time"])
+
+    fig = plt.figure(figsize=(8, 7), constrained_layout=True)
+    ax = fig.add_subplot(111, projection="3d")
+    for trial_id in np.unique(ids):
+        idx = np.flatnonzero(ids == trial_id)
+        ax.plot(z_plot[idx, 0], z_plot[idx, 1], z_plot[idx, 2], color="0.65", linewidth=0.7, alpha=0.7)
+    scatter = ax.scatter(
+        z_plot[:, 0],
+        z_plot[:, 1],
+        z_plot[:, 2],
+        c=progress,
+        cmap="viridis",
+        s=10,
+        alpha=0.9,
+    )
+    ax.set_xlabel("latent PC1")
+    ax.set_ylabel("latent PC2")
+    ax.set_zlabel("latent PC3")
+    ax.set_title("Heldout latent trajectories")
+    colorbar = fig.colorbar(scatter, ax=ax, shrink=0.72, pad=0.08)
+    colorbar.set_label("time progress")
+    fig.savefig(out_path, dpi=180)
+    plt.close(fig)
 
 
 def main() -> None:
@@ -905,6 +1256,7 @@ def main() -> None:
     next_metrics = {
         "train": next_prediction_metrics(
             fnext_train,
+            fhat_train,
             data["f_train_flat"],
             data["x_train_flat"],
             raw_meta["train_frame_trial_ids"],
@@ -912,9 +1264,11 @@ def main() -> None:
             data["norm_mu"],
             data["norm_sd"],
             cfg_bool(cfg, "respect_trial_boundaries", True),
+            cfg_int(cfg, "seed", 42) + 3101,
         ),
         "heldout": next_prediction_metrics(
             fnext_test,
+            fhat_test,
             data["f_test_flat"],
             data["x_test_flat"],
             raw_meta["test_frame_trial_ids"],
@@ -922,6 +1276,31 @@ def main() -> None:
             data["norm_mu"],
             data["norm_sd"],
             cfg_bool(cfg, "respect_trial_boundaries", True),
+            cfg_int(cfg, "seed", 42) + 3102,
+        ),
+    }
+    temporal_probes = temporal_probe_metrics(
+        zhat_train,
+        zhat_test,
+        data["f_train_flat"],
+        data["f_test_flat"],
+        teacher["z_train"],
+        teacher["z_test"],
+        raw_meta,
+        cfg,
+    )
+    temporal_distances = {
+        "train": latent_temporal_distance_metrics(
+            zhat_train,
+            raw_meta["train_frame_trial_ids"],
+            cfg_int(cfg, "temporal_negative_min_lag", 10),
+            cfg_int(cfg, "seed", 42) + 3201,
+        ),
+        "heldout": latent_temporal_distance_metrics(
+            zhat_test,
+            raw_meta["test_frame_trial_ids"],
+            cfg_int(cfg, "temporal_negative_min_lag", 10),
+            cfg_int(cfg, "seed", 42) + 3202,
         ),
     }
     teacher_train_decoded = teacher["teacher_train_target"]
@@ -957,8 +1336,23 @@ def main() -> None:
     if next_metrics["heldout"]:
         print(
             f"Next-frame heldout feature MSE {next_metrics['heldout']['next_feature_mse']:.5f} | "
-            f"raw next R2 {next_metrics['heldout']['next_raw_R2']:.4f}"
+            f"raw next R2 {next_metrics['heldout']['next_raw_R2']:.4f} | "
+            f"persistence R2 {next_metrics['heldout']['persistence_raw_R2']:.4f} | "
+            f"latent persistence R2 {next_metrics['heldout']['latent_persistence_raw_R2']:.4f} | "
+            f"time-shuffled R2 {next_metrics['heldout']['time_shuffled_prediction_raw_R2']:.4f}"
         )
+    print(
+        "Heldout temporal probes: "
+        f"latent time R2 {temporal_probes['latent']['R2']:.4f} | "
+        f"PCA time R2 {temporal_probes['pca_feature']['R2']:.4f} | "
+        f"shuffled-label R2 {temporal_probes['shuffled_train_time_control']['R2']:.4f}"
+    )
+    print(
+        "Heldout latent temporal distances: "
+        f"adjacent/far {temporal_distances['heldout'].get('adjacent_over_far_distance', float('nan')):.4f} | "
+        f"adjacent closer fraction "
+        f"{temporal_distances['heldout'].get('fraction_adjacent_closer_than_far', float('nan')):.4f}"
+    )
     torch.save({"model_state": model.state_dict(), "config": jsonable(cfg), "train_meta": jsonable(train_meta)}, out_dir / "model.pt")
     np.savez_compressed(
         out_dir / "analysis_cache_best.npz",
@@ -978,7 +1372,16 @@ def main() -> None:
         test_frame_time=raw_meta["test_frame_time"],
         train_frame_position=raw_meta["train_frame_position"],
         test_frame_position=raw_meta["test_frame_position"],
-        metrics_json=np.asarray(json.dumps(jsonable({"train": train_metrics, "heldout": test_metrics, "events": event_metrics}))),
+        fnext_train=fnext_train.astype(np.float32) if fnext_train is not None else np.asarray([], dtype=np.float32),
+        fnext_test=fnext_test.astype(np.float32) if fnext_test is not None else np.asarray([], dtype=np.float32),
+        metrics_json=np.asarray(json.dumps(jsonable({
+            "train": train_metrics,
+            "heldout": test_metrics,
+            "events": event_metrics,
+            "next_prediction": next_metrics,
+            "temporal_probes": temporal_probes,
+            "temporal_distances": temporal_distances,
+        }))),
     )
     save_raw_frame_recon_heatmap(
         data["x_test_proc"],
@@ -989,12 +1392,20 @@ def main() -> None:
         frame_time=raw_meta["test_frame_time"],
     )
     mind.save_embedding_plot(teacher["z_lm"], out_dir / "latent_manifold_mds.png")
+    save_temporal_latent_plot(
+        zhat_train,
+        zhat_test,
+        raw_meta,
+        out_dir / "heldout_latent_time_3d.png",
+    )
 
     final_metrics = {
         "train": train_metrics,
         "heldout": test_metrics,
         "events": event_metrics,
         "next_prediction": next_metrics,
+        "temporal_probes": temporal_probes,
+        "temporal_distances": temporal_distances,
         "teacher_heldout": teacher_test_metrics,
         "R2": test_metrics["R2"],
         "r": test_metrics["r"],
@@ -1017,6 +1428,9 @@ def main() -> None:
             "no position covariate",
             transition_assumption,
             "optional latent one-step transition head predicts next PCA feature",
+            "optional Sammon loss preserves transition-derived MIND geometry",
+            "optional same-trial temporal triplets place adjacent frames closer than far frames",
+            "heldout temporal probes use time only as an evaluation label",
         ],
         "n_trials_total": int(raw_meta["n_trials_total"]),
         "n_trials_train": int(raw_meta["n_trials_train"]),
@@ -1038,7 +1452,11 @@ def main() -> None:
         "raw_frame_split": raw_meta,
         "training": train_meta,
         "metrics": final_metrics,
-        "method_note": "Raw-frame geometric AE: PCA(raw neural frame) -> z -> PCA feature, optionally with z -> next PCA feature transition head, train-only neural-state MIND geometry, and no position input.",
+        "method_note": (
+            "Raw-frame temporal-geometry AE: neural activity is the only model input; "
+            "time enters training through trial-boundary-aware transitions and geometry losses, "
+            "and enters evaluation through heldout next-state and elapsed-progress probes."
+        ),
     }
     (out_dir / "run_metadata.json").write_text(json.dumps(jsonable(metadata), indent=2) + "\n")
     (out_dir / "training_results.txt").write_text(json.dumps(jsonable(final_metrics), indent=2) + "\n")

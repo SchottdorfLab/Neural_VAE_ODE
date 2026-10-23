@@ -1,0 +1,109 @@
+JAX devices: [CpuDevice(id=0)]
+Loading exact sphere data: runs/geodesic_sphere_forecast_2d_30x600_e3000_float64_cpu/synthetic_sphere_trials.npz
+Train: (24, 600, 300); heldout: (6, 600, 300)
+Encoder context: first 10 frames; forecast score: frames 10-599
+Starting optimization...
+Epoch 0000 | Reconstruction MSE: 160.77602216
+Epoch 0025 | Reconstruction MSE: 2.10444327
+Epoch 0050 | Reconstruction MSE: 1.90058567
+Epoch 0075 | Reconstruction MSE: 1.91682335
+Epoch 0100 | Reconstruction MSE: 2.04160919
+Epoch 0125 | Reconstruction MSE: 2.13611823
+Epoch 0150 | Reconstruction MSE: 1.71565915
+Epoch 0175 | Reconstruction MSE: 1.63089097
+Epoch 0200 | Reconstruction MSE: 1.60057982
+Epoch 0225 | Reconstruction MSE: 1.44952929
+Epoch 0250 | Reconstruction MSE: 1.46741311
+Epoch 0275 | Reconstruction MSE: 1.41927848
+Epoch 0300 | Reconstruction MSE: 1.39154997
+Epoch 0325 | Reconstruction MSE: 1.33242824
+Epoch 0350 | Reconstruction MSE: 1.38359445
+Epoch 0375 | Reconstruction MSE: 1.32449201
+Epoch 0400 | Reconstruction MSE: 1.33946015
+Epoch 0425 | Reconstruction MSE: 1.32691821
+Epoch 0450 | Reconstruction MSE: 1.32369245
+Epoch 0475 | Reconstruction MSE: 1.31876986
+Epoch 0500 | Reconstruction MSE: 1.31905848
+Epoch 0525 | Reconstruction MSE: 1.31053657
+Epoch 0550 | Reconstruction MSE: 1.30665089
+Epoch 0575 | Reconstruction MSE: 1.31044523
+Epoch 0600 | Reconstruction MSE: 1.31450521
+Epoch 0625 | Reconstruction MSE: 1.30259564
+Epoch 0650 | Reconstruction MSE: 1.30098029
+Epoch 0675 | Reconstruction MSE: 1.28984657
+Epoch 0700 | Reconstruction MSE: 1.29975104
+Epoch 0725 | Reconstruction MSE: 1.28985935
+Epoch 0750 | Reconstruction MSE: 1.28014077
+Epoch 0775 | Reconstruction MSE: 1.29098855
+Epoch 0800 | Reconstruction MSE: 1.27531978
+Epoch 0825 | Reconstruction MSE: 1.28901730
+Epoch 0850 | Reconstruction MSE: 1.27337740
+Epoch 0875 | Reconstruction MSE: 1.26356186
+Epoch 0900 | Reconstruction MSE: 1.26302193
+Epoch 0925 | Reconstruction MSE: 1.26252868
+Epoch 0950 | Reconstruction MSE: 1.24957946
+Epoch 0975 | Reconstruction MSE: 1.24083956
+Epoch 1000 | Reconstruction MSE: 1.24106128
+Epoch 1025 | Reconstruction MSE: 1.24320433
+Epoch 1050 | Reconstruction MSE: 1.22454119
+Epoch 1075 | Reconstruction MSE: 1.22169159
+Epoch 1100 | Reconstruction MSE: 1.21651198
+Epoch 1125 | Reconstruction MSE: 1.21361660
+Epoch 1150 | Reconstruction MSE: 1.19709493
+Epoch 1175 | Reconstruction MSE: 1.18931118
+Epoch 1200 | Reconstruction MSE: 1.18929524
+Epoch 1225 | Reconstruction MSE: 1.21433168
+Epoch 1250 | Reconstruction MSE: 1.18703293
+Epoch 1275 | Reconstruction MSE: 1.18318069
+Epoch 1300 | Reconstruction MSE: 1.17003946
+Epoch 1325 | Reconstruction MSE: 1.17252919
+Epoch 1350 | Reconstruction MSE: 1.17285140
+Epoch 1375 | Reconstruction MSE: 1.16608942
+Epoch 1400 | Reconstruction MSE: 1.15787895
+Epoch 1425 | Reconstruction MSE: 1.15673088
+Epoch 1450 | Reconstruction MSE: 1.14417546
+Epoch 1475 | Reconstruction MSE: 1.13777581
+Epoch 1500 | Reconstruction MSE: 1.14289699
+Epoch 1525 | Reconstruction MSE: 1.13974015
+Epoch 1550 | Reconstruction MSE: 1.12863661
+Epoch 1575 | Reconstruction MSE: 1.12365874
+Epoch 1600 | Reconstruction MSE: 1.12199512
+Epoch 1625 | Reconstruction MSE: 1.10748112
+Epoch 1650 | Reconstruction MSE: 1.12688943
+Epoch 1675 | Reconstruction MSE: 1.10480008
+Epoch 1700 | Reconstruction MSE: 1.08303072
+Epoch 1725 | Reconstruction MSE: 1.08557853
+Epoch 1750 | Reconstruction MSE: 1.09890709
+Epoch 1775 | Reconstruction MSE: 1.07385959
+Epoch 1800 | Reconstruction MSE: 1.06180904
+Epoch 1825 | Reconstruction MSE: 1.05334782
+Epoch 1850 | Reconstruction MSE: 1.06400719
+Epoch 1875 | Reconstruction MSE: 1.07778598
+Epoch 1900 | Reconstruction MSE: 1.02844831
+Epoch 1925 | Reconstruction MSE: 1.03668355
+Epoch 1950 | Reconstruction MSE: 1.02742137
+Epoch 1975 | Reconstruction MSE: 1.01958394
+Epoch 2000 | Reconstruction MSE: 1.06785053
+Epoch 2025 | Reconstruction MSE: 1.01413349
+Epoch 2050 | Reconstruction MSE: 1.00135269
+Epoch 2075 | Reconstruction MSE: 0.98636961
+Epoch 2100 | Reconstruction MSE: 0.99512354
+Epoch 2125 | Reconstruction MSE: 0.98035362
+Epoch 2150 | Reconstruction MSE: 0.98016208
+Epoch 2175 | Reconstruction MSE: 0.96628278
+Epoch 2200 | Reconstruction MSE: 0.96518672
+Epoch 2225 | Reconstruction MSE: 0.95924025
+Epoch 2250 | Reconstruction MSE: 0.95516304
+Epoch 2275 | Reconstruction MSE: 0.95584184
+Epoch 2300 | Reconstruction MSE: 0.95060552
+Epoch 2325 | Reconstruction MSE: 0.94578912
+Epoch 2350 | Reconstruction MSE: 0.93775816
+Epoch 2375 | Reconstruction MSE: 1.01554289
+Epoch 2400 | Reconstruction MSE: 0.96713083
+Epoch 2425 | Reconstruction MSE: 0.97399948
+Epoch 2450 | Reconstruction MSE: 0.95548022
+Early stopping at epoch 2465; restoring best epoch 2365 (MSE=0.93580739).
+Optimization ran for 1566.24 seconds.
+Train R2: 0.293335 | Train r: 0.541704 | Train MSE: 0.93580739
+Forecast R2: -0.002549 | Forecast r: 0.281902 | Forecast MSE: 1.32759392
+Saved outputs to runs/jax_sphere_2d_30x600_e3000_context10_lr1e4_positive_diag

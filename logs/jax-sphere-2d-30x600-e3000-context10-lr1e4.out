@@ -1,0 +1,14 @@
+JAX devices: [CpuDevice(id=0)]
+Loading exact sphere data: runs/geodesic_sphere_forecast_2d_30x600_e3000_float64_cpu/synthetic_sphere_trials.npz
+Train: (24, 600, 300); heldout: (6, 600, 300)
+Encoder context: first 10 frames; forecast score: frames 10-599
+Starting optimization...
+Epoch 0000 | Reconstruction MSE: 160.77602216
+Epoch 0100 | Reconstruction MSE: 1.84129056
+Epoch 0200 | Reconstruction MSE: 1.53465023
+Epoch 0300 | Reconstruction MSE: 1.35986902
+Epoch 0400 | Reconstruction MSE: 1.33535845
+Epoch 0500 | Reconstruction MSE: 1.31973828
+Epoch 0600 | Reconstruction MSE: 1.26350290
+Epoch 0700 | Reconstruction MSE: 1.28675669
+Epoch 0800 | Reconstruction MSE: 1.38928166

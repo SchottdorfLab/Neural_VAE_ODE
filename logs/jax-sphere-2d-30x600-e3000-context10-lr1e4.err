@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/kathleenhiggins/Neural_VAE_ODE/sandbox/JAX/fit_sphere_trials_context.py", line 432, in <module>
+    main()
+  File "/Users/kathleenhiggins/Neural_VAE_ODE/sandbox/JAX/fit_sphere_trials_context.py", line 333, in main
+    raise FloatingPointError(f"Non-finite loss at epoch {epoch}: {loss_value}")
+FloatingPointError: Non-finite loss at epoch 866: nan

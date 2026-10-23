@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import time
 from pathlib import Path
 
 import matplotlib
@@ -117,41 +118,36 @@ class GeodesicDynamics(nn.Module):
             device=x.device,
             dtype=x.dtype,
         )
+        # The metric is symmetric, so its derivatives are symmetric in i/j as
+        # well.  Computing only the lower triangle reduces d^2 autograd calls
+        # to d(d+1)/2 without changing the metric or geodesic equation.
         for i in range(latent_dim):
-            for j in range(latent_dim):
-                metric_derivative[:, i, j, :] = torch.autograd.grad(
+            for j in range(i + 1):
+                derivative = torch.autograd.grad(
                     outputs=metric[:, i, j].sum(),
                     inputs=x,
                     create_graph=True,
                     retain_graph=True,
                 )[0]
+                metric_derivative[:, i, j, :] = derivative
+                if i != j:
+                    metric_derivative[:, j, i, :] = derivative
 
         inverse_metric = torch.linalg.inv(metric)
-        christoffel = torch.zeros_like(metric_derivative)
-        for k in range(latent_dim):
-            for m in range(latent_dim):
-                for n in range(latent_dim):
-                    term = 0.0
-                    for ell in range(latent_dim):
-                        term = term + 0.5 * inverse_metric[:, k, ell] * (
-                            metric_derivative[:, n, ell, m]
-                            + metric_derivative[:, m, ell, n]
-                            - metric_derivative[:, m, n, ell]
-                        )
-                    christoffel[:, k, m, n] = term
-        return christoffel
+        # Gamma^k_mn = 1/2 g^kl (d_m g_nl + d_n g_ml - d_l g_mn).
+        # These permutations form the first-kind Christoffel tensor with axes
+        # [batch, ell, m, n]; einsum then raises its first index.  This is the
+        # same contraction as the original four nested Python loops.
+        first_kind = 0.5 * (
+            metric_derivative.permute(0, 2, 3, 1)
+            + metric_derivative.permute(0, 2, 1, 3)
+            - metric_derivative.permute(0, 3, 1, 2)
+        )
+        return torch.einsum("bkl,blmn->bkmn", inverse_metric, first_kind)
 
     def acceleration(self, x: torch.Tensor, velocity: torch.Tensor) -> torch.Tensor:
         christoffel = self.compute_christoffel(x)
-        latent_dim = x.shape[1]
-        acceleration = torch.zeros_like(velocity)
-        for k in range(latent_dim):
-            for m in range(latent_dim):
-                for n in range(latent_dim):
-                    acceleration[:, k] -= (
-                        christoffel[:, k, m, n] * velocity[:, m] * velocity[:, n]
-                    )
-        return acceleration
+        return -torch.einsum("bkmn,bm,bn->bk", christoffel, velocity, velocity)
 
     def euler_step(self, x: torch.Tensor, velocity: torch.Tensor, dt: torch.Tensor):
         acceleration = self.acceleration(x, velocity)
@@ -434,6 +430,72 @@ def masked_statistics(prediction: torch.Tensor, target: torch.Tensor, mask: torc
     )
 
 
+def atomic_torch_save(payload, checkpoint_path: Path):
+    """Write a checkpoint atomically so interruption cannot corrupt the last save."""
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = checkpoint_path.with_suffix(checkpoint_path.suffix + ".tmp")
+    torch.save(payload, temporary_path)
+    temporary_path.replace(checkpoint_path)
+
+
+def load_torch_checkpoint(checkpoint_path: Path, selected_device: torch.device):
+    """Load checkpoints on both current and older PyTorch releases."""
+    try:
+        return torch.load(
+            checkpoint_path,
+            map_location=selected_device,
+            weights_only=False,
+        )
+    except TypeError:
+        return torch.load(checkpoint_path, map_location=selected_device)
+
+
+def restore_training_checkpoint(
+    checkpoint_path: Path,
+    stage_name: str,
+    model: nn.Module,
+    optimizer: optim.Optimizer,
+    selected_device: torch.device,
+    resume: bool,
+):
+    if not resume or not checkpoint_path.exists():
+        return 0, None, None
+    checkpoint = load_torch_checkpoint(checkpoint_path, selected_device)
+    saved_stage = checkpoint.get("stage")
+    if saved_stage != stage_name:
+        raise ValueError(
+            f"Checkpoint {checkpoint_path} belongs to stage {saved_stage!r}, "
+            f"not {stage_name!r}."
+        )
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    start_epoch = int(checkpoint["next_epoch"])
+    print(f"Resuming {stage_name} at epoch {start_epoch} from {checkpoint_path}")
+    return start_epoch, checkpoint.get("history"), checkpoint.get("numpy_rng_state")
+
+
+def save_training_checkpoint(
+    checkpoint_path: Path,
+    stage_name: str,
+    next_epoch: int,
+    model: nn.Module,
+    optimizer: optim.Optimizer,
+    history,
+    numpy_rng_state=None,
+):
+    atomic_torch_save(
+        {
+            "stage": stage_name,
+            "next_epoch": int(next_epoch),
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "history": history,
+            "numpy_rng_state": numpy_rng_state,
+        },
+        checkpoint_path,
+    )
+
+
 def train_model(
     model: nn.Module,
     arrays,
@@ -444,12 +506,34 @@ def train_model(
     batch_size: int,
     seed: int,
     log_every: int,
+    checkpoint_path: Path,
+    checkpoint_every: int,
+    resume: bool,
+    stage_name: str,
 ):
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     rng = np.random.default_rng(seed)
     history = {"epoch": [], "nll": [], "mse": [], "r2": []}
+    start_epoch, saved_history, saved_rng_state = restore_training_checkpoint(
+        checkpoint_path,
+        stage_name,
+        model,
+        optimizer,
+        selected_device,
+        resume,
+    )
+    if saved_history is not None:
+        history = saved_history
+    if saved_rng_state is not None:
+        rng.bit_generator.state = saved_rng_state
+    if start_epoch > epochs:
+        raise ValueError(
+            f"Checkpoint {checkpoint_path} is already at epoch {start_epoch}, "
+            f"which exceeds requested E65_EPOCHS={epochs}."
+        )
 
-    for epoch in range(epochs):
+    for epoch in range(start_epoch, epochs):
+        epoch_started = time.perf_counter()
         nll_total = 0.0
         squared_error_total = 0.0
         target_sum = 0.0
@@ -480,8 +564,24 @@ def train_model(
         history["nll"].append(nll_total)
         history["mse"].append(mse)
         history["r2"].append(r2)
+        if checkpoint_every > 0 and (
+            (epoch + 1) % checkpoint_every == 0 or epoch == epochs - 1
+        ):
+            save_training_checkpoint(
+                checkpoint_path,
+                stage_name,
+                epoch + 1,
+                model,
+                optimizer,
+                history,
+                rng.bit_generator.state,
+            )
         if epoch % log_every == 0 or epoch == epochs - 1:
-            print(f"Epoch {epoch:03d} | NLL Sum: {nll_total:.2f} | MSE: {mse:.8f} | R2: {r2:.6f}")
+            epoch_seconds = time.perf_counter() - epoch_started
+            print(
+                f"Epoch {epoch:03d} | NLL Sum: {nll_total:.2f} | "
+                f"MSE: {mse:.8f} | R2: {r2:.6f} | Seconds: {epoch_seconds:.1f}"
+            )
     return history
 
 
@@ -494,6 +594,11 @@ def fit_context_initial_conditions(
     epochs: int,
     learning_rate: float,
     batch_size: int,
+    log_every: int,
+    checkpoint_path: Path,
+    checkpoint_every: int,
+    resume: bool,
+    stage_name: str,
 ):
     if len(heldout_indices) == 0:
         return []
@@ -502,8 +607,24 @@ def fit_context_initial_conditions(
         parameter.requires_grad_(name in {"x0", "v0"})
     optimizer = optim.Adam([model.x0, model.v0], lr=learning_rate)
     history = []
+    start_epoch, saved_history, _ = restore_training_checkpoint(
+        checkpoint_path,
+        stage_name,
+        model,
+        optimizer,
+        selected_device,
+        resume,
+    )
+    if saved_history is not None:
+        history = saved_history
+    if start_epoch > epochs:
+        raise ValueError(
+            f"Checkpoint {checkpoint_path} is already at epoch {start_epoch}, "
+            f"which exceeds requested E65_CONTEXT_EPOCHS={epochs}."
+        )
     try:
-        for _ in range(epochs):
+        for epoch in range(start_epoch, epochs):
+            epoch_started = time.perf_counter()
             epoch_nll = 0.0
             for batch_indices in iter_index_batches(
                 heldout_indices, batch_size, False, np.random.default_rng(0)
@@ -519,6 +640,23 @@ def fit_context_initial_conditions(
                 optimizer.step()
                 epoch_nll += float(nll.detach().cpu())
             history.append(epoch_nll)
+            if checkpoint_every > 0 and (
+                (epoch + 1) % checkpoint_every == 0 or epoch == epochs - 1
+            ):
+                save_training_checkpoint(
+                    checkpoint_path,
+                    stage_name,
+                    epoch + 1,
+                    model,
+                    optimizer,
+                    history,
+                )
+            if epoch % log_every == 0 or epoch == epochs - 1:
+                epoch_seconds = time.perf_counter() - epoch_started
+                print(
+                    f"Context epoch {epoch:03d} | NLL Sum: {epoch_nll:.2f} | "
+                    f"Seconds: {epoch_seconds:.1f}"
+                )
     finally:
         for name, parameter in model.named_parameters():
             parameter.requires_grad_(prior_requires_grad[name])
@@ -671,13 +809,25 @@ def main():
     filter_train_silent = env_flag("E65_FILTER_TRAIN_SILENT", True)
     solver = os.environ.get("E65_MODEL_SOLVER", "rk4").strip().lower()
     log_every = int(os.environ.get("E65_LOG_EVERY", "10"))
+    checkpoint_every = int(os.environ.get("E65_CHECKPOINT_EVERY", "1"))
+    resume_checkpoints = env_flag("E65_RESUME", True)
+    checkpoint_dir = Path(
+        os.environ.get("E65_CHECKPOINT_DIR", str(output_dir / "checkpoints"))
+    ).expanduser()
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
     if solver not in {"rk4", "euler"}:
         raise ValueError("E65_MODEL_SOLVER must be 'rk4' or 'euler'.")
     if not 0.0 <= heldout_fraction < 1.0:
         raise ValueError("E65_HELDOUT_FRAC must be in [0, 1).")
+    if checkpoint_every < 0:
+        raise ValueError("E65_CHECKPOINT_EVERY must be nonnegative.")
 
     print(f"Using device: {selected_device}")
     print(f"Using dtype: {TORCH_DTYPE}")
+    print(
+        f"Checkpoints: {checkpoint_dir} "
+        f"(every {checkpoint_every} epoch(s), resume={resume_checkpoints})"
+    )
     print(f"Loading E65: {data_path}")
     raw_rates, trial_labels, frame_times = load_e65(data_path)
     arrays, metadata = prepare_e65_data(
@@ -744,6 +894,10 @@ def main():
         batch_size,
         seed,
         log_every,
+        checkpoint_dir / "geodesic_training.pt",
+        checkpoint_every,
+        resume_checkpoints,
+        "geodesic_training",
     )
     print("Training free-dynamics model...")
     free_history = train_model(
@@ -756,6 +910,10 @@ def main():
         batch_size,
         seed,
         log_every,
+        checkpoint_dir / "free_training.pt",
+        checkpoint_every,
+        resume_checkpoints,
+        "free_training",
     )
 
     if len(heldout_indices):
@@ -769,6 +927,11 @@ def main():
             context_epochs,
             context_learning_rate,
             batch_size,
+            log_every,
+            checkpoint_dir / "geodesic_context.pt",
+            checkpoint_every,
+            resume_checkpoints,
+            "geodesic_context",
         )
         print("Fitting heldout free x0/v0 from context only...")
         free_context_history = fit_context_initial_conditions(
@@ -780,6 +943,11 @@ def main():
             context_epochs,
             context_learning_rate,
             batch_size,
+            log_every,
+            checkpoint_dir / "free_context.pt",
+            checkpoint_every,
+            resume_checkpoints,
+            "free_context",
         )
     else:
         geodesic_context_history = []
@@ -873,6 +1041,9 @@ def main():
             "learning_rate": learning_rate,
             "batch_size": batch_size,
             "solver": solver,
+            "checkpoint_every": checkpoint_every,
+            "resume_checkpoints": resume_checkpoints,
+            "vectorized_christoffel": True,
             "device": str(selected_device),
             "dtype": str(TORCH_DTYPE),
             "filter_train_silent": filter_train_silent,
@@ -898,7 +1069,7 @@ def main():
         "preferred_by_BIC": "geodesic" if bic_geodesic < bic_free else "free",
     }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-    torch.save(
+    atomic_torch_save(
         {
             "config": summary["config"],
             "geodesic_state_dict": model_geodesic.state_dict(),

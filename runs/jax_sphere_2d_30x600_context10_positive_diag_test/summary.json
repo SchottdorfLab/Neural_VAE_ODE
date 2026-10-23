@@ -1,0 +1,73 @@
+{
+  "config": {
+    "data_path": "runs/geodesic_sphere_forecast_2d_30x600_e3000_float64_cpu/synthetic_sphere_trials.npz",
+    "train_indices": [
+      12,
+      0,
+      6,
+      25,
+      8,
+      15,
+      10,
+      18,
+      16,
+      23,
+      28,
+      26,
+      20,
+      7,
+      21,
+      22,
+      29,
+      13,
+      14,
+      2,
+      4,
+      1,
+      9,
+      11
+    ],
+    "heldout_indices": [
+      17,
+      19,
+      27,
+      5,
+      24,
+      3
+    ],
+    "num_train_trials": 24,
+    "num_heldout_trials": 6,
+    "n_timepoints": 600,
+    "n_neurons": 300,
+    "latent_dim": 2,
+    "context_steps": 10,
+    "forecast_start_frame": 10,
+    "epochs": 3,
+    "epochs_completed": 3,
+    "best_epoch": 2,
+    "best_training_mse": 11.104466794057036,
+    "early_stopping_patience": 2,
+    "early_stopping_min_delta": 1e-06,
+    "stop_reason": "completed_requested_epochs",
+    "learning_rate": 0.0001,
+    "dtype": "jax.float64",
+    "solver": "rk4",
+    "encoder_input": "first_10_neural_frames",
+    "elapsed_seconds": 3.674575090408325
+  },
+  "train": {
+    "mse": 11.10446679405704,
+    "r2": -7.385423325362597,
+    "r": -0.00029577656856040967
+  },
+  "heldout_context": {
+    "mse": 4.367932248355796,
+    "r2": -2.298324113505048,
+    "r": -0.011003347801716357
+  },
+  "forecast": {
+    "mse": 11.789697972811165,
+    "r2": -7.903137409184435,
+    "r": -0.005721717465777951
+  }
+}

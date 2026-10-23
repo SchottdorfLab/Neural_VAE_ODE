@@ -1,0 +1,67 @@
+{
+  "config": {
+    "data_path": "runs/geodesic_sphere_forecast_2d_30x600_e3000_float64_cpu/synthetic_sphere_trials.npz",
+    "train_indices": [
+      12,
+      0,
+      6,
+      25,
+      8,
+      15,
+      10,
+      18,
+      16,
+      23,
+      28,
+      26,
+      20,
+      7,
+      21,
+      22,
+      29,
+      13,
+      14,
+      2,
+      4,
+      1,
+      9,
+      11
+    ],
+    "heldout_indices": [
+      17,
+      19,
+      27,
+      5,
+      24,
+      3
+    ],
+    "num_train_trials": 24,
+    "num_heldout_trials": 6,
+    "n_timepoints": 600,
+    "n_neurons": 300,
+    "latent_dim": 2,
+    "context_steps": 10,
+    "forecast_start_frame": 10,
+    "epochs": 1,
+    "learning_rate": 0.001,
+    "dtype": "jax.float64",
+    "solver": "rk4",
+    "encoder_input": "first_10_neural_frames",
+    "elapsed_seconds": 3.2813799381256104
+  },
+  "train": {
+    "mse": 65688.18438175258,
+    "r2": -49602.75349226676,
+    "r": -0.0006056215909129555
+  },
+  "heldout_context": {
+    "mse": 126.5577405623226,
+    "r2": -94.56660307736128,
+    "r": -0.0015055053784852105
+  },
+  "forecast": {
+    "mse": 66245.74785558289,
+    "r2": -50025.30239490413,
+    "r": -0.001456013955659335
+  }
+}

@@ -2,6 +2,9 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+# October 25th, 12:14pm:
+- Just spent a hot minute trying to figure out why the JAX code isn't running on DARWIN. I realized it's because I don't have the dependencies installed in the env! So working on that now. I had ChatGPT try and debug that issue and it didn't catch it, haha. Human error. 
+
 # October 25th, 11:36am:
 - I've been continuing to work on this project throughout, but I haven't been taking notes, so I'll provide a brief update here.
 - The first big thing is that Dr. Schottdorf's JAX code works. Also, it's important to note that where the fit_sphere_trials.py/simulate_geodesic_sphere.py code found the initial velocity and point by gradient descent, the JAX code finds it using the first 2 frames. I am not quite sure that 2 frames is enough to definitvely determine intial conditions, and so I've been doing tests with more "context frames." I'll have to go back and look at what these results are, if I am remembering correctly (or perhaps I am just justifying my hunch) they improved scores. 

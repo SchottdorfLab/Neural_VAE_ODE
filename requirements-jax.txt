@@ -1,0 +1,7 @@
+# Packages imported by the JAX experiments in sandbox/JAX.
+#
+# JAX itself is installed separately by scripts/install_jax_environment.sh so
+# that DARWIN receives the NVIDIA/CUDA build while macOS receives the CPU build.
+numpy
+matplotlib
+optax

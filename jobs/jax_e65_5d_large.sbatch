@@ -54,8 +54,23 @@ echo "Started: $(date)"
 echo "Python: ${PYTHON_BIN}"
 "$PYTHON_BIN" --version
 nvidia-smi
-"$PYTHON_BIN" -c "import jax; print('JAX:', jax.__version__); print('Devices:', jax.devices())" || {
-    echo "JAX startup check failed." >&2
+"$PYTHON_BIN" - <<'PY' || {
+import jax
+import matplotlib
+import numpy
+import optax
+
+devices = jax.devices()
+print("JAX:", jax.__version__)
+print("Optax:", optax.__version__)
+print("NumPy:", numpy.__version__)
+print("Matplotlib:", matplotlib.__version__)
+print("Devices:", devices)
+if not any(device.platform == "gpu" for device in devices):
+    raise RuntimeError("JAX installed, but it cannot see the allocated GPU")
+PY
+    echo "JAX dependency/GPU startup check failed." >&2
+    echo "Run: bash scripts/install_jax_environment.sh" >&2
     exit 1
 }
 

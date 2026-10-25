@@ -1,0 +1,1263 @@
+Adding package `miniconda/25.1.1.2` to your environment
+Job ID: 7592821
+Host: r1t00
+Started: Fri Oct 23 09:58:07 EDT 2026
+Python: /home/4429/envs/odevae/bin/python
+Python 3.11.15
+GPU status:
+Fri Oct 23 09:58:09 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   45C    P0             28W /   70W |       1MiB /  15360MiB |     10%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+PyTorch: 2.5.1+cu118
+CUDA: True
+GPU: Tesla T4
+Using device: cuda
+Using dtype: torch.float32
+Checkpoints: runs/geodesic_e65_trials_5d_e300/checkpoints (every 1 epoch(s), resume=True)
+Loading E65: src/npz_e65_data/E65_data.npz
+Prepared 188 trials: train=150, heldout=38, frames=7434, length=29-78, neurons=352.
+Neuron filter removed 23; globally silent=18, train-silent=23.
+Inputs: raw neural activity and raw within-trial frame times only; no behavior or position.
+Heldout protocol: fit x0/v0 on 10 prefix frames, then forecast each remaining suffix.
+Geodesic training parameters: 26507
+Free training parameters: 59841
+
+Training geodesic model...
+Epoch 000 | NLL Sum: 1416495.19 | MSE: 0.51519146 | R2: -61.740322 | Seconds: 220.4
+Epoch 001 | NLL Sum: 1129912.46 | MSE: 0.32512702 | R2: -38.594161 | Seconds: 221.7
+Epoch 002 | NLL Sum: 859472.38 | MSE: 0.20144048 | R2: -23.531542 | Seconds: 225.0
+Epoch 003 | NLL Sum: 598404.75 | MSE: 0.11421082 | R2: -12.908662 | Seconds: 228.5
+Epoch 004 | NLL Sum: 422379.04 | MSE: 0.06365188 | R2: -6.751564 | Seconds: 219.8
+Epoch 005 | NLL Sum: 342141.79 | MSE: 0.04057284 | R2: -3.940985 | Seconds: 216.7
+Epoch 006 | NLL Sum: 290572.58 | MSE: 0.03161598 | R2: -2.850212 | Seconds: 214.1
+Epoch 007 | NLL Sum: 258494.79 | MSE: 0.02843353 | R2: -2.462652 | Seconds: 219.0
+Epoch 008 | NLL Sum: 238714.98 | MSE: 0.02505304 | R2: -2.050973 | Seconds: 215.3
+Epoch 009 | NLL Sum: 222517.10 | MSE: 0.02302672 | R2: -1.804207 | Seconds: 218.8
+Epoch 010 | NLL Sum: 208116.41 | MSE: 0.02100152 | R2: -1.557577 | Seconds: 205.2
+Epoch 011 | NLL Sum: 196165.69 | MSE: 0.01905649 | R2: -1.320711 | Seconds: 217.0
+Epoch 012 | NLL Sum: 187569.67 | MSE: 0.01812886 | R2: -1.207744 | Seconds: 220.0
+Epoch 013 | NLL Sum: 178890.82 | MSE: 0.01674804 | R2: -1.039586 | Seconds: 223.9
+Epoch 014 | NLL Sum: 171395.04 | MSE: 0.01563533 | R2: -0.904079 | Seconds: 226.9
+Epoch 015 | NLL Sum: 167688.33 | MSE: 0.01511302 | R2: -0.840473 | Seconds: 211.8
+Epoch 016 | NLL Sum: 552566.77 | MSE: 3008.63528764 | R2: -366392.395413 | Seconds: 226.5
+Epoch 017 | NLL Sum: 157292.60 | MSE: 0.01329876 | R2: -0.619531 | Seconds: 222.7
+Epoch 018 | NLL Sum: 151743.20 | MSE: 0.01255333 | R2: -0.528751 | Seconds: 208.6
+Epoch 019 | NLL Sum: 148673.70 | MSE: 0.01195488 | R2: -0.455873 | Seconds: 213.6
+Epoch 020 | NLL Sum: 142533.16 | MSE: 0.01162205 | R2: -0.415340 | Seconds: 223.8
+Epoch 021 | NLL Sum: 269509.11 | MSE: 552.07902925 | R2: -67231.511919 | Seconds: 219.9
+Epoch 022 | NLL Sum: 131820.27 | MSE: 0.01073706 | R2: -0.307566 | Seconds: 219.8
+Epoch 023 | NLL Sum: 128397.96 | MSE: 0.01012126 | R2: -0.232573 | Seconds: 219.8
+Epoch 024 | NLL Sum: 124987.74 | MSE: 0.00985025 | R2: -0.199569 | Seconds: 223.5
+Epoch 025 | NLL Sum: 121414.50 | MSE: 0.00961607 | R2: -0.171051 | Seconds: 219.7
+Epoch 026 | NLL Sum: 117186.10 | MSE: 0.00935791 | R2: -0.139612 | Seconds: 225.5
+Epoch 027 | NLL Sum: 114146.48 | MSE: 0.00921450 | R2: -0.122148 | Seconds: 222.1
+Epoch 028 | NLL Sum: 113680.74 | MSE: 0.00891504 | R2: -0.085679 | Seconds: 222.0
+Epoch 029 | NLL Sum: 110566.04 | MSE: 0.00880522 | R2: -0.072305 | Seconds: 225.4
+Epoch 030 | NLL Sum: 107873.24 | MSE: 0.00866357 | R2: -0.055055 | Seconds: 211.9
+Epoch 031 | NLL Sum: 107462.75 | MSE: 0.00853141 | R2: -0.038960 | Seconds: 217.8
+Epoch 032 | NLL Sum: 104511.34 | MSE: 0.00843696 | R2: -0.027457 | Seconds: 214.1
+Epoch 033 | NLL Sum: 102926.26 | MSE: 0.00834745 | R2: -0.016557 | Seconds: 223.6
+Epoch 034 | NLL Sum: 101576.55 | MSE: 0.00825359 | R2: -0.005127 | Seconds: 221.4
+Epoch 035 | NLL Sum: 100406.61 | MSE: 0.00820218 | R2: 0.001134 | Seconds: 220.3
+Epoch 036 | NLL Sum: 101846.61 | MSE: 0.00815013 | R2: 0.007472 | Seconds: 221.9
+Epoch 037 | NLL Sum: 98937.82 | MSE: 0.00812689 | R2: 0.010302 | Seconds: 224.9
+Epoch 038 | NLL Sum: 97895.77 | MSE: 0.00803954 | R2: 0.020940 | Seconds: 219.6
+Epoch 039 | NLL Sum: 97235.15 | MSE: 0.00800536 | R2: 0.025103 | Seconds: 224.9
+Epoch 040 | NLL Sum: 98183.25 | MSE: 0.00797655 | R2: 0.028610 | Seconds: 220.0
+Epoch 041 | NLL Sum: 96616.16 | MSE: 0.00793982 | R2: 0.033084 | Seconds: 218.2
+Epoch 042 | NLL Sum: 94220.24 | MSE: 0.00790391 | R2: 0.037458 | Seconds: 218.9
+Epoch 043 | NLL Sum: 103295.31 | MSE: 0.00790763 | R2: 0.037004 | Seconds: 218.5
+Epoch 044 | NLL Sum: 98456.96 | MSE: 0.00788464 | R2: 0.039804 | Seconds: 216.6
+Epoch 045 | NLL Sum: 93607.54 | MSE: 0.00786456 | R2: 0.042250 | Seconds: 229.0
+Epoch 046 | NLL Sum: 91178.21 | MSE: 0.00782717 | R2: 0.046802 | Seconds: 219.3
+Epoch 047 | NLL Sum: 91553.91 | MSE: 0.00780959 | R2: 0.048944 | Seconds: 215.1
+Epoch 048 | NLL Sum: 89852.58 | MSE: 0.00777652 | R2: 0.052971 | Seconds: 217.7
+Epoch 049 | NLL Sum: 88873.21 | MSE: 0.00776671 | R2: 0.054165 | Seconds: 215.6
+Epoch 050 | NLL Sum: 88664.37 | MSE: 0.00774185 | R2: 0.057193 | Seconds: 213.0
+Epoch 051 | NLL Sum: 88134.96 | MSE: 0.00771757 | R2: 0.060149 | Seconds: 221.4
+Epoch 052 | NLL Sum: 87743.92 | MSE: 0.00770201 | R2: 0.062044 | Seconds: 220.6
+Epoch 053 | NLL Sum: 87021.01 | MSE: 0.00768475 | R2: 0.064146 | Seconds: 212.7
+Epoch 054 | NLL Sum: 86863.30 | MSE: 0.00766455 | R2: 0.066607 | Seconds: 227.9
+Epoch 055 | NLL Sum: 87645.71 | MSE: 0.36380480 | R2: -43.304363 | Seconds: 217.7
+Epoch 056 | NLL Sum: 86198.60 | MSE: 0.00763529 | R2: 0.070169 | Seconds: 213.9
+Epoch 057 | NLL Sum: 87755.73 | MSE: 0.00762020 | R2: 0.072007 | Seconds: 206.9
+Epoch 058 | NLL Sum: 5531949.02 | MSE: 173239.11565628 | R2: -21097161.504155 | Seconds: 205.0
+Epoch 059 | NLL Sum: 85291.15 | MSE: 0.00760113 | R2: 0.074330 | Seconds: 206.2
+Epoch 060 | NLL Sum: 84984.06 | MSE: 0.00759433 | R2: 0.075158 | Seconds: 212.7
+Epoch 061 | NLL Sum: 84453.38 | MSE: 0.00758446 | R2: 0.076359 | Seconds: 216.8
+Epoch 062 | NLL Sum: 84090.60 | MSE: 0.00756440 | R2: 0.078803 | Seconds: 216.1
+Epoch 063 | NLL Sum: 84284.75 | MSE: 0.00756177 | R2: 0.079124 | Seconds: 214.0
+Epoch 064 | NLL Sum: 83907.37 | MSE: 0.00753637 | R2: 0.082217 | Seconds: 207.7
+Epoch 065 | NLL Sum: 83638.50 | MSE: 0.00752904 | R2: 0.083109 | Seconds: 226.5
+Epoch 066 | NLL Sum: 83352.62 | MSE: 0.00750588 | R2: 0.085930 | Seconds: 214.4
+Epoch 067 | NLL Sum: 1473023.37 | MSE: 34681.07325688 | R2: -4223480.627864 | Seconds: 215.3
+Epoch 068 | NLL Sum: 82701.62 | MSE: 0.00750716 | R2: 0.085773 | Seconds: 214.0
+Epoch 069 | NLL Sum: 82493.95 | MSE: 0.00748853 | R2: 0.088043 | Seconds: 215.4
+Epoch 070 | NLL Sum: 82159.48 | MSE: 0.00747767 | R2: 0.089365 | Seconds: 211.6
+Epoch 071 | NLL Sum: 81981.32 | MSE: 0.00746644 | R2: 0.090732 | Seconds: 218.6
+Epoch 072 | NLL Sum: 81719.11 | MSE: 0.00744452 | R2: 0.093402 | Seconds: 220.9
+Epoch 073 | NLL Sum: 81506.07 | MSE: 0.00743371 | R2: 0.094718 | Seconds: 212.5
+Epoch 074 | NLL Sum: 81374.82 | MSE: 0.00742916 | R2: 0.095273 | Seconds: 222.0
+Epoch 075 | NLL Sum: 81188.60 | MSE: 0.00742151 | R2: 0.096204 | Seconds: 213.1
+Epoch 076 | NLL Sum: 81022.40 | MSE: 0.00740320 | R2: 0.098434 | Seconds: 212.0
+Epoch 077 | NLL Sum: 80785.89 | MSE: 0.00739280 | R2: 0.099701 | Seconds: 207.1
+Epoch 078 | NLL Sum: 80657.27 | MSE: 0.00738422 | R2: 0.100746 | Seconds: 217.6
+Epoch 079 | NLL Sum: 80453.24 | MSE: 0.00736509 | R2: 0.103075 | Seconds: 219.0
+Epoch 080 | NLL Sum: 80191.07 | MSE: 0.00734126 | R2: 0.105977 | Seconds: 224.0
+Epoch 081 | NLL Sum: 80244.23 | MSE: 0.00736477 | R2: 0.103113 | Seconds: 225.4
+Epoch 082 | NLL Sum: 80081.55 | MSE: 0.00734396 | R2: 0.105649 | Seconds: 225.4
+Epoch 083 | NLL Sum: 79840.52 | MSE: 0.00732770 | R2: 0.107629 | Seconds: 218.3
+Epoch 084 | NLL Sum: 79573.91 | MSE: 0.00731459 | R2: 0.109225 | Seconds: 217.0
+Epoch 085 | NLL Sum: 79502.75 | MSE: 0.00729390 | R2: 0.111744 | Seconds: 226.9
+Epoch 086 | NLL Sum: 79291.08 | MSE: 0.00728348 | R2: 0.113014 | Seconds: 223.0
+Epoch 087 | NLL Sum: 79150.11 | MSE: 0.00727917 | R2: 0.113538 | Seconds: 217.0
+Epoch 088 | NLL Sum: 78995.64 | MSE: 0.00726696 | R2: 0.115025 | Seconds: 218.4
+Epoch 089 | NLL Sum: 78824.81 | MSE: 0.00723972 | R2: 0.118343 | Seconds: 217.2
+Epoch 090 | NLL Sum: 78728.12 | MSE: 0.00723582 | R2: 0.118818 | Seconds: 218.8
+Epoch 091 | NLL Sum: 78528.35 | MSE: 0.00722270 | R2: 0.120416 | Seconds: 222.3
+Epoch 092 | NLL Sum: 78391.18 | MSE: 0.00721780 | R2: 0.121012 | Seconds: 216.9
+Epoch 093 | NLL Sum: 78180.40 | MSE: 0.00719951 | R2: 0.123240 | Seconds: 214.4
+Epoch 094 | NLL Sum: 78049.98 | MSE: 0.00717236 | R2: 0.126546 | Seconds: 213.6
+Epoch 095 | NLL Sum: 77970.77 | MSE: 0.00716537 | R2: 0.127396 | Seconds: 216.9
+Epoch 096 | NLL Sum: 77787.99 | MSE: 0.00716204 | R2: 0.127802 | Seconds: 206.6
+Epoch 097 | NLL Sum: 77614.24 | MSE: 0.00714613 | R2: 0.129740 | Seconds: 212.6
+Epoch 098 | NLL Sum: 77500.52 | MSE: 0.00713767 | R2: 0.130771 | Seconds: 213.8
+Epoch 099 | NLL Sum: 77383.80 | MSE: 0.00712419 | R2: 0.132412 | Seconds: 219.6
+Epoch 100 | NLL Sum: 77169.18 | MSE: 0.00710903 | R2: 0.134258 | Seconds: 218.4
+Epoch 101 | NLL Sum: 77052.58 | MSE: 0.00709283 | R2: 0.136231 | Seconds: 219.1
+Epoch 102 | NLL Sum: 76913.64 | MSE: 0.00708307 | R2: 0.137420 | Seconds: 223.7
+Epoch 103 | NLL Sum: 76767.03 | MSE: 0.00708828 | R2: 0.136785 | Seconds: 215.7
+Epoch 104 | NLL Sum: 76686.20 | MSE: 0.00707014 | R2: 0.138994 | Seconds: 216.7
+Epoch 105 | NLL Sum: 76484.90 | MSE: 0.00705118 | R2: 0.141303 | Seconds: 216.4
+Epoch 106 | NLL Sum: 76396.18 | MSE: 0.00704118 | R2: 0.142520 | Seconds: 226.6
+Epoch 107 | NLL Sum: 76286.60 | MSE: 0.00703472 | R2: 0.143308 | Seconds: 220.1
+Epoch 108 | NLL Sum: 76094.67 | MSE: 0.00701134 | R2: 0.146155 | Seconds: 214.6
+Epoch 109 | NLL Sum: 76044.24 | MSE: 0.00701391 | R2: 0.145842 | Seconds: 216.0
+Epoch 110 | NLL Sum: 75963.11 | MSE: 0.00701891 | R2: 0.145233 | Seconds: 220.0
+Epoch 111 | NLL Sum: 75711.33 | MSE: 0.00698110 | R2: 0.149838 | Seconds: 222.6
+Epoch 112 | NLL Sum: 75689.12 | MSE: 0.00697046 | R2: 0.151133 | Seconds: 221.6
+Epoch 113 | NLL Sum: 75644.31 | MSE: 0.00697606 | R2: 0.150451 | Seconds: 213.9
+Epoch 114 | NLL Sum: 75497.93 | MSE: 0.00697600 | R2: 0.150459 | Seconds: 210.0
+Epoch 115 | NLL Sum: 75545.80 | MSE: 0.00699686 | R2: 0.147919 | Seconds: 209.0
+Epoch 116 | NLL Sum: 75326.90 | MSE: 0.00695449 | R2: 0.153078 | Seconds: 220.1
+Epoch 117 | NLL Sum: 75129.05 | MSE: 0.00694618 | R2: 0.154091 | Seconds: 225.2
+Epoch 118 | NLL Sum: 74966.82 | MSE: 0.00690978 | R2: 0.158522 | Seconds: 218.3
+Epoch 119 | NLL Sum: 74857.88 | MSE: 0.00691052 | R2: 0.158433 | Seconds: 226.0
+Epoch 120 | NLL Sum: 74693.96 | MSE: 0.00689891 | R2: 0.159846 | Seconds: 219.1
+Epoch 121 | NLL Sum: 74623.95 | MSE: 0.00688352 | R2: 0.161721 | Seconds: 222.8
+Epoch 122 | NLL Sum: 74494.26 | MSE: 0.00688097 | R2: 0.162032 | Seconds: 216.3
+Epoch 123 | NLL Sum: 74433.52 | MSE: 0.00687122 | R2: 0.163219 | Seconds: 226.0
+Epoch 124 | NLL Sum: 74261.36 | MSE: 0.00685020 | R2: 0.165778 | Seconds: 218.9
+Epoch 125 | NLL Sum: 74051.54 | MSE: 0.00683476 | R2: 0.167659 | Seconds: 227.6
+Epoch 126 | NLL Sum: 73959.48 | MSE: 0.00681672 | R2: 0.169855 | Seconds: 222.8
+Epoch 127 | NLL Sum: 73872.95 | MSE: 0.00681789 | R2: 0.169713 | Seconds: 227.0
+Epoch 128 | NLL Sum: 73764.24 | MSE: 0.00681369 | R2: 0.170225 | Seconds: 219.3
+Epoch 129 | NLL Sum: 73703.38 | MSE: 0.00678515 | R2: 0.173700 | Seconds: 218.5
+Epoch 130 | NLL Sum: 73457.85 | MSE: 0.00677511 | R2: 0.174923 | Seconds: 217.8
+Epoch 131 | NLL Sum: 73365.13 | MSE: 0.00677877 | R2: 0.174478 | Seconds: 224.3
+Epoch 132 | NLL Sum: 73231.67 | MSE: 0.00675546 | R2: 0.177317 | Seconds: 213.9
+Epoch 133 | NLL Sum: 73829.10 | MSE: 0.00713771 | R2: 0.130766 | Seconds: 219.5
+Epoch 134 | NLL Sum: 73408.55 | MSE: 0.00677517 | R2: 0.174915 | Seconds: 218.8
+Epoch 135 | NLL Sum: 73127.68 | MSE: 0.00676089 | R2: 0.176655 | Seconds: 214.9
+Epoch 136 | NLL Sum: 72947.47 | MSE: 0.00672377 | R2: 0.181175 | Seconds: 218.6
+Epoch 137 | NLL Sum: 72884.50 | MSE: 0.00672534 | R2: 0.180984 | Seconds: 219.5
+Epoch 138 | NLL Sum: 72892.78 | MSE: 0.00671829 | R2: 0.181843 | Seconds: 210.1
+Epoch 139 | NLL Sum: 72642.49 | MSE: 0.00671263 | R2: 0.182532 | Seconds: 210.7
+Epoch 140 | NLL Sum: 72624.78 | MSE: 0.00671017 | R2: 0.182832 | Seconds: 213.0
+Epoch 141 | NLL Sum: 72503.06 | MSE: 0.00672354 | R2: 0.181204 | Seconds: 205.4
+Epoch 142 | NLL Sum: 72363.03 | MSE: 0.00668654 | R2: 0.185709 | Seconds: 213.3
+Epoch 143 | NLL Sum: 72440.23 | MSE: 0.00670299 | R2: 0.183705 | Seconds: 205.9
+Epoch 144 | NLL Sum: 72276.93 | MSE: 0.00668765 | R2: 0.185575 | Seconds: 208.7
+Epoch 145 | NLL Sum: 72135.99 | MSE: 0.00666195 | R2: 0.188704 | Seconds: 203.0
+Epoch 146 | NLL Sum: 72162.98 | MSE: 0.00667948 | R2: 0.186570 | Seconds: 214.0
+Epoch 147 | NLL Sum: 72026.14 | MSE: 0.00668289 | R2: 0.186153 | Seconds: 209.3
+Epoch 148 | NLL Sum: 71891.62 | MSE: 0.00665649 | R2: 0.189369 | Seconds: 198.5
+Epoch 149 | NLL Sum: 71863.89 | MSE: 0.00664534 | R2: 0.190726 | Seconds: 213.9
+Epoch 150 | NLL Sum: 71667.54 | MSE: 0.00661010 | R2: 0.195019 | Seconds: 209.5
+Epoch 151 | NLL Sum: 71679.28 | MSE: 0.00662709 | R2: 0.192949 | Seconds: 205.2
+Epoch 152 | NLL Sum: 71469.70 | MSE: 0.00661567 | R2: 0.194340 | Seconds: 204.1
+Epoch 153 | NLL Sum: 71382.30 | MSE: 0.00660507 | R2: 0.195631 | Seconds: 204.3
+Epoch 154 | NLL Sum: 71437.67 | MSE: 0.00661348 | R2: 0.194607 | Seconds: 207.6
+Epoch 155 | NLL Sum: 71253.53 | MSE: 0.00659352 | R2: 0.197037 | Seconds: 204.0
+Epoch 156 | NLL Sum: 71196.04 | MSE: 0.00656934 | R2: 0.199981 | Seconds: 203.3
+Epoch 157 | NLL Sum: 71108.77 | MSE: 0.00658362 | R2: 0.198243 | Seconds: 200.5
+Epoch 158 | NLL Sum: 70995.12 | MSE: 0.00656082 | R2: 0.201019 | Seconds: 209.0
+Epoch 159 | NLL Sum: 70760.67 | MSE: 0.00652584 | R2: 0.205279 | Seconds: 211.0
+Epoch 160 | NLL Sum: 70776.23 | MSE: 0.00654500 | R2: 0.202947 | Seconds: 210.6
+Epoch 161 | NLL Sum: 70687.96 | MSE: 0.00654260 | R2: 0.203239 | Seconds: 192.4
+Epoch 162 | NLL Sum: 70638.44 | MSE: 0.00654155 | R2: 0.203367 | Seconds: 210.2
+Epoch 163 | NLL Sum: 70424.47 | MSE: 0.00649883 | R2: 0.208569 | Seconds: 199.4
+Epoch 164 | NLL Sum: 70568.79 | MSE: 0.00653089 | R2: 0.204665 | Seconds: 206.3
+Epoch 165 | NLL Sum: 70605.21 | MSE: 0.00656033 | R2: 0.201079 | Seconds: 201.8
+Epoch 166 | NLL Sum: 70274.83 | MSE: 0.00650314 | R2: 0.208044 | Seconds: 201.3
+Epoch 167 | NLL Sum: 70327.36 | MSE: 0.00651012 | R2: 0.207193 | Seconds: 205.1
+Epoch 168 | NLL Sum: 70145.39 | MSE: 0.00649621 | R2: 0.208887 | Seconds: 211.7
+Epoch 169 | NLL Sum: 70059.52 | MSE: 0.00648191 | R2: 0.210629 | Seconds: 213.2
+Epoch 170 | NLL Sum: 69931.08 | MSE: 0.00645523 | R2: 0.213879 | Seconds: 214.5
+Epoch 171 | NLL Sum: 69793.25 | MSE: 0.00645212 | R2: 0.214257 | Seconds: 206.4
+Epoch 172 | NLL Sum: 69726.73 | MSE: 0.00645640 | R2: 0.213736 | Seconds: 206.7
+Epoch 173 | NLL Sum: 69724.57 | MSE: 0.00644860 | R2: 0.214685 | Seconds: 211.6
+Epoch 174 | NLL Sum: 69581.35 | MSE: 0.00643595 | R2: 0.216226 | Seconds: 213.7
+Epoch 175 | NLL Sum: 69572.09 | MSE: 0.00644127 | R2: 0.215579 | Seconds: 207.0
+Epoch 176 | NLL Sum: 69543.07 | MSE: 0.00643548 | R2: 0.216284 | Seconds: 206.6
+Epoch 177 | NLL Sum: 69371.30 | MSE: 0.00641686 | R2: 0.218551 | Seconds: 210.4
+Epoch 178 | NLL Sum: 69318.27 | MSE: 0.00641469 | R2: 0.218815 | Seconds: 200.7
+Epoch 179 | NLL Sum: 69200.24 | MSE: 0.00638462 | R2: 0.222477 | Seconds: 207.0
+Epoch 180 | NLL Sum: 69083.20 | MSE: 0.00638065 | R2: 0.222961 | Seconds: 211.5
+Epoch 181 | NLL Sum: 69067.09 | MSE: 0.00638970 | R2: 0.221859 | Seconds: 203.1
+Epoch 182 | NLL Sum: 68943.22 | MSE: 0.00634810 | R2: 0.226924 | Seconds: 211.3
+Epoch 183 | NLL Sum: 68829.45 | MSE: 0.00637109 | R2: 0.224124 | Seconds: 206.5
+Epoch 184 | NLL Sum: 68781.43 | MSE: 0.00633815 | R2: 0.228136 | Seconds: 208.5
+Epoch 185 | NLL Sum: 68733.67 | MSE: 0.00634563 | R2: 0.227225 | Seconds: 202.6
+Epoch 186 | NLL Sum: 68670.87 | MSE: 0.00634655 | R2: 0.227113 | Seconds: 205.7
+Epoch 187 | NLL Sum: 68564.28 | MSE: 0.00633447 | R2: 0.228585 | Seconds: 212.8
+Epoch 188 | NLL Sum: 68428.10 | MSE: 0.00629936 | R2: 0.232861 | Seconds: 201.3
+Epoch 189 | NLL Sum: 68325.33 | MSE: 0.00632158 | R2: 0.230154 | Seconds: 211.7
+Epoch 190 | NLL Sum: 68351.07 | MSE: 0.00628744 | R2: 0.234312 | Seconds: 211.2
+Epoch 191 | NLL Sum: 68223.69 | MSE: 0.00627806 | R2: 0.235454 | Seconds: 198.9
+Epoch 192 | NLL Sum: 68078.06 | MSE: 0.00628234 | R2: 0.234932 | Seconds: 200.4
+Epoch 193 | NLL Sum: 68018.46 | MSE: 0.00628556 | R2: 0.234540 | Seconds: 207.0
+Epoch 194 | NLL Sum: 68089.91 | MSE: 0.00628620 | R2: 0.234463 | Seconds: 208.0
+Epoch 195 | NLL Sum: 67894.66 | MSE: 0.00623908 | R2: 0.240201 | Seconds: 201.0
+Epoch 196 | NLL Sum: 67894.78 | MSE: 0.00627009 | R2: 0.236425 | Seconds: 207.3
+Epoch 197 | NLL Sum: 67757.13 | MSE: 0.00625048 | R2: 0.238813 | Seconds: 206.7
+Epoch 198 | NLL Sum: 67835.65 | MSE: 0.00626180 | R2: 0.237435 | Seconds: 211.2
+Epoch 199 | NLL Sum: 67624.32 | MSE: 0.00620607 | R2: 0.244221 | Seconds: 204.1
+Epoch 200 | NLL Sum: 67888.00 | MSE: 0.00628684 | R2: 0.234384 | Seconds: 207.2
+Epoch 201 | NLL Sum: 67677.32 | MSE: 0.00625471 | R2: 0.238297 | Seconds: 213.0
+Epoch 202 | NLL Sum: 67809.27 | MSE: 0.00627137 | R2: 0.236268 | Seconds: 203.0
+Epoch 203 | NLL Sum: 67494.93 | MSE: 0.00619470 | R2: 0.245606 | Seconds: 206.4
+Epoch 204 | NLL Sum: 67429.41 | MSE: 0.00620659 | R2: 0.244158 | Seconds: 203.9
+Epoch 205 | NLL Sum: 67414.51 | MSE: 0.00621747 | R2: 0.242833 | Seconds: 215.2
+Epoch 206 | NLL Sum: 67358.87 | MSE: 0.00620150 | R2: 0.244778 | Seconds: 205.1
+Epoch 207 | NLL Sum: 67309.12 | MSE: 0.00621828 | R2: 0.242734 | Seconds: 208.3
+Epoch 208 | NLL Sum: 67127.50 | MSE: 0.00617521 | R2: 0.247979 | Seconds: 203.3
+Epoch 209 | NLL Sum: 67076.80 | MSE: 0.00618386 | R2: 0.246926 | Seconds: 202.6
+Epoch 210 | NLL Sum: 66970.75 | MSE: 0.00615898 | R2: 0.249956 | Seconds: 200.3
+Epoch 211 | NLL Sum: 66953.22 | MSE: 0.00618143 | R2: 0.247221 | Seconds: 211.8
+Epoch 212 | NLL Sum: 67043.05 | MSE: 0.00619628 | R2: 0.245414 | Seconds: 216.2
+Epoch 213 | NLL Sum: 66865.61 | MSE: 0.00615771 | R2: 0.250110 | Seconds: 211.7
+Epoch 214 | NLL Sum: 66762.63 | MSE: 0.00614857 | R2: 0.251224 | Seconds: 206.5
+Epoch 215 | NLL Sum: 66668.60 | MSE: 0.00612113 | R2: 0.254566 | Seconds: 210.9
+Epoch 216 | NLL Sum: 66639.30 | MSE: 0.00610041 | R2: 0.257089 | Seconds: 194.8
+Epoch 217 | NLL Sum: 66616.47 | MSE: 0.00613388 | R2: 0.253012 | Seconds: 203.6
+Epoch 218 | NLL Sum: 66536.44 | MSE: 0.00612080 | R2: 0.254606 | Seconds: 208.8
+Epoch 219 | NLL Sum: 66381.82 | MSE: 0.00609061 | R2: 0.258281 | Seconds: 201.7
+Epoch 220 | NLL Sum: 66268.05 | MSE: 0.00606684 | R2: 0.261176 | Seconds: 204.3
+Epoch 221 | NLL Sum: 66348.37 | MSE: 0.00609693 | R2: 0.257512 | Seconds: 207.2
+Epoch 222 | NLL Sum: 77147432655.08 | MSE: 35111293790789.51171875 | R2: -4275874218177042.500000 | Seconds: 208.1
+Epoch 223 | NLL Sum: 923684876.29 | MSE: 7755926938.05466175 | R2: -944521400558.119141 | Seconds: 206.0
+Epoch 224 | NLL Sum: 66146.89 | MSE: 0.00608571 | R2: 0.258878 | Seconds: 206.9
+Epoch 225 | NLL Sum: 66059.42 | MSE: 0.00605612 | R2: 0.262482 | Seconds: 209.4
+Epoch 226 | NLL Sum: 65945.01 | MSE: 0.00603950 | R2: 0.264505 | Seconds: 210.6
+Epoch 227 | NLL Sum: 65912.73 | MSE: 0.00605153 | R2: 0.263041 | Seconds: 204.1
+Epoch 228 | NLL Sum: 65873.80 | MSE: 0.00605056 | R2: 0.263159 | Seconds: 206.8
+Epoch 229 | NLL Sum: 65783.12 | MSE: 0.00605657 | R2: 0.262427 | Seconds: 205.6
+Epoch 230 | NLL Sum: 65709.31 | MSE: 0.00599133 | R2: 0.270372 | Seconds: 208.6
+Epoch 231 | NLL Sum: 65682.68 | MSE: 0.00601732 | R2: 0.267207 | Seconds: 208.1
+Epoch 232 | NLL Sum: 65734.04 | MSE: 0.00603045 | R2: 0.265608 | Seconds: 203.8
+Epoch 233 | NLL Sum: 65644.86 | MSE: 0.00605475 | R2: 0.262649 | Seconds: 207.6
+Epoch 234 | NLL Sum: 65514.98 | MSE: 0.00598030 | R2: 0.271716 | Seconds: 212.1
+Epoch 235 | NLL Sum: 65459.50 | MSE: 0.00601602 | R2: 0.267365 | Seconds: 203.4
+Epoch 236 | NLL Sum: 65648.14 | MSE: 0.00605842 | R2: 0.262203 | Seconds: 198.4
+Epoch 237 | NLL Sum: 65417.85 | MSE: 0.00599635 | R2: 0.269761 | Seconds: 214.5
+Epoch 238 | NLL Sum: 65323.15 | MSE: 0.00598503 | R2: 0.271140 | Seconds: 209.0
+Epoch 239 | NLL Sum: 65368.19 | MSE: 0.00598174 | R2: 0.271540 | Seconds: 196.8
+Epoch 240 | NLL Sum: 65293.99 | MSE: 0.00598532 | R2: 0.271104 | Seconds: 201.0
+Epoch 241 | NLL Sum: 65118.25 | MSE: 0.00594515 | R2: 0.275996 | Seconds: 207.6
+Epoch 242 | NLL Sum: 65145.70 | MSE: 0.00598186 | R2: 0.271525 | Seconds: 193.3
+Epoch 243 | NLL Sum: 65224.81 | MSE: 0.00595815 | R2: 0.274412 | Seconds: 206.9
+Epoch 244 | NLL Sum: 65090.79 | MSE: 0.00595268 | R2: 0.275079 | Seconds: 210.6
+Epoch 245 | NLL Sum: 64977.45 | MSE: 0.00594597 | R2: 0.275896 | Seconds: 211.6
+Epoch 246 | NLL Sum: 64953.54 | MSE: 0.00594167 | R2: 0.276420 | Seconds: 206.3
+Epoch 247 | NLL Sum: 64714.93 | MSE: 0.00589347 | R2: 0.282290 | Seconds: 212.1
+Epoch 248 | NLL Sum: 64743.42 | MSE: 0.00591676 | R2: 0.279454 | Seconds: 205.9
+Epoch 249 | NLL Sum: 64769.77 | MSE: 0.00590021 | R2: 0.281468 | Seconds: 204.1
+Epoch 250 | NLL Sum: 16730580.92 | MSE: 28494824.79503592 | R2: -3470116753.747523 | Seconds: 203.5
+Epoch 251 | NLL Sum: 64616.81 | MSE: 0.00589817 | R2: 0.281717 | Seconds: 202.4
+Epoch 252 | NLL Sum: 64576.79 | MSE: 0.00589444 | R2: 0.282171 | Seconds: 207.6
+Epoch 253 | NLL Sum: 64537.94 | MSE: 0.00589560 | R2: 0.282031 | Seconds: 200.4
+Epoch 254 | NLL Sum: 64510.55 | MSE: 0.00586674 | R2: 0.285544 | Seconds: 206.5
+Epoch 255 | NLL Sum: 64415.30 | MSE: 0.00585921 | R2: 0.286462 | Seconds: 206.4
+Epoch 256 | NLL Sum: 64314.32 | MSE: 0.00585488 | R2: 0.286990 | Seconds: 208.0
+Epoch 257 | NLL Sum: 64225.20 | MSE: 0.00583628 | R2: 0.289255 | Seconds: 206.1
+Epoch 258 | NLL Sum: 64296.95 | MSE: 0.00585474 | R2: 0.287007 | Seconds: 203.9
+Epoch 259 | NLL Sum: 64208.81 | MSE: 0.00584054 | R2: 0.288736 | Seconds: 203.1
+Epoch 260 | NLL Sum: 64137.05 | MSE: 0.00582430 | R2: 0.290713 | Seconds: 200.9
+Epoch 261 | NLL Sum: 64130.51 | MSE: 0.00584137 | R2: 0.288635 | Seconds: 204.9
+Epoch 262 | NLL Sum: 64203.11 | MSE: 0.00586436 | R2: 0.285835 | Seconds: 206.6
+Epoch 263 | NLL Sum: 64115.54 | MSE: 0.00586032 | R2: 0.286327 | Seconds: 203.8
+Epoch 264 | NLL Sum: 64110.21 | MSE: 0.00584810 | R2: 0.287815 | Seconds: 200.3
+Epoch 265 | NLL Sum: 63883.92 | MSE: 0.00581298 | R2: 0.292092 | Seconds: 208.9
+Epoch 266 | NLL Sum: 63885.91 | MSE: 0.00581405 | R2: 0.291962 | Seconds: 206.2
+Epoch 267 | NLL Sum: 63788.71 | MSE: 0.00579260 | R2: 0.294574 | Seconds: 200.1
+Epoch 268 | NLL Sum: 63875.35 | MSE: 0.00583232 | R2: 0.289736 | Seconds: 202.5
+Epoch 269 | NLL Sum: 63697.03 | MSE: 0.00579121 | R2: 0.294743 | Seconds: 205.1
+Epoch 270 | NLL Sum: 63670.67 | MSE: 0.00577311 | R2: 0.296947 | Seconds: 203.3
+Epoch 271 | NLL Sum: 63659.97 | MSE: 0.00577456 | R2: 0.296771 | Seconds: 204.9
+Epoch 272 | NLL Sum: 63618.83 | MSE: 0.00575878 | R2: 0.298693 | Seconds: 199.4
+Epoch 273 | NLL Sum: 63532.74 | MSE: 0.00577510 | R2: 0.296704 | Seconds: 202.8
+Epoch 274 | NLL Sum: 63557.62 | MSE: 0.00577787 | R2: 0.296367 | Seconds: 201.7
+Epoch 275 | NLL Sum: 63488.93 | MSE: 0.00577910 | R2: 0.296218 | Seconds: 215.7
+Epoch 276 | NLL Sum: 63453.25 | MSE: 0.00575731 | R2: 0.298872 | Seconds: 200.2
+Epoch 277 | NLL Sum: 63340.08 | MSE: 0.00574293 | R2: 0.300622 | Seconds: 200.3
+Epoch 278 | NLL Sum: 63326.66 | MSE: 0.00574260 | R2: 0.300663 | Seconds: 200.7
+Epoch 279 | NLL Sum: 63277.32 | MSE: 0.00572826 | R2: 0.302409 | Seconds: 205.5
+Epoch 280 | NLL Sum: 63227.72 | MSE: 0.00572047 | R2: 0.303358 | Seconds: 211.6
+Epoch 281 | NLL Sum: 63163.70 | MSE: 0.00575418 | R2: 0.299252 | Seconds: 211.2
+Epoch 282 | NLL Sum: 63018.40 | MSE: 0.00567869 | R2: 0.308446 | Seconds: 210.3
+Epoch 283 | NLL Sum: 63263.06 | MSE: 0.00574006 | R2: 0.300972 | Seconds: 208.1
+Epoch 284 | NLL Sum: 63119.79 | MSE: 0.00572248 | R2: 0.303113 | Seconds: 202.5
+Epoch 285 | NLL Sum: 63095.10 | MSE: 0.00571377 | R2: 0.304173 | Seconds: 198.4
+Epoch 286 | NLL Sum: 63255.67 | MSE: 0.00574815 | R2: 0.299987 | Seconds: 211.6
+Epoch 287 | NLL Sum: 63213.67 | MSE: 0.00576254 | R2: 0.298235 | Seconds: 208.7
+Epoch 288 | NLL Sum: 63097.37 | MSE: 0.00578474 | R2: 0.295530 | Seconds: 206.5
+Epoch 289 | NLL Sum: 62865.59 | MSE: 0.00568385 | R2: 0.307818 | Seconds: 209.8
+Epoch 290 | NLL Sum: 62824.13 | MSE: 0.00566534 | R2: 0.310072 | Seconds: 209.6
+Epoch 291 | NLL Sum: 62823.83 | MSE: 0.00568272 | R2: 0.307955 | Seconds: 211.2
+Epoch 292 | NLL Sum: 62673.48 | MSE: 0.00564293 | R2: 0.312800 | Seconds: 199.5
+Epoch 293 | NLL Sum: 62582.45 | MSE: 0.00565103 | R2: 0.311814 | Seconds: 204.9
+Epoch 294 | NLL Sum: 62704.24 | MSE: 0.00567949 | R2: 0.308348 | Seconds: 211.2
+Epoch 295 | NLL Sum: 62601.29 | MSE: 0.00565522 | R2: 0.311304 | Seconds: 201.4
+Epoch 296 | NLL Sum: 62541.06 | MSE: 0.00562591 | R2: 0.314873 | Seconds: 206.3
+Epoch 297 | NLL Sum: 62473.00 | MSE: 0.00565567 | R2: 0.311250 | Seconds: 206.0
+Epoch 298 | NLL Sum: 399771715.94 | MSE: 258558767.11194429 | R2: -31487439827.281925 | Seconds: 213.1
+Epoch 299 | NLL Sum: 63787.49 | MSE: 0.00574013 | R2: 0.300964 | Seconds: 205.3
+Training free-dynamics model...
+Epoch 000 | NLL Sum: 1423407.94 | MSE: 0.48554453 | R2: -58.129901 | Seconds: 2.0
+Epoch 001 | NLL Sum: 1158701.48 | MSE: 0.33550239 | R2: -39.857680 | Seconds: 2.0
+Epoch 002 | NLL Sum: 777200.04 | MSE: 0.18877858 | R2: -21.989568 | Seconds: 2.0
+Epoch 003 | NLL Sum: 498186.43 | MSE: 0.09183827 | R2: -10.184119 | Seconds: 2.1
+Epoch 004 | NLL Sum: 390047.02 | MSE: 0.05875096 | R2: -6.154726 | Seconds: 2.0
+Epoch 005 | NLL Sum: 333593.97 | MSE: 0.04505059 | R2: -4.486288 | Seconds: 2.0
+Epoch 006 | NLL Sum: 296842.56 | MSE: 0.03718517 | R2: -3.528432 | Seconds: 2.0
+Epoch 007 | NLL Sum: 273307.84 | MSE: 0.03234441 | R2: -2.938921 | Seconds: 2.0
+Epoch 008 | NLL Sum: 256973.60 | MSE: 0.02813652 | R2: -2.426482 | Seconds: 1.9
+Epoch 009 | NLL Sum: 243031.31 | MSE: 0.02569469 | R2: -2.129114 | Seconds: 2.0
+Epoch 010 | NLL Sum: 223080.46 | MSE: 0.02341281 | R2: -1.851225 | Seconds: 1.9
+Epoch 011 | NLL Sum: 199798.15 | MSE: 0.02131730 | R2: -1.596033 | Seconds: 2.0
+Epoch 012 | NLL Sum: 175686.08 | MSE: 0.01811680 | R2: -1.206275 | Seconds: 2.0
+Epoch 013 | NLL Sum: 159959.93 | MSE: 0.01577627 | R2: -0.921243 | Seconds: 2.1
+Epoch 014 | NLL Sum: 146062.51 | MSE: 0.01395822 | R2: -0.699840 | Seconds: 2.1
+Epoch 015 | NLL Sum: 134769.47 | MSE: 0.01245275 | R2: -0.516503 | Seconds: 2.0
+Epoch 016 | NLL Sum: 125420.70 | MSE: 0.01126047 | R2: -0.371307 | Seconds: 2.1
+Epoch 017 | NLL Sum: 117682.29 | MSE: 0.01031115 | R2: -0.255698 | Seconds: 2.1
+Epoch 018 | NLL Sum: 111287.75 | MSE: 0.00960440 | R2: -0.169629 | Seconds: 1.9
+Epoch 019 | NLL Sum: 106528.06 | MSE: 0.00911375 | R2: -0.109878 | Seconds: 2.0
+Epoch 020 | NLL Sum: 102410.97 | MSE: 0.00874673 | R2: -0.065183 | Seconds: 2.1
+Epoch 021 | NLL Sum: 99382.65 | MSE: 0.00849074 | R2: -0.034008 | Seconds: 2.0
+Epoch 022 | NLL Sum: 96832.90 | MSE: 0.00829055 | R2: -0.009629 | Seconds: 2.0
+Epoch 023 | NLL Sum: 94733.31 | MSE: 0.00815026 | R2: 0.007456 | Seconds: 2.0
+Epoch 024 | NLL Sum: 93094.77 | MSE: 0.00803831 | R2: 0.021090 | Seconds: 2.0
+Epoch 025 | NLL Sum: 91690.14 | MSE: 0.00795871 | R2: 0.030784 | Seconds: 2.0
+Epoch 026 | NLL Sum: 90518.20 | MSE: 0.00789158 | R2: 0.038959 | Seconds: 2.1
+Epoch 027 | NLL Sum: 89590.92 | MSE: 0.00784559 | R2: 0.044560 | Seconds: 2.1
+Epoch 028 | NLL Sum: 88650.62 | MSE: 0.00779639 | R2: 0.050551 | Seconds: 2.0
+Epoch 029 | NLL Sum: 87855.18 | MSE: 0.00775867 | R2: 0.055144 | Seconds: 2.1
+Epoch 030 | NLL Sum: 87266.66 | MSE: 0.00773485 | R2: 0.058045 | Seconds: 2.0
+Epoch 031 | NLL Sum: 86648.34 | MSE: 0.00770260 | R2: 0.061973 | Seconds: 2.0
+Epoch 032 | NLL Sum: 86109.00 | MSE: 0.00768152 | R2: 0.064540 | Seconds: 2.0
+Epoch 033 | NLL Sum: 85722.81 | MSE: 0.00766263 | R2: 0.066841 | Seconds: 2.1
+Epoch 034 | NLL Sum: 85190.76 | MSE: 0.00763544 | R2: 0.070151 | Seconds: 2.0
+Epoch 035 | NLL Sum: 84931.39 | MSE: 0.00763103 | R2: 0.070688 | Seconds: 2.0
+Epoch 036 | NLL Sum: 84552.20 | MSE: 0.00761095 | R2: 0.073134 | Seconds: 2.1
+Epoch 037 | NLL Sum: 84097.56 | MSE: 0.00759152 | R2: 0.075500 | Seconds: 2.1
+Epoch 038 | NLL Sum: 83770.23 | MSE: 0.00757821 | R2: 0.077121 | Seconds: 2.1
+Epoch 039 | NLL Sum: 83404.35 | MSE: 0.00756231 | R2: 0.079058 | Seconds: 2.1
+Epoch 040 | NLL Sum: 83193.50 | MSE: 0.00754817 | R2: 0.080779 | Seconds: 2.1
+Epoch 041 | NLL Sum: 82880.62 | MSE: 0.00753322 | R2: 0.082600 | Seconds: 2.0
+Epoch 042 | NLL Sum: 82649.12 | MSE: 0.00752953 | R2: 0.083049 | Seconds: 2.0
+Epoch 043 | NLL Sum: 82434.39 | MSE: 0.00752013 | R2: 0.084194 | Seconds: 2.0
+Epoch 044 | NLL Sum: 82307.73 | MSE: 0.00750595 | R2: 0.085920 | Seconds: 2.0
+Epoch 045 | NLL Sum: 82277.91 | MSE: 0.00752381 | R2: 0.083746 | Seconds: 2.1
+Epoch 046 | NLL Sum: 81782.69 | MSE: 0.00749560 | R2: 0.087181 | Seconds: 2.0
+Epoch 047 | NLL Sum: 81677.51 | MSE: 0.00748484 | R2: 0.088492 | Seconds: 2.0
+Epoch 048 | NLL Sum: 81395.05 | MSE: 0.00746875 | R2: 0.090451 | Seconds: 2.0
+Epoch 049 | NLL Sum: 81114.33 | MSE: 0.00745930 | R2: 0.091602 | Seconds: 2.0
+Epoch 050 | NLL Sum: 81163.02 | MSE: 0.00747464 | R2: 0.089733 | Seconds: 2.0
+Epoch 051 | NLL Sum: 80735.33 | MSE: 0.00743475 | R2: 0.094592 | Seconds: 2.1
+Epoch 052 | NLL Sum: 80630.38 | MSE: 0.00742737 | R2: 0.095490 | Seconds: 2.1
+Epoch 053 | NLL Sum: 80434.58 | MSE: 0.00742228 | R2: 0.096110 | Seconds: 2.0
+Epoch 054 | NLL Sum: 80128.04 | MSE: 0.00740640 | R2: 0.098045 | Seconds: 2.1
+Epoch 055 | NLL Sum: 80034.76 | MSE: 0.00740013 | R2: 0.098808 | Seconds: 2.0
+Epoch 056 | NLL Sum: 79764.02 | MSE: 0.00738078 | R2: 0.101164 | Seconds: 2.0
+Epoch 057 | NLL Sum: 79689.51 | MSE: 0.00738110 | R2: 0.101125 | Seconds: 2.0
+Epoch 058 | NLL Sum: 79506.25 | MSE: 0.00736244 | R2: 0.103398 | Seconds: 2.0
+Epoch 059 | NLL Sum: 79465.49 | MSE: 0.00736593 | R2: 0.102973 | Seconds: 2.0
+Epoch 060 | NLL Sum: 79323.71 | MSE: 0.00735986 | R2: 0.103712 | Seconds: 2.0
+Epoch 061 | NLL Sum: 79112.65 | MSE: 0.00734617 | R2: 0.105379 | Seconds: 2.0
+Epoch 062 | NLL Sum: 78811.39 | MSE: 0.00732636 | R2: 0.107791 | Seconds: 2.0
+Epoch 063 | NLL Sum: 78724.27 | MSE: 0.00731596 | R2: 0.109058 | Seconds: 2.0
+Epoch 064 | NLL Sum: 78637.39 | MSE: 0.00731663 | R2: 0.108976 | Seconds: 1.9
+Epoch 065 | NLL Sum: 78445.41 | MSE: 0.00730051 | R2: 0.110940 | Seconds: 2.0
+Epoch 066 | NLL Sum: 78325.01 | MSE: 0.00729177 | R2: 0.112004 | Seconds: 2.0
+Epoch 067 | NLL Sum: 78251.08 | MSE: 0.00728717 | R2: 0.112564 | Seconds: 2.0
+Epoch 068 | NLL Sum: 77989.87 | MSE: 0.00727217 | R2: 0.114390 | Seconds: 1.9
+Epoch 069 | NLL Sum: 77840.05 | MSE: 0.00725998 | R2: 0.115875 | Seconds: 2.0
+Epoch 070 | NLL Sum: 77807.22 | MSE: 0.00726355 | R2: 0.115440 | Seconds: 2.0
+Epoch 071 | NLL Sum: 77585.07 | MSE: 0.00724226 | R2: 0.118034 | Seconds: 2.0
+Epoch 072 | NLL Sum: 77417.73 | MSE: 0.00723349 | R2: 0.119102 | Seconds: 2.0
+Epoch 073 | NLL Sum: 77485.02 | MSE: 0.00723498 | R2: 0.118920 | Seconds: 2.0
+Epoch 074 | NLL Sum: 77243.47 | MSE: 0.00722992 | R2: 0.119536 | Seconds: 2.0
+Epoch 075 | NLL Sum: 77172.20 | MSE: 0.00722389 | R2: 0.120270 | Seconds: 1.9
+Epoch 076 | NLL Sum: 77058.96 | MSE: 0.00721248 | R2: 0.121660 | Seconds: 2.0
+Epoch 077 | NLL Sum: 76983.61 | MSE: 0.00721702 | R2: 0.121107 | Seconds: 1.9
+Epoch 078 | NLL Sum: 76935.59 | MSE: 0.00721706 | R2: 0.121102 | Seconds: 2.0
+Epoch 079 | NLL Sum: 76736.70 | MSE: 0.00719830 | R2: 0.123387 | Seconds: 2.0
+Epoch 080 | NLL Sum: 76765.84 | MSE: 0.00719780 | R2: 0.123448 | Seconds: 2.1
+Epoch 081 | NLL Sum: 76648.49 | MSE: 0.00719540 | R2: 0.123740 | Seconds: 2.0
+Epoch 082 | NLL Sum: 76447.60 | MSE: 0.00718144 | R2: 0.125440 | Seconds: 2.1
+Epoch 083 | NLL Sum: 76432.60 | MSE: 0.00718449 | R2: 0.125069 | Seconds: 2.0
+Epoch 084 | NLL Sum: 76409.37 | MSE: 0.00716889 | R2: 0.126969 | Seconds: 2.0
+Epoch 085 | NLL Sum: 76192.56 | MSE: 0.00716417 | R2: 0.127543 | Seconds: 2.1
+Epoch 086 | NLL Sum: 76125.07 | MSE: 0.00715381 | R2: 0.128805 | Seconds: 2.0
+Epoch 087 | NLL Sum: 75879.19 | MSE: 0.00713712 | R2: 0.130837 | Seconds: 2.0
+Epoch 088 | NLL Sum: 75770.34 | MSE: 0.00713058 | R2: 0.131634 | Seconds: 2.0
+Epoch 089 | NLL Sum: 75648.23 | MSE: 0.00711651 | R2: 0.133347 | Seconds: 2.0
+Epoch 090 | NLL Sum: 75633.11 | MSE: 0.00712064 | R2: 0.132845 | Seconds: 2.0
+Epoch 091 | NLL Sum: 75397.52 | MSE: 0.00709034 | R2: 0.136534 | Seconds: 2.0
+Epoch 092 | NLL Sum: 75368.11 | MSE: 0.00708831 | R2: 0.136781 | Seconds: 2.0
+Epoch 093 | NLL Sum: 75197.97 | MSE: 0.00707464 | R2: 0.138446 | Seconds: 2.0
+Epoch 094 | NLL Sum: 75100.29 | MSE: 0.00707699 | R2: 0.138160 | Seconds: 2.0
+Epoch 095 | NLL Sum: 74910.73 | MSE: 0.00705993 | R2: 0.140237 | Seconds: 2.0
+Epoch 096 | NLL Sum: 74817.31 | MSE: 0.00704682 | R2: 0.141834 | Seconds: 1.9
+Epoch 097 | NLL Sum: 74668.85 | MSE: 0.00703157 | R2: 0.143692 | Seconds: 2.0
+Epoch 098 | NLL Sum: 74512.46 | MSE: 0.00702602 | R2: 0.144367 | Seconds: 1.9
+Epoch 099 | NLL Sum: 74492.60 | MSE: 0.00703188 | R2: 0.143653 | Seconds: 2.0
+Epoch 100 | NLL Sum: 74454.97 | MSE: 0.00702442 | R2: 0.144561 | Seconds: 2.0
+Epoch 101 | NLL Sum: 74296.96 | MSE: 0.00700428 | R2: 0.147014 | Seconds: 2.0
+Epoch 102 | NLL Sum: 74246.63 | MSE: 0.00700089 | R2: 0.147428 | Seconds: 2.1
+Epoch 103 | NLL Sum: 74013.41 | MSE: 0.00698580 | R2: 0.149266 | Seconds: 2.0
+Epoch 104 | NLL Sum: 73943.65 | MSE: 0.00697581 | R2: 0.150481 | Seconds: 2.0
+Epoch 105 | NLL Sum: 73824.14 | MSE: 0.00696748 | R2: 0.151497 | Seconds: 2.0
+Epoch 106 | NLL Sum: 73704.90 | MSE: 0.00696058 | R2: 0.152336 | Seconds: 2.1
+Epoch 107 | NLL Sum: 73581.04 | MSE: 0.00694405 | R2: 0.154350 | Seconds: 2.0
+Epoch 108 | NLL Sum: 73449.26 | MSE: 0.00693664 | R2: 0.155252 | Seconds: 2.0
+Epoch 109 | NLL Sum: 73355.53 | MSE: 0.00691843 | R2: 0.157469 | Seconds: 2.0
+Epoch 110 | NLL Sum: 73323.72 | MSE: 0.00692714 | R2: 0.156409 | Seconds: 2.0
+Epoch 111 | NLL Sum: 73089.61 | MSE: 0.00689780 | R2: 0.159982 | Seconds: 2.1
+Epoch 112 | NLL Sum: 73010.36 | MSE: 0.00689405 | R2: 0.160439 | Seconds: 2.0
+Epoch 113 | NLL Sum: 72945.37 | MSE: 0.00688962 | R2: 0.160978 | Seconds: 2.0
+Epoch 114 | NLL Sum: 72808.82 | MSE: 0.00688443 | R2: 0.161610 | Seconds: 1.9
+Epoch 115 | NLL Sum: 72793.31 | MSE: 0.00688134 | R2: 0.161986 | Seconds: 1.9
+Epoch 116 | NLL Sum: 72627.65 | MSE: 0.00685683 | R2: 0.164971 | Seconds: 2.0
+Epoch 117 | NLL Sum: 72648.46 | MSE: 0.00686298 | R2: 0.164222 | Seconds: 2.1
+Epoch 118 | NLL Sum: 72561.35 | MSE: 0.00686178 | R2: 0.164368 | Seconds: 2.0
+Epoch 119 | NLL Sum: 72363.75 | MSE: 0.00684339 | R2: 0.166608 | Seconds: 2.1
+Epoch 120 | NLL Sum: 72391.57 | MSE: 0.00684493 | R2: 0.166420 | Seconds: 2.0
+Epoch 121 | NLL Sum: 72191.05 | MSE: 0.00682091 | R2: 0.169345 | Seconds: 2.1
+Epoch 122 | NLL Sum: 72061.24 | MSE: 0.00682124 | R2: 0.169305 | Seconds: 2.0
+Epoch 123 | NLL Sum: 72029.66 | MSE: 0.00679571 | R2: 0.172414 | Seconds: 2.1
+Epoch 124 | NLL Sum: 71976.30 | MSE: 0.00679316 | R2: 0.172725 | Seconds: 2.0
+Epoch 125 | NLL Sum: 71864.44 | MSE: 0.00680002 | R2: 0.171889 | Seconds: 2.1
+Epoch 126 | NLL Sum: 71790.09 | MSE: 0.00677772 | R2: 0.174605 | Seconds: 2.0
+Epoch 127 | NLL Sum: 71572.38 | MSE: 0.00677355 | R2: 0.175113 | Seconds: 2.1
+Epoch 128 | NLL Sum: 72104.06 | MSE: 0.00678930 | R2: 0.173195 | Seconds: 2.0
+Epoch 129 | NLL Sum: 71565.07 | MSE: 0.00676989 | R2: 0.175558 | Seconds: 2.0
+Epoch 130 | NLL Sum: 71356.19 | MSE: 0.00672570 | R2: 0.180940 | Seconds: 2.0
+Epoch 131 | NLL Sum: 71326.71 | MSE: 0.00674268 | R2: 0.178873 | Seconds: 2.1
+Epoch 132 | NLL Sum: 71248.23 | MSE: 0.00675100 | R2: 0.177859 | Seconds: 2.0
+Epoch 133 | NLL Sum: 71111.41 | MSE: 0.00671730 | R2: 0.181963 | Seconds: 2.0
+Epoch 134 | NLL Sum: 71102.40 | MSE: 0.00672394 | R2: 0.181155 | Seconds: 2.0
+Epoch 135 | NLL Sum: 71165.70 | MSE: 0.00673998 | R2: 0.179201 | Seconds: 2.0
+Epoch 136 | NLL Sum: 70816.17 | MSE: 0.00669248 | R2: 0.184985 | Seconds: 2.0
+Epoch 137 | NLL Sum: 70664.19 | MSE: 0.00667865 | R2: 0.186669 | Seconds: 2.0
+Epoch 138 | NLL Sum: 70615.04 | MSE: 0.00667195 | R2: 0.187486 | Seconds: 1.9
+Epoch 139 | NLL Sum: 70507.35 | MSE: 0.00666083 | R2: 0.188841 | Seconds: 2.1
+Epoch 140 | NLL Sum: 70470.32 | MSE: 0.00665244 | R2: 0.189862 | Seconds: 2.1
+Epoch 141 | NLL Sum: 70320.34 | MSE: 0.00663384 | R2: 0.192127 | Seconds: 2.0
+Epoch 142 | NLL Sum: 70360.68 | MSE: 0.00665462 | R2: 0.189596 | Seconds: 2.1
+Epoch 143 | NLL Sum: 70442.19 | MSE: 0.00666516 | R2: 0.188313 | Seconds: 2.0
+Epoch 144 | NLL Sum: 70021.12 | MSE: 0.00660130 | R2: 0.196089 | Seconds: 2.0
+Epoch 145 | NLL Sum: 70059.37 | MSE: 0.00660694 | R2: 0.195402 | Seconds: 2.0
+Epoch 146 | NLL Sum: 69953.76 | MSE: 0.00659231 | R2: 0.197185 | Seconds: 2.1
+Epoch 147 | NLL Sum: 69844.75 | MSE: 0.00659108 | R2: 0.197335 | Seconds: 2.1
+Epoch 148 | NLL Sum: 69685.81 | MSE: 0.00658252 | R2: 0.198377 | Seconds: 1.9
+Epoch 149 | NLL Sum: 69571.46 | MSE: 0.00657116 | R2: 0.199760 | Seconds: 2.1
+Epoch 150 | NLL Sum: 69490.73 | MSE: 0.00655513 | R2: 0.201713 | Seconds: 2.1
+Epoch 151 | NLL Sum: 69338.70 | MSE: 0.00653046 | R2: 0.204717 | Seconds: 2.0
+Epoch 152 | NLL Sum: 69280.10 | MSE: 0.00652492 | R2: 0.205391 | Seconds: 2.0
+Epoch 153 | NLL Sum: 69133.74 | MSE: 0.00650998 | R2: 0.207210 | Seconds: 2.0
+Epoch 154 | NLL Sum: 69114.18 | MSE: 0.00651411 | R2: 0.206708 | Seconds: 2.0
+Epoch 155 | NLL Sum: 69078.64 | MSE: 0.00650410 | R2: 0.207927 | Seconds: 2.0
+Epoch 156 | NLL Sum: 68999.27 | MSE: 0.00650513 | R2: 0.207801 | Seconds: 2.0
+Epoch 157 | NLL Sum: 68944.35 | MSE: 0.00651294 | R2: 0.206850 | Seconds: 2.0
+Epoch 158 | NLL Sum: 68796.57 | MSE: 0.00649220 | R2: 0.209376 | Seconds: 2.0
+Epoch 159 | NLL Sum: 68665.72 | MSE: 0.00645497 | R2: 0.213909 | Seconds: 2.1
+Epoch 160 | NLL Sum: 68556.77 | MSE: 0.00644138 | R2: 0.215565 | Seconds: 2.1
+Epoch 161 | NLL Sum: 68516.53 | MSE: 0.00645690 | R2: 0.213675 | Seconds: 1.9
+Epoch 162 | NLL Sum: 68379.96 | MSE: 0.00643423 | R2: 0.216436 | Seconds: 2.1
+Epoch 163 | NLL Sum: 68348.24 | MSE: 0.00643673 | R2: 0.216132 | Seconds: 2.0
+Epoch 164 | NLL Sum: 68260.74 | MSE: 0.00642218 | R2: 0.217903 | Seconds: 2.0
+Epoch 165 | NLL Sum: 68200.50 | MSE: 0.00643979 | R2: 0.215758 | Seconds: 2.0
+Epoch 166 | NLL Sum: 68086.99 | MSE: 0.00640412 | R2: 0.220103 | Seconds: 2.0
+Epoch 167 | NLL Sum: 67927.64 | MSE: 0.00638271 | R2: 0.222709 | Seconds: 2.0
+Epoch 168 | NLL Sum: 67871.09 | MSE: 0.00639013 | R2: 0.221807 | Seconds: 2.0
+Epoch 169 | NLL Sum: 67754.60 | MSE: 0.00636119 | R2: 0.225330 | Seconds: 2.1
+Epoch 170 | NLL Sum: 67691.16 | MSE: 0.00636289 | R2: 0.225124 | Seconds: 2.1
+Epoch 171 | NLL Sum: 67605.42 | MSE: 0.00635420 | R2: 0.226182 | Seconds: 2.0
+Epoch 172 | NLL Sum: 67490.03 | MSE: 0.00633684 | R2: 0.228296 | Seconds: 2.0
+Epoch 173 | NLL Sum: 67537.36 | MSE: 0.00635374 | R2: 0.226237 | Seconds: 2.1
+Epoch 174 | NLL Sum: 67472.26 | MSE: 0.00633978 | R2: 0.227938 | Seconds: 2.1
+Epoch 175 | NLL Sum: 67391.99 | MSE: 0.00633203 | R2: 0.228882 | Seconds: 2.0
+Epoch 176 | NLL Sum: 67382.00 | MSE: 0.00634846 | R2: 0.226881 | Seconds: 2.0
+Epoch 177 | NLL Sum: 67206.44 | MSE: 0.00631926 | R2: 0.230437 | Seconds: 2.0
+Epoch 178 | NLL Sum: 67181.30 | MSE: 0.00632239 | R2: 0.230055 | Seconds: 1.9
+Epoch 179 | NLL Sum: 67066.71 | MSE: 0.00630687 | R2: 0.231945 | Seconds: 2.0
+Epoch 180 | NLL Sum: 66880.05 | MSE: 0.00626754 | R2: 0.236735 | Seconds: 2.2
+Epoch 181 | NLL Sum: 66845.60 | MSE: 0.00627206 | R2: 0.236185 | Seconds: 2.0
+Epoch 182 | NLL Sum: 66792.49 | MSE: 0.00626786 | R2: 0.236697 | Seconds: 2.1
+Epoch 183 | NLL Sum: 66747.47 | MSE: 0.00627363 | R2: 0.235994 | Seconds: 2.0
+Epoch 184 | NLL Sum: 66727.62 | MSE: 0.00627018 | R2: 0.236414 | Seconds: 2.0
+Epoch 185 | NLL Sum: 66742.75 | MSE: 0.00627544 | R2: 0.235773 | Seconds: 1.9
+Epoch 186 | NLL Sum: 66551.56 | MSE: 0.00624060 | R2: 0.240016 | Seconds: 2.0
+Epoch 187 | NLL Sum: 66513.16 | MSE: 0.00625584 | R2: 0.238160 | Seconds: 2.1
+Epoch 188 | NLL Sum: 66360.77 | MSE: 0.00622736 | R2: 0.241628 | Seconds: 1.9
+Epoch 189 | NLL Sum: 66301.47 | MSE: 0.00620693 | R2: 0.244116 | Seconds: 2.1
+Epoch 190 | NLL Sum: 66390.56 | MSE: 0.00624346 | R2: 0.239668 | Seconds: 2.1
+Epoch 191 | NLL Sum: 66354.22 | MSE: 0.00623918 | R2: 0.240189 | Seconds: 1.9
+Epoch 192 | NLL Sum: 66181.19 | MSE: 0.00620669 | R2: 0.244146 | Seconds: 1.9
+Epoch 193 | NLL Sum: 66064.76 | MSE: 0.00619209 | R2: 0.245924 | Seconds: 2.0
+Epoch 194 | NLL Sum: 66031.05 | MSE: 0.00619780 | R2: 0.245229 | Seconds: 2.0
+Epoch 195 | NLL Sum: 65929.00 | MSE: 0.00617946 | R2: 0.247462 | Seconds: 1.9
+Epoch 196 | NLL Sum: 65906.99 | MSE: 0.00617599 | R2: 0.247884 | Seconds: 2.0
+Epoch 197 | NLL Sum: 65743.88 | MSE: 0.00617545 | R2: 0.247950 | Seconds: 2.0
+Epoch 198 | NLL Sum: 65688.79 | MSE: 0.00615828 | R2: 0.250041 | Seconds: 2.0
+Epoch 199 | NLL Sum: 65676.04 | MSE: 0.00617465 | R2: 0.248047 | Seconds: 2.0
+Epoch 200 | NLL Sum: 65506.94 | MSE: 0.00612473 | R2: 0.254126 | Seconds: 2.0
+Epoch 201 | NLL Sum: 65601.53 | MSE: 0.00616196 | R2: 0.249593 | Seconds: 2.1
+Epoch 202 | NLL Sum: 65487.92 | MSE: 0.00612546 | R2: 0.254038 | Seconds: 2.0
+Epoch 203 | NLL Sum: 65484.66 | MSE: 0.00614126 | R2: 0.252114 | Seconds: 2.0
+Epoch 204 | NLL Sum: 65314.54 | MSE: 0.00611583 | R2: 0.255211 | Seconds: 2.0
+Epoch 205 | NLL Sum: 65516.14 | MSE: 0.00614242 | R2: 0.251972 | Seconds: 2.1
+Epoch 206 | NLL Sum: 65336.81 | MSE: 0.00613841 | R2: 0.252461 | Seconds: 2.0
+Epoch 207 | NLL Sum: 65189.48 | MSE: 0.00610211 | R2: 0.256881 | Seconds: 2.0
+Epoch 208 | NLL Sum: 65205.46 | MSE: 0.00611460 | R2: 0.255361 | Seconds: 2.0
+Epoch 209 | NLL Sum: 65028.35 | MSE: 0.00608375 | R2: 0.259117 | Seconds: 2.0
+Epoch 210 | NLL Sum: 64993.09 | MSE: 0.00608851 | R2: 0.258538 | Seconds: 2.0
+Epoch 211 | NLL Sum: 65003.10 | MSE: 0.00609944 | R2: 0.257206 | Seconds: 2.1
+Epoch 212 | NLL Sum: 64891.50 | MSE: 0.00607043 | R2: 0.260739 | Seconds: 2.1
+Epoch 213 | NLL Sum: 64794.52 | MSE: 0.00605579 | R2: 0.262522 | Seconds: 2.0
+Epoch 214 | NLL Sum: 64709.50 | MSE: 0.00604650 | R2: 0.263654 | Seconds: 2.0
+Epoch 215 | NLL Sum: 64862.04 | MSE: 0.00609687 | R2: 0.257520 | Seconds: 2.0
+Epoch 216 | NLL Sum: 64761.22 | MSE: 0.00608071 | R2: 0.259487 | Seconds: 1.9
+Epoch 217 | NLL Sum: 64522.95 | MSE: 0.00601824 | R2: 0.267095 | Seconds: 2.0
+Epoch 218 | NLL Sum: 64518.24 | MSE: 0.00601870 | R2: 0.267039 | Seconds: 2.0
+Epoch 219 | NLL Sum: 64432.97 | MSE: 0.00603413 | R2: 0.265160 | Seconds: 2.0
+Epoch 220 | NLL Sum: 64420.95 | MSE: 0.00602366 | R2: 0.266435 | Seconds: 2.0
+Epoch 221 | NLL Sum: 64517.19 | MSE: 0.00604652 | R2: 0.263651 | Seconds: 2.0
+Epoch 222 | NLL Sum: 64220.68 | MSE: 0.00599115 | R2: 0.270394 | Seconds: 2.0
+Epoch 223 | NLL Sum: 64182.46 | MSE: 0.00599335 | R2: 0.270127 | Seconds: 2.0
+Epoch 224 | NLL Sum: 64193.87 | MSE: 0.00599287 | R2: 0.270185 | Seconds: 2.0
+Epoch 225 | NLL Sum: 63962.88 | MSE: 0.00595704 | R2: 0.274549 | Seconds: 2.1
+Epoch 226 | NLL Sum: 63929.71 | MSE: 0.00596219 | R2: 0.273921 | Seconds: 2.0
+Epoch 227 | NLL Sum: 64012.41 | MSE: 0.00597435 | R2: 0.272440 | Seconds: 2.0
+Epoch 228 | NLL Sum: 64152.43 | MSE: 0.00600575 | R2: 0.268616 | Seconds: 2.0
+Epoch 229 | NLL Sum: 64010.25 | MSE: 0.00598526 | R2: 0.271111 | Seconds: 2.0
+Epoch 230 | NLL Sum: 63748.45 | MSE: 0.00593756 | R2: 0.276920 | Seconds: 2.0
+Epoch 231 | NLL Sum: 63655.07 | MSE: 0.00593725 | R2: 0.276958 | Seconds: 2.0
+Epoch 232 | NLL Sum: 63601.47 | MSE: 0.00592994 | R2: 0.277848 | Seconds: 2.0
+Epoch 233 | NLL Sum: 63630.90 | MSE: 0.00593066 | R2: 0.277760 | Seconds: 2.0
+Epoch 234 | NLL Sum: 63536.16 | MSE: 0.00590320 | R2: 0.281105 | Seconds: 2.1
+Epoch 235 | NLL Sum: 63470.08 | MSE: 0.00591243 | R2: 0.279980 | Seconds: 2.0
+Epoch 236 | NLL Sum: 63518.49 | MSE: 0.00591103 | R2: 0.280152 | Seconds: 2.0
+Epoch 237 | NLL Sum: 63411.56 | MSE: 0.00592166 | R2: 0.278857 | Seconds: 2.1
+Epoch 238 | NLL Sum: 63266.20 | MSE: 0.00589553 | R2: 0.282039 | Seconds: 2.0
+Epoch 239 | NLL Sum: 63226.43 | MSE: 0.00586637 | R2: 0.285590 | Seconds: 1.9
+Epoch 240 | NLL Sum: 63177.32 | MSE: 0.00587209 | R2: 0.284894 | Seconds: 2.0
+Epoch 241 | NLL Sum: 63121.22 | MSE: 0.00585866 | R2: 0.286529 | Seconds: 2.0
+Epoch 242 | NLL Sum: 62954.33 | MSE: 0.00584791 | R2: 0.287837 | Seconds: 1.9
+Epoch 243 | NLL Sum: 62972.20 | MSE: 0.00585019 | R2: 0.287561 | Seconds: 2.0
+Epoch 244 | NLL Sum: 62941.07 | MSE: 0.00585300 | R2: 0.287218 | Seconds: 2.1
+Epoch 245 | NLL Sum: 62943.89 | MSE: 0.00585306 | R2: 0.287211 | Seconds: 2.1
+Epoch 246 | NLL Sum: 62897.63 | MSE: 0.00585676 | R2: 0.286760 | Seconds: 2.0
+Epoch 247 | NLL Sum: 62886.70 | MSE: 0.00586997 | R2: 0.285152 | Seconds: 2.1
+Epoch 248 | NLL Sum: 62813.53 | MSE: 0.00584178 | R2: 0.288584 | Seconds: 2.0
+Epoch 249 | NLL Sum: 62970.41 | MSE: 0.00585412 | R2: 0.287082 | Seconds: 2.0
+Epoch 250 | NLL Sum: 62900.58 | MSE: 0.00587509 | R2: 0.284527 | Seconds: 2.0
+Epoch 251 | NLL Sum: 62630.72 | MSE: 0.00579816 | R2: 0.293897 | Seconds: 2.0
+Epoch 252 | NLL Sum: 62505.53 | MSE: 0.00578682 | R2: 0.295277 | Seconds: 2.0
+Epoch 253 | NLL Sum: 62460.04 | MSE: 0.00577660 | R2: 0.296523 | Seconds: 2.0
+Epoch 254 | NLL Sum: 62429.32 | MSE: 0.00576402 | R2: 0.298055 | Seconds: 2.0
+Epoch 255 | NLL Sum: 62360.43 | MSE: 0.00576684 | R2: 0.297711 | Seconds: 2.0
+Epoch 256 | NLL Sum: 62246.99 | MSE: 0.00576124 | R2: 0.298393 | Seconds: 2.1
+Epoch 257 | NLL Sum: 62202.68 | MSE: 0.00575286 | R2: 0.299413 | Seconds: 2.0
+Epoch 258 | NLL Sum: 62292.32 | MSE: 0.00578072 | R2: 0.296020 | Seconds: 2.0
+Epoch 259 | NLL Sum: 62193.32 | MSE: 0.00574050 | R2: 0.300919 | Seconds: 2.0
+Epoch 260 | NLL Sum: 62113.13 | MSE: 0.00573134 | R2: 0.302034 | Seconds: 2.0
+Epoch 261 | NLL Sum: 62177.79 | MSE: 0.00576505 | R2: 0.297928 | Seconds: 2.0
+Epoch 262 | NLL Sum: 62301.49 | MSE: 0.00579865 | R2: 0.293837 | Seconds: 2.0
+Epoch 263 | NLL Sum: 62040.50 | MSE: 0.00573595 | R2: 0.301473 | Seconds: 2.0
+Epoch 264 | NLL Sum: 62170.52 | MSE: 0.00577457 | R2: 0.296769 | Seconds: 2.0
+Epoch 265 | NLL Sum: 61897.52 | MSE: 0.00572461 | R2: 0.302854 | Seconds: 2.0
+Epoch 266 | NLL Sum: 61851.89 | MSE: 0.00571816 | R2: 0.303639 | Seconds: 2.0
+Epoch 267 | NLL Sum: 61782.60 | MSE: 0.00572518 | R2: 0.302785 | Seconds: 2.0
+Epoch 268 | NLL Sum: 61687.43 | MSE: 0.00567646 | R2: 0.308717 | Seconds: 2.0
+Epoch 269 | NLL Sum: 61691.64 | MSE: 0.00568929 | R2: 0.307154 | Seconds: 2.0
+Epoch 270 | NLL Sum: 61642.78 | MSE: 0.00569232 | R2: 0.306786 | Seconds: 2.0
+Epoch 271 | NLL Sum: 61610.92 | MSE: 0.00568405 | R2: 0.307793 | Seconds: 2.0
+Epoch 272 | NLL Sum: 61557.78 | MSE: 0.00568211 | R2: 0.308029 | Seconds: 1.9
+Epoch 273 | NLL Sum: 61414.53 | MSE: 0.00563729 | R2: 0.313488 | Seconds: 2.0
+Epoch 274 | NLL Sum: 61436.20 | MSE: 0.00565882 | R2: 0.310865 | Seconds: 2.0
+Epoch 275 | NLL Sum: 61363.48 | MSE: 0.00563846 | R2: 0.313345 | Seconds: 2.2
+Epoch 276 | NLL Sum: 61499.06 | MSE: 0.00567612 | R2: 0.308759 | Seconds: 2.0
+Epoch 277 | NLL Sum: 61418.40 | MSE: 0.00566010 | R2: 0.310710 | Seconds: 1.9
+Epoch 278 | NLL Sum: 61540.77 | MSE: 0.00571805 | R2: 0.303653 | Seconds: 2.0
+Epoch 279 | NLL Sum: 61365.52 | MSE: 0.00565992 | R2: 0.310731 | Seconds: 2.0
+Epoch 280 | NLL Sum: 61291.50 | MSE: 0.00565513 | R2: 0.311315 | Seconds: 2.1
+Epoch 281 | NLL Sum: 61232.84 | MSE: 0.00565274 | R2: 0.311605 | Seconds: 2.1
+Epoch 282 | NLL Sum: 61338.98 | MSE: 0.00567032 | R2: 0.309464 | Seconds: 2.0
+Epoch 283 | NLL Sum: 61198.86 | MSE: 0.00564071 | R2: 0.313071 | Seconds: 2.0
+Epoch 284 | NLL Sum: 61445.54 | MSE: 0.00571462 | R2: 0.304070 | Seconds: 2.0
+Epoch 285 | NLL Sum: 61399.83 | MSE: 0.00568465 | R2: 0.307719 | Seconds: 1.9
+Epoch 286 | NLL Sum: 61234.78 | MSE: 0.00565555 | R2: 0.311264 | Seconds: 2.1
+Epoch 287 | NLL Sum: 61135.69 | MSE: 0.00561557 | R2: 0.316132 | Seconds: 2.0
+Epoch 288 | NLL Sum: 60827.56 | MSE: 0.00557750 | R2: 0.320769 | Seconds: 2.0
+Epoch 289 | NLL Sum: 60908.67 | MSE: 0.00562082 | R2: 0.315494 | Seconds: 2.1
+Epoch 290 | NLL Sum: 60888.11 | MSE: 0.00559636 | R2: 0.318472 | Seconds: 2.0
+Epoch 291 | NLL Sum: 60716.60 | MSE: 0.00556172 | R2: 0.322690 | Seconds: 2.0
+Epoch 292 | NLL Sum: 60609.17 | MSE: 0.00554260 | R2: 0.325018 | Seconds: 1.9
+Epoch 293 | NLL Sum: 60617.56 | MSE: 0.00555271 | R2: 0.323788 | Seconds: 2.0
+Epoch 294 | NLL Sum: 60554.36 | MSE: 0.00553196 | R2: 0.326314 | Seconds: 2.1
+Epoch 295 | NLL Sum: 60458.51 | MSE: 0.00552036 | R2: 0.327727 | Seconds: 1.9
+Epoch 296 | NLL Sum: 60346.32 | MSE: 0.00549858 | R2: 0.330379 | Seconds: 2.0
+Epoch 297 | NLL Sum: 60263.46 | MSE: 0.00550773 | R2: 0.329266 | Seconds: 2.0
+Epoch 298 | NLL Sum: 60225.76 | MSE: 0.00548701 | R2: 0.331788 | Seconds: 2.0
+Epoch 299 | NLL Sum: 60169.72 | MSE: 0.00549327 | R2: 0.331026 | Seconds: 2.0
+Fitting heldout geodesic x0/v0 from context only...
+Context epoch 000 | NLL Sum: 5186142.94 | Seconds: 8.9
+Context epoch 001 | NLL Sum: 4135163.60 | Seconds: 9.0
+Context epoch 002 | NLL Sum: 3308001.04 | Seconds: 9.0
+Context epoch 003 | NLL Sum: 2587271.20 | Seconds: 9.0
+Context epoch 004 | NLL Sum: 1966806.76 | Seconds: 9.1
+Context epoch 005 | NLL Sum: 1443568.58 | Seconds: 9.0
+Context epoch 006 | NLL Sum: 1016583.91 | Seconds: 9.0
+Context epoch 007 | NLL Sum: 691051.59 | Seconds: 9.0
+Context epoch 008 | NLL Sum: 488309.25 | Seconds: 9.0
+Context epoch 009 | NLL Sum: 323090.96 | Seconds: 9.0
+Context epoch 010 | NLL Sum: 258031.70 | Seconds: 9.0
+Context epoch 011 | NLL Sum: 210148.21 | Seconds: 9.1
+Context epoch 012 | NLL Sum: 164299.15 | Seconds: 9.0
+Context epoch 013 | NLL Sum: 1173628.17 | Seconds: 9.1
+Context epoch 014 | NLL Sum: 3861708.43 | Seconds: 9.0
+Context epoch 015 | NLL Sum: 3338051.70 | Seconds: 9.0
+Context epoch 016 | NLL Sum: 1152983.99 | Seconds: 9.0
+Context epoch 017 | NLL Sum: 300866.54 | Seconds: 9.1
+Context epoch 018 | NLL Sum: 165522.46 | Seconds: 9.1
+Context epoch 019 | NLL Sum: 171323.61 | Seconds: 9.0
+Context epoch 020 | NLL Sum: 167374.61 | Seconds: 9.0
+Context epoch 021 | NLL Sum: 148910.90 | Seconds: 9.0
+Context epoch 022 | NLL Sum: 441260.54 | Seconds: 9.1
+Context epoch 023 | NLL Sum: 10746824.84 | Seconds: 9.1
+Context epoch 024 | NLL Sum: 292657.43 | Seconds: 9.1
+Context epoch 025 | NLL Sum: 147794.56 | Seconds: 9.1
+Context epoch 026 | NLL Sum: 150158.49 | Seconds: 9.0
+Context epoch 027 | NLL Sum: 135898.63 | Seconds: 9.0
+Context epoch 028 | NLL Sum: 138663.58 | Seconds: 9.0
+Context epoch 029 | NLL Sum: 166293.46 | Seconds: 9.0
+Context epoch 030 | NLL Sum: 131022.04 | Seconds: 9.1
+Context epoch 031 | NLL Sum: 187342.16 | Seconds: 9.1
+Context epoch 032 | NLL Sum: 130980.75 | Seconds: 9.0
+Context epoch 033 | NLL Sum: 155723.51 | Seconds: 9.0
+Context epoch 034 | NLL Sum: 155962.21 | Seconds: 9.0
+Context epoch 035 | NLL Sum: 141919.96 | Seconds: 9.1
+Context epoch 036 | NLL Sum: 298099.70 | Seconds: 9.1
+Context epoch 037 | NLL Sum: 348681.71 | Seconds: 9.1
+Context epoch 038 | NLL Sum: 154789.40 | Seconds: 9.1
+Context epoch 039 | NLL Sum: 150246.55 | Seconds: 9.0
+Context epoch 040 | NLL Sum: 152182.63 | Seconds: 9.0
+Context epoch 041 | NLL Sum: 141021.84 | Seconds: 9.0
+Context epoch 042 | NLL Sum: 226777.92 | Seconds: 9.1
+Context epoch 043 | NLL Sum: 249964.87 | Seconds: 9.1
+Context epoch 044 | NLL Sum: 123255.81 | Seconds: 9.1
+Context epoch 045 | NLL Sum: 151113.24 | Seconds: 9.0
+Context epoch 046 | NLL Sum: 152774.87 | Seconds: 9.0
+Context epoch 047 | NLL Sum: 143278.96 | Seconds: 9.0
+Context epoch 048 | NLL Sum: 137497.20 | Seconds: 9.1
+Context epoch 049 | NLL Sum: 145473.34 | Seconds: 9.1
+Context epoch 050 | NLL Sum: 132433.33 | Seconds: 9.1
+Context epoch 051 | NLL Sum: 128409.29 | Seconds: 9.0
+Context epoch 052 | NLL Sum: 184182.51 | Seconds: 9.0
+Context epoch 053 | NLL Sum: 147245.77 | Seconds: 9.1
+Context epoch 054 | NLL Sum: 132804.26 | Seconds: 9.1
+Context epoch 055 | NLL Sum: 130803.80 | Seconds: 9.1
+Context epoch 056 | NLL Sum: 143644.62 | Seconds: 9.1
+Context epoch 057 | NLL Sum: 118729.75 | Seconds: 9.0
+Context epoch 058 | NLL Sum: 135473.51 | Seconds: 9.0
+Context epoch 059 | NLL Sum: 132949.77 | Seconds: 9.1
+Context epoch 060 | NLL Sum: 115516.12 | Seconds: 9.7
+Context epoch 061 | NLL Sum: 113182.10 | Seconds: 9.7
+Context epoch 062 | NLL Sum: 174592.93 | Seconds: 9.7
+Context epoch 063 | NLL Sum: 121568.30 | Seconds: 9.6
+Context epoch 064 | NLL Sum: 130933.67 | Seconds: 9.7
+Context epoch 065 | NLL Sum: 129633.75 | Seconds: 9.6
+Context epoch 066 | NLL Sum: 107662.68 | Seconds: 9.6
+Context epoch 067 | NLL Sum: 115991.02 | Seconds: 9.7
+Context epoch 068 | NLL Sum: 124677.49 | Seconds: 9.7
+Context epoch 069 | NLL Sum: 104479.55 | Seconds: 9.7
+Context epoch 070 | NLL Sum: 137653.91 | Seconds: 9.7
+Context epoch 071 | NLL Sum: 103814.63 | Seconds: 9.6
+Context epoch 072 | NLL Sum: 127959.91 | Seconds: 9.6
+Context epoch 073 | NLL Sum: 127225.53 | Seconds: 9.5
+Context epoch 074 | NLL Sum: 111114.95 | Seconds: 9.7
+Context epoch 075 | NLL Sum: 178609.16 | Seconds: 9.7
+Context epoch 076 | NLL Sum: 194616.53 | Seconds: 9.6
+Context epoch 077 | NLL Sum: 106277.29 | Seconds: 9.7
+Context epoch 078 | NLL Sum: 117563.57 | Seconds: 9.7
+Context epoch 079 | NLL Sum: 118760.98 | Seconds: 9.6
+Context epoch 080 | NLL Sum: 104258.25 | Seconds: 9.6
+Context epoch 081 | NLL Sum: 114119.07 | Seconds: 9.7
+Context epoch 082 | NLL Sum: 114948.85 | Seconds: 9.7
+Context epoch 083 | NLL Sum: 87516.76 | Seconds: 9.7
+Context epoch 084 | NLL Sum: 110345.94 | Seconds: 9.7
+Context epoch 085 | NLL Sum: 110618.90 | Seconds: 9.7
+Context epoch 086 | NLL Sum: 92573.70 | Seconds: 9.7
+Context epoch 087 | NLL Sum: 82149.73 | Seconds: 9.7
+Context epoch 088 | NLL Sum: 81955.02 | Seconds: 9.7
+Context epoch 089 | NLL Sum: 75003.69 | Seconds: 9.7
+Context epoch 090 | NLL Sum: 72041.18 | Seconds: 9.7
+Context epoch 091 | NLL Sum: 66738.13 | Seconds: 9.7
+Context epoch 092 | NLL Sum: 57468.39 | Seconds: 9.7
+Context epoch 093 | NLL Sum: 45642.31 | Seconds: 9.6
+Context epoch 094 | NLL Sum: 67626.85 | Seconds: 9.7
+Context epoch 095 | NLL Sum: 42428.44 | Seconds: 9.7
+Context epoch 096 | NLL Sum: 34403.24 | Seconds: 9.7
+Context epoch 097 | NLL Sum: 30976.46 | Seconds: 9.6
+Context epoch 098 | NLL Sum: 366990661.05 | Seconds: 9.7
+Context epoch 099 | NLL Sum: 29275.16 | Seconds: 9.7
+Context epoch 100 | NLL Sum: 33784.50 | Seconds: 9.6
+Context epoch 101 | NLL Sum: 30765.52 | Seconds: 9.7
+Context epoch 102 | NLL Sum: 33675.74 | Seconds: 9.7
+Context epoch 103 | NLL Sum: 26659.61 | Seconds: 9.7
+Context epoch 104 | NLL Sum: 34262.07 | Seconds: 9.7
+Context epoch 105 | NLL Sum: 31194.26 | Seconds: 9.7
+Context epoch 106 | NLL Sum: 11994.47 | Seconds: 9.6
+Context epoch 107 | NLL Sum: 24575.61 | Seconds: 9.6
+Context epoch 108 | NLL Sum: 34837.27 | Seconds: 9.7
+Context epoch 109 | NLL Sum: 31842.23 | Seconds: 9.7
+Context epoch 110 | NLL Sum: 27518.48 | Seconds: 9.6
+Context epoch 111 | NLL Sum: 22758.80 | Seconds: 9.7
+Context epoch 112 | NLL Sum: 35277.70 | Seconds: 9.6
+Context epoch 113 | NLL Sum: 32396.85 | Seconds: 9.6
+Context epoch 114 | NLL Sum: 25428.92 | Seconds: 9.6
+Context epoch 115 | NLL Sum: 20419.87 | Seconds: 9.7
+Context epoch 116 | NLL Sum: 35843.35 | Seconds: 9.7
+Context epoch 117 | NLL Sum: 33126.79 | Seconds: 9.7
+Context epoch 118 | NLL Sum: 23261.99 | Seconds: 9.6
+Context epoch 119 | NLL Sum: 18378.47 | Seconds: 9.6
+Context epoch 120 | NLL Sum: 36490.87 | Seconds: 9.7
+Context epoch 121 | NLL Sum: 33802.75 | Seconds: 9.7
+Context epoch 122 | NLL Sum: 20974.72 | Seconds: 9.7
+Context epoch 123 | NLL Sum: 16802.70 | Seconds: 9.6
+Context epoch 124 | NLL Sum: 37038.25 | Seconds: 9.7
+Context epoch 125 | NLL Sum: 34346.48 | Seconds: 9.6
+Context epoch 126 | NLL Sum: 18795.48 | Seconds: 9.6
+Context epoch 127 | NLL Sum: 17427.86 | Seconds: 9.7
+Context epoch 128 | NLL Sum: 57777.31 | Seconds: 9.6
+Context epoch 129 | NLL Sum: 259013774902.63 | Seconds: 9.7
+Context epoch 130 | NLL Sum: 31687.20 | Seconds: 9.7
+Context epoch 131 | NLL Sum: 30521.63 | Seconds: 9.6
+Context epoch 132 | NLL Sum: 21179.27 | Seconds: 9.6
+Context epoch 133 | NLL Sum: 16470.04 | Seconds: 9.7
+Context epoch 134 | NLL Sum: 36488.08 | Seconds: 9.6
+Context epoch 135 | NLL Sum: 34238.97 | Seconds: 9.7
+Context epoch 136 | NLL Sum: 17150.65 | Seconds: 9.7
+Context epoch 137 | NLL Sum: 18212.11 | Seconds: 9.7
+Context epoch 138 | NLL Sum: 49206.26 | Seconds: 9.7
+Context epoch 139 | NLL Sum: 22813.06 | Seconds: 9.7
+Context epoch 140 | NLL Sum: 32707.90 | Seconds: 9.7
+Context epoch 141 | NLL Sum: 31532.04 | Seconds: 9.6
+Context epoch 142 | NLL Sum: 18162.54 | Seconds: 9.7
+Context epoch 143 | NLL Sum: 16762.45 | Seconds: 9.7
+Context epoch 144 | NLL Sum: 50657.60 | Seconds: 9.7
+Context epoch 145 | NLL Sum: 22427.54 | Seconds: 9.7
+Context epoch 146 | NLL Sum: 32538.54 | Seconds: 9.7
+Context epoch 147 | NLL Sum: 31637.79 | Seconds: 9.7
+Context epoch 148 | NLL Sum: 17089.27 | Seconds: 9.7
+Context epoch 149 | NLL Sum: 17391.76 | Seconds: 9.7
+Context epoch 150 | NLL Sum: 46308.71 | Seconds: 9.7
+Context epoch 151 | NLL Sum: 19864.67 | Seconds: 9.6
+Context epoch 152 | NLL Sum: 33112.44 | Seconds: 9.7
+Context epoch 153 | NLL Sum: 32119.90 | Seconds: 9.7
+Context epoch 154 | NLL Sum: 15833.32 | Seconds: 9.7
+Context epoch 155 | NLL Sum: 18016.81 | Seconds: 9.7
+Context epoch 156 | NLL Sum: 41104.62 | Seconds: 9.7
+Context epoch 157 | NLL Sum: 18329.35 | Seconds: 9.7
+Context epoch 158 | NLL Sum: 33651.28 | Seconds: 9.6
+Context epoch 159 | NLL Sum: 32779.63 | Seconds: 9.6
+Context epoch 160 | NLL Sum: 14512.73 | Seconds: 9.7
+Context epoch 161 | NLL Sum: 18992.16 | Seconds: 9.7
+Context epoch 162 | NLL Sum: 35943.04 | Seconds: 9.7
+Context epoch 163 | NLL Sum: 16779.54 | Seconds: 9.7
+Context epoch 164 | NLL Sum: 34300.81 | Seconds: 9.7
+Context epoch 165 | NLL Sum: 33469.12 | Seconds: 9.7
+Context epoch 166 | NLL Sum: 14941.21 | Seconds: 9.7
+Context epoch 167 | NLL Sum: 158260.99 | Seconds: 9.7
+Context epoch 168 | NLL Sum: 191378.69 | Seconds: 9.6
+Context epoch 169 | NLL Sum: 97195.59 | Seconds: 9.7
+Context epoch 170 | NLL Sum: 21795.21 | Seconds: 9.7
+Context epoch 171 | NLL Sum: 24685.09 | Seconds: 9.6
+Context epoch 172 | NLL Sum: 19817.09 | Seconds: 9.7
+Context epoch 173 | NLL Sum: 14896.20 | Seconds: 9.7
+Context epoch 174 | NLL Sum: 43780.81 | Seconds: 9.7
+Context epoch 175 | NLL Sum: 16822.35 | Seconds: 9.7
+Context epoch 176 | NLL Sum: 33824.39 | Seconds: 9.7
+Context epoch 177 | NLL Sum: 33475.94 | Seconds: 9.7
+Context epoch 178 | NLL Sum: 15576.28 | Seconds: 9.7
+Context epoch 179 | NLL Sum: 149301.78 | Seconds: 9.7
+Context epoch 180 | NLL Sum: 180534.63 | Seconds: 9.7
+Context epoch 181 | NLL Sum: 87291.07 | Seconds: 9.7
+Context epoch 182 | NLL Sum: 23112.41 | Seconds: 9.7
+Context epoch 183 | NLL Sum: 26165.51 | Seconds: 9.7
+Context epoch 184 | NLL Sum: 15975.27 | Seconds: 9.7
+Context epoch 185 | NLL Sum: 16608.87 | Seconds: 9.7
+Context epoch 186 | NLL Sum: 34276.15 | Seconds: 9.7
+Context epoch 187 | NLL Sum: 14266.52 | Seconds: 9.7
+Context epoch 188 | NLL Sum: 35080.17 | Seconds: 9.6
+Context epoch 189 | NLL Sum: 34828.15 | Seconds: 9.7
+Context epoch 190 | NLL Sum: 17234.07 | Seconds: 9.7
+Context epoch 191 | NLL Sum: 134087.03 | Seconds: 9.6
+Context epoch 192 | NLL Sum: 165932.89 | Seconds: 9.6
+Context epoch 193 | NLL Sum: 73665.27 | Seconds: 9.7
+Context epoch 194 | NLL Sum: 24659.00 | Seconds: 9.7
+Context epoch 195 | NLL Sum: 27578.14 | Seconds: 9.8
+Context epoch 196 | NLL Sum: 13411.42 | Seconds: 9.6
+Context epoch 197 | NLL Sum: 18151.61 | Seconds: 9.7
+Context epoch 198 | NLL Sum: 2091977237.99 | Seconds: 9.7
+Context epoch 199 | NLL Sum: 12613.51 | Seconds: 9.6
+Context epoch 200 | NLL Sum: 40020.81 | Seconds: 9.6
+Context epoch 201 | NLL Sum: 13756.80 | Seconds: 9.7
+Context epoch 202 | NLL Sum: 34732.76 | Seconds: 9.7
+Context epoch 203 | NLL Sum: 34947.39 | Seconds: 9.7
+Context epoch 204 | NLL Sum: 17935.39 | Seconds: 9.7
+Context epoch 205 | NLL Sum: 125486.20 | Seconds: 9.7
+Context epoch 206 | NLL Sum: 154410.60 | Seconds: 9.7
+Context epoch 207 | NLL Sum: 62257.26 | Seconds: 9.7
+Context epoch 208 | NLL Sum: 25984.40 | Seconds: 9.7
+Context epoch 209 | NLL Sum: 28807.14 | Seconds: 9.6
+Context epoch 210 | NLL Sum: 12509.23 | Seconds: 9.7
+Context epoch 211 | NLL Sum: 144412.73 | Seconds: 9.7
+Context epoch 212 | NLL Sum: 165825.20 | Seconds: 9.6
+Context epoch 213 | NLL Sum: 69217.39 | Seconds: 9.7
+Context epoch 214 | NLL Sum: 25377.46 | Seconds: 9.7
+Context epoch 215 | NLL Sum: 28487.70 | Seconds: 9.7
+Context epoch 216 | NLL Sum: 12663.25 | Seconds: 9.6
+Context epoch 217 | NLL Sum: 140066.03 | Seconds: 9.7
+Context epoch 218 | NLL Sum: 161423.39 | Seconds: 9.7
+Context epoch 219 | NLL Sum: 64357.68 | Seconds: 9.7
+Context epoch 220 | NLL Sum: 25967.20 | Seconds: 9.7
+Context epoch 221 | NLL Sum: 29220.47 | Seconds: 9.7
+Context epoch 222 | NLL Sum: 13978.74 | Seconds: 9.7
+Context epoch 223 | NLL Sum: 134457.09 | Seconds: 9.6
+Context epoch 224 | NLL Sum: 154342.60 | Seconds: 9.6
+Context epoch 225 | NLL Sum: 58219.55 | Seconds: 9.5
+Context epoch 226 | NLL Sum: 26771.50 | Seconds: 9.7
+Context epoch 227 | NLL Sum: 29953.43 | Seconds: 9.7
+Context epoch 228 | NLL Sum: 14854.75 | Seconds: 9.7
+Context epoch 229 | NLL Sum: 127387.95 | Seconds: 9.7
+Context epoch 230 | NLL Sum: 147455.75 | Seconds: 9.7
+Context epoch 231 | NLL Sum: 51931.99 | Seconds: 9.7
+Context epoch 232 | NLL Sum: 27486.34 | Seconds: 9.6
+Context epoch 233 | NLL Sum: 30696.14 | Seconds: 9.6
+Context epoch 234 | NLL Sum: 15851.85 | Seconds: 9.7
+Context epoch 235 | NLL Sum: 120778.11 | Seconds: 9.7
+Context epoch 236 | NLL Sum: 141060.58 | Seconds: 9.7
+Context epoch 237 | NLL Sum: 46550.77 | Seconds: 9.6
+Context epoch 238 | NLL Sum: 28380.01 | Seconds: 9.6
+Context epoch 239 | NLL Sum: 31441.25 | Seconds: 9.6
+Context epoch 240 | NLL Sum: 16619.35 | Seconds: 9.7
+Context epoch 241 | NLL Sum: 113908.67 | Seconds: 9.7
+Context epoch 242 | NLL Sum: 133321.41 | Seconds: 9.6
+Context epoch 243 | NLL Sum: 41249.45 | Seconds: 9.7
+Context epoch 244 | NLL Sum: 29017.09 | Seconds: 9.7
+Context epoch 245 | NLL Sum: 32236.62 | Seconds: 9.4
+Context epoch 246 | NLL Sum: 17615.74 | Seconds: 9.4
+Context epoch 247 | NLL Sum: 107716.41 | Seconds: 9.7
+Context epoch 248 | NLL Sum: 126986.03 | Seconds: 9.7
+Context epoch 249 | NLL Sum: 36918.02 | Seconds: 9.7
+Context epoch 250 | NLL Sum: 29738.77 | Seconds: 9.7
+Context epoch 251 | NLL Sum: 32945.88 | Seconds: 9.7
+Context epoch 252 | NLL Sum: 18438.55 | Seconds: 9.7
+Context epoch 253 | NLL Sum: 101427.18 | Seconds: 9.7
+Context epoch 254 | NLL Sum: 121296.19 | Seconds: 9.7
+Context epoch 255 | NLL Sum: 32482.66 | Seconds: 9.7
+Context epoch 256 | NLL Sum: 30474.98 | Seconds: 9.7
+Context epoch 257 | NLL Sum: 33606.77 | Seconds: 9.7
+Context epoch 258 | NLL Sum: 19250.96 | Seconds: 9.7
+Context epoch 259 | NLL Sum: 95910.62 | Seconds: 9.6
+Context epoch 260 | NLL Sum: 114545.69 | Seconds: 9.6
+Context epoch 261 | NLL Sum: 28559.37 | Seconds: 9.7
+Context epoch 262 | NLL Sum: 31197.60 | Seconds: 9.7
+Context epoch 263 | NLL Sum: 34212.48 | Seconds: 9.6
+Context epoch 264 | NLL Sum: 20139.10 | Seconds: 9.7
+Context epoch 265 | NLL Sum: 89454.48 | Seconds: 9.7
+Context epoch 266 | NLL Sum: 108332.18 | Seconds: 9.6
+Context epoch 267 | NLL Sum: 25476.14 | Seconds: 9.6
+Context epoch 268 | NLL Sum: 55487.77 | Seconds: 9.7
+Context epoch 269 | NLL Sum: 9806.28 | Seconds: 9.7
+Context epoch 270 | NLL Sum: 36102.65 | Seconds: 9.7
+Context epoch 271 | NLL Sum: 37771.53 | Seconds: 9.7
+Context epoch 272 | NLL Sum: 23535.52 | Seconds: 9.7
+Context epoch 273 | NLL Sum: 71198.83 | Seconds: 9.7
+Context epoch 274 | NLL Sum: 93417.36 | Seconds: 9.6
+Context epoch 275 | NLL Sum: 18809.70 | Seconds: 9.7
+Context epoch 276 | NLL Sum: 33171.89 | Seconds: 9.7
+Context epoch 277 | NLL Sum: 36063.84 | Seconds: 9.7
+Context epoch 278 | NLL Sum: 22056.84 | Seconds: 9.7
+Context epoch 279 | NLL Sum: 75220.94 | Seconds: 9.7
+Context epoch 280 | NLL Sum: 94009.24 | Seconds: 9.6
+Context epoch 281 | NLL Sum: 18631.62 | Seconds: 9.7
+Context epoch 282 | NLL Sum: 33353.55 | Seconds: 9.7
+Context epoch 283 | NLL Sum: 36246.47 | Seconds: 9.7
+Context epoch 284 | NLL Sum: 22606.66 | Seconds: 9.6
+Context epoch 285 | NLL Sum: 70955.56 | Seconds: 9.7
+Context epoch 286 | NLL Sum: 88871.37 | Seconds: 9.6
+Context epoch 287 | NLL Sum: 16313.68 | Seconds: 9.6
+Context epoch 288 | NLL Sum: 33819.25 | Seconds: 9.6
+Context epoch 289 | NLL Sum: 36775.92 | Seconds: 9.7
+Context epoch 290 | NLL Sum: 23344.88 | Seconds: 9.7
+Context epoch 291 | NLL Sum: 65616.62 | Seconds: 9.6
+Context epoch 292 | NLL Sum: 84052.28 | Seconds: 9.7
+Context epoch 293 | NLL Sum: 13860.21 | Seconds: 9.6
+Context epoch 294 | NLL Sum: 34517.46 | Seconds: 9.7
+Context epoch 295 | NLL Sum: 37303.56 | Seconds: 9.7
+Context epoch 296 | NLL Sum: 23968.01 | Seconds: 9.7
+Context epoch 297 | NLL Sum: 60610.94 | Seconds: 9.7
+Context epoch 298 | NLL Sum: 79068.91 | Seconds: 9.7
+Context epoch 299 | NLL Sum: 11395.09 | Seconds: 9.7
+Fitting heldout free x0/v0 from context only...
+Context epoch 000 | NLL Sum: 6432.91 | Seconds: 0.1
+Context epoch 001 | NLL Sum: 6428.00 | Seconds: 0.1
+Context epoch 002 | NLL Sum: 6423.49 | Seconds: 0.1
+Context epoch 003 | NLL Sum: 6419.07 | Seconds: 0.1
+Context epoch 004 | NLL Sum: 6414.69 | Seconds: 0.1
+Context epoch 005 | NLL Sum: 6410.34 | Seconds: 0.1
+Context epoch 006 | NLL Sum: 6406.00 | Seconds: 0.1
+Context epoch 007 | NLL Sum: 6401.68 | Seconds: 0.1
+Context epoch 008 | NLL Sum: 6397.38 | Seconds: 0.1
+Context epoch 009 | NLL Sum: 6393.08 | Seconds: 0.1
+Context epoch 010 | NLL Sum: 6388.80 | Seconds: 0.1
+Context epoch 011 | NLL Sum: 6384.52 | Seconds: 0.1
+Context epoch 012 | NLL Sum: 6380.26 | Seconds: 0.1
+Context epoch 013 | NLL Sum: 6376.01 | Seconds: 0.1
+Context epoch 014 | NLL Sum: 6371.77 | Seconds: 0.1
+Context epoch 015 | NLL Sum: 6367.54 | Seconds: 0.1
+Context epoch 016 | NLL Sum: 6363.30 | Seconds: 0.1
+Context epoch 017 | NLL Sum: 6359.07 | Seconds: 0.1
+Context epoch 018 | NLL Sum: 6354.84 | Seconds: 0.1
+Context epoch 019 | NLL Sum: 6350.62 | Seconds: 0.1
+Context epoch 020 | NLL Sum: 6346.41 | Seconds: 0.1
+Context epoch 021 | NLL Sum: 6342.20 | Seconds: 0.1
+Context epoch 022 | NLL Sum: 6337.99 | Seconds: 0.1
+Context epoch 023 | NLL Sum: 6333.78 | Seconds: 0.1
+Context epoch 024 | NLL Sum: 6329.58 | Seconds: 0.1
+Context epoch 025 | NLL Sum: 6325.39 | Seconds: 0.1
+Context epoch 026 | NLL Sum: 6321.20 | Seconds: 0.1
+Context epoch 027 | NLL Sum: 6317.02 | Seconds: 0.1
+Context epoch 028 | NLL Sum: 6312.84 | Seconds: 0.1
+Context epoch 029 | NLL Sum: 6308.68 | Seconds: 0.1
+Context epoch 030 | NLL Sum: 6304.52 | Seconds: 0.1
+Context epoch 031 | NLL Sum: 6300.36 | Seconds: 0.1
+Context epoch 032 | NLL Sum: 6296.21 | Seconds: 0.1
+Context epoch 033 | NLL Sum: 6292.07 | Seconds: 0.1
+Context epoch 034 | NLL Sum: 6287.94 | Seconds: 0.1
+Context epoch 035 | NLL Sum: 6283.81 | Seconds: 0.1
+Context epoch 036 | NLL Sum: 6279.70 | Seconds: 0.1
+Context epoch 037 | NLL Sum: 6275.59 | Seconds: 0.1
+Context epoch 038 | NLL Sum: 6271.48 | Seconds: 0.1
+Context epoch 039 | NLL Sum: 6267.37 | Seconds: 0.1
+Context epoch 040 | NLL Sum: 6263.26 | Seconds: 0.1
+Context epoch 041 | NLL Sum: 6259.16 | Seconds: 0.1
+Context epoch 042 | NLL Sum: 6255.07 | Seconds: 0.1
+Context epoch 043 | NLL Sum: 6250.98 | Seconds: 0.1
+Context epoch 044 | NLL Sum: 6246.90 | Seconds: 0.1
+Context epoch 045 | NLL Sum: 6242.83 | Seconds: 0.1
+Context epoch 046 | NLL Sum: 6238.78 | Seconds: 0.1
+Context epoch 047 | NLL Sum: 6234.72 | Seconds: 0.1
+Context epoch 048 | NLL Sum: 6230.68 | Seconds: 0.1
+Context epoch 049 | NLL Sum: 6226.63 | Seconds: 0.1
+Context epoch 050 | NLL Sum: 6222.60 | Seconds: 0.1
+Context epoch 051 | NLL Sum: 6218.57 | Seconds: 0.1
+Context epoch 052 | NLL Sum: 6214.55 | Seconds: 0.1
+Context epoch 053 | NLL Sum: 6210.54 | Seconds: 0.1
+Context epoch 054 | NLL Sum: 6206.54 | Seconds: 0.1
+Context epoch 055 | NLL Sum: 6202.56 | Seconds: 0.1
+Context epoch 056 | NLL Sum: 6198.58 | Seconds: 0.1
+Context epoch 057 | NLL Sum: 6194.61 | Seconds: 0.1
+Context epoch 058 | NLL Sum: 6190.65 | Seconds: 0.1
+Context epoch 059 | NLL Sum: 6186.70 | Seconds: 0.1
+Context epoch 060 | NLL Sum: 6182.75 | Seconds: 0.1
+Context epoch 061 | NLL Sum: 6178.81 | Seconds: 0.1
+Context epoch 062 | NLL Sum: 6174.88 | Seconds: 0.1
+Context epoch 063 | NLL Sum: 6170.95 | Seconds: 0.1
+Context epoch 064 | NLL Sum: 6167.04 | Seconds: 0.1
+Context epoch 065 | NLL Sum: 6163.13 | Seconds: 0.1
+Context epoch 066 | NLL Sum: 6159.23 | Seconds: 0.1
+Context epoch 067 | NLL Sum: 6155.33 | Seconds: 0.1
+Context epoch 068 | NLL Sum: 6151.44 | Seconds: 0.1
+Context epoch 069 | NLL Sum: 6147.55 | Seconds: 0.1
+Context epoch 070 | NLL Sum: 6143.65 | Seconds: 0.1
+Context epoch 071 | NLL Sum: 6139.76 | Seconds: 0.1
+Context epoch 072 | NLL Sum: 6135.88 | Seconds: 0.1
+Context epoch 073 | NLL Sum: 6132.00 | Seconds: 0.1
+Context epoch 074 | NLL Sum: 6128.12 | Seconds: 0.1
+Context epoch 075 | NLL Sum: 6124.25 | Seconds: 0.1
+Context epoch 076 | NLL Sum: 6120.39 | Seconds: 0.1
+Context epoch 077 | NLL Sum: 6116.52 | Seconds: 0.1
+Context epoch 078 | NLL Sum: 6112.68 | Seconds: 0.1
+Context epoch 079 | NLL Sum: 6108.83 | Seconds: 0.1
+Context epoch 080 | NLL Sum: 6105.00 | Seconds: 0.1
+Context epoch 081 | NLL Sum: 6101.17 | Seconds: 0.1
+Context epoch 082 | NLL Sum: 6097.35 | Seconds: 0.1
+Context epoch 083 | NLL Sum: 6093.55 | Seconds: 0.1
+Context epoch 084 | NLL Sum: 6089.74 | Seconds: 0.1
+Context epoch 085 | NLL Sum: 6085.95 | Seconds: 0.1
+Context epoch 086 | NLL Sum: 6082.17 | Seconds: 0.1
+Context epoch 087 | NLL Sum: 6078.40 | Seconds: 0.1
+Context epoch 088 | NLL Sum: 6074.64 | Seconds: 0.1
+Context epoch 089 | NLL Sum: 6070.89 | Seconds: 0.1
+Context epoch 090 | NLL Sum: 6067.16 | Seconds: 0.1
+Context epoch 091 | NLL Sum: 6063.44 | Seconds: 0.1
+Context epoch 092 | NLL Sum: 6059.72 | Seconds: 0.1
+Context epoch 093 | NLL Sum: 6056.00 | Seconds: 0.1
+Context epoch 094 | NLL Sum: 6052.29 | Seconds: 0.1
+Context epoch 095 | NLL Sum: 6048.57 | Seconds: 0.1
+Context epoch 096 | NLL Sum: 6044.87 | Seconds: 0.1
+Context epoch 097 | NLL Sum: 6041.19 | Seconds: 0.1
+Context epoch 098 | NLL Sum: 6037.51 | Seconds: 0.1
+Context epoch 099 | NLL Sum: 6033.85 | Seconds: 0.1
+Context epoch 100 | NLL Sum: 6030.21 | Seconds: 0.1
+Context epoch 101 | NLL Sum: 6026.58 | Seconds: 0.1
+Context epoch 102 | NLL Sum: 6022.97 | Seconds: 0.1
+Context epoch 103 | NLL Sum: 6019.36 | Seconds: 0.1
+Context epoch 104 | NLL Sum: 6015.75 | Seconds: 0.1
+Context epoch 105 | NLL Sum: 6012.15 | Seconds: 0.1
+Context epoch 106 | NLL Sum: 6008.56 | Seconds: 0.1
+Context epoch 107 | NLL Sum: 6004.97 | Seconds: 0.1
+Context epoch 108 | NLL Sum: 6001.38 | Seconds: 0.1
+Context epoch 109 | NLL Sum: 5997.79 | Seconds: 0.1
+Context epoch 110 | NLL Sum: 5994.22 | Seconds: 0.1
+Context epoch 111 | NLL Sum: 5990.64 | Seconds: 0.1
+Context epoch 112 | NLL Sum: 5987.08 | Seconds: 0.1
+Context epoch 113 | NLL Sum: 5983.51 | Seconds: 0.1
+Context epoch 114 | NLL Sum: 5979.95 | Seconds: 0.1
+Context epoch 115 | NLL Sum: 5976.39 | Seconds: 0.1
+Context epoch 116 | NLL Sum: 5972.85 | Seconds: 0.1
+Context epoch 117 | NLL Sum: 5969.31 | Seconds: 0.1
+Context epoch 118 | NLL Sum: 5965.78 | Seconds: 0.1
+Context epoch 119 | NLL Sum: 5962.25 | Seconds: 0.1
+Context epoch 120 | NLL Sum: 5958.73 | Seconds: 0.1
+Context epoch 121 | NLL Sum: 5955.22 | Seconds: 0.1
+Context epoch 122 | NLL Sum: 5951.72 | Seconds: 0.1
+Context epoch 123 | NLL Sum: 5948.23 | Seconds: 0.1
+Context epoch 124 | NLL Sum: 5944.75 | Seconds: 0.1
+Context epoch 125 | NLL Sum: 5941.28 | Seconds: 0.1
+Context epoch 126 | NLL Sum: 5937.81 | Seconds: 0.1
+Context epoch 127 | NLL Sum: 5934.36 | Seconds: 0.1
+Context epoch 128 | NLL Sum: 5930.91 | Seconds: 0.1
+Context epoch 129 | NLL Sum: 5927.47 | Seconds: 0.1
+Context epoch 130 | NLL Sum: 5924.03 | Seconds: 0.1
+Context epoch 131 | NLL Sum: 5920.60 | Seconds: 0.1
+Context epoch 132 | NLL Sum: 5917.17 | Seconds: 0.1
+Context epoch 133 | NLL Sum: 5913.75 | Seconds: 0.1
+Context epoch 134 | NLL Sum: 5910.33 | Seconds: 0.1
+Context epoch 135 | NLL Sum: 5906.91 | Seconds: 0.1
+Context epoch 136 | NLL Sum: 5903.49 | Seconds: 0.1
+Context epoch 137 | NLL Sum: 5900.08 | Seconds: 0.1
+Context epoch 138 | NLL Sum: 5896.68 | Seconds: 0.1
+Context epoch 139 | NLL Sum: 5893.28 | Seconds: 0.1
+Context epoch 140 | NLL Sum: 5889.89 | Seconds: 0.1
+Context epoch 141 | NLL Sum: 5886.52 | Seconds: 0.1
+Context epoch 142 | NLL Sum: 5883.14 | Seconds: 0.1
+Context epoch 143 | NLL Sum: 5879.78 | Seconds: 0.1
+Context epoch 144 | NLL Sum: 5876.42 | Seconds: 0.1
+Context epoch 145 | NLL Sum: 5873.07 | Seconds: 0.1
+Context epoch 146 | NLL Sum: 5869.73 | Seconds: 0.1
+Context epoch 147 | NLL Sum: 5866.40 | Seconds: 0.1
+Context epoch 148 | NLL Sum: 5863.08 | Seconds: 0.1
+Context epoch 149 | NLL Sum: 5859.77 | Seconds: 0.1
+Context epoch 150 | NLL Sum: 5856.47 | Seconds: 0.1
+Context epoch 151 | NLL Sum: 5853.17 | Seconds: 0.1
+Context epoch 152 | NLL Sum: 5849.89 | Seconds: 0.1
+Context epoch 153 | NLL Sum: 5846.61 | Seconds: 0.1
+Context epoch 154 | NLL Sum: 5843.34 | Seconds: 0.1
+Context epoch 155 | NLL Sum: 5840.07 | Seconds: 0.1
+Context epoch 156 | NLL Sum: 5836.81 | Seconds: 0.1
+Context epoch 157 | NLL Sum: 5833.56 | Seconds: 0.1
+Context epoch 158 | NLL Sum: 5830.33 | Seconds: 0.1
+Context epoch 159 | NLL Sum: 5827.10 | Seconds: 0.1
+Context epoch 160 | NLL Sum: 5823.87 | Seconds: 0.1
+Context epoch 161 | NLL Sum: 5820.65 | Seconds: 0.1
+Context epoch 162 | NLL Sum: 5817.43 | Seconds: 0.1
+Context epoch 163 | NLL Sum: 5814.22 | Seconds: 0.1
+Context epoch 164 | NLL Sum: 5811.00 | Seconds: 0.1
+Context epoch 165 | NLL Sum: 5807.80 | Seconds: 0.1
+Context epoch 166 | NLL Sum: 5804.61 | Seconds: 0.1
+Context epoch 167 | NLL Sum: 5801.42 | Seconds: 0.1
+Context epoch 168 | NLL Sum: 5798.24 | Seconds: 0.1
+Context epoch 169 | NLL Sum: 5795.07 | Seconds: 0.1
+Context epoch 170 | NLL Sum: 5791.91 | Seconds: 0.1
+Context epoch 171 | NLL Sum: 5788.74 | Seconds: 0.1
+Context epoch 172 | NLL Sum: 5785.58 | Seconds: 0.1
+Context epoch 173 | NLL Sum: 5782.43 | Seconds: 0.1
+Context epoch 174 | NLL Sum: 5779.27 | Seconds: 0.1
+Context epoch 175 | NLL Sum: 5776.13 | Seconds: 0.1
+Context epoch 176 | NLL Sum: 5772.99 | Seconds: 0.1
+Context epoch 177 | NLL Sum: 5769.86 | Seconds: 0.1
+Context epoch 178 | NLL Sum: 5766.74 | Seconds: 0.1
+Context epoch 179 | NLL Sum: 5763.61 | Seconds: 0.1
+Context epoch 180 | NLL Sum: 5760.50 | Seconds: 0.1
+Context epoch 181 | NLL Sum: 5757.39 | Seconds: 0.1
+Context epoch 182 | NLL Sum: 5754.29 | Seconds: 0.1
+Context epoch 183 | NLL Sum: 5751.20 | Seconds: 0.1
+Context epoch 184 | NLL Sum: 5748.11 | Seconds: 0.1
+Context epoch 185 | NLL Sum: 5745.03 | Seconds: 0.1
+Context epoch 186 | NLL Sum: 5741.95 | Seconds: 0.1
+Context epoch 187 | NLL Sum: 5738.87 | Seconds: 0.1
+Context epoch 188 | NLL Sum: 5735.80 | Seconds: 0.1
+Context epoch 189 | NLL Sum: 5732.75 | Seconds: 0.1
+Context epoch 190 | NLL Sum: 5729.69 | Seconds: 0.1
+Context epoch 191 | NLL Sum: 5726.65 | Seconds: 0.1
+Context epoch 192 | NLL Sum: 5723.62 | Seconds: 0.1
+Context epoch 193 | NLL Sum: 5720.58 | Seconds: 0.1
+Context epoch 194 | NLL Sum: 5717.54 | Seconds: 0.1
+Context epoch 195 | NLL Sum: 5714.52 | Seconds: 0.1
+Context epoch 196 | NLL Sum: 5711.49 | Seconds: 0.1
+Context epoch 197 | NLL Sum: 5708.47 | Seconds: 0.1
+Context epoch 198 | NLL Sum: 5705.45 | Seconds: 0.1
+Context epoch 199 | NLL Sum: 5702.43 | Seconds: 0.1
+Context epoch 200 | NLL Sum: 5699.42 | Seconds: 0.1
+Context epoch 201 | NLL Sum: 5696.42 | Seconds: 0.1
+Context epoch 202 | NLL Sum: 5693.42 | Seconds: 0.1
+Context epoch 203 | NLL Sum: 5690.43 | Seconds: 0.1
+Context epoch 204 | NLL Sum: 5687.45 | Seconds: 0.1
+Context epoch 205 | NLL Sum: 5684.47 | Seconds: 0.1
+Context epoch 206 | NLL Sum: 5681.49 | Seconds: 0.1
+Context epoch 207 | NLL Sum: 5678.52 | Seconds: 0.1
+Context epoch 208 | NLL Sum: 5675.57 | Seconds: 0.1
+Context epoch 209 | NLL Sum: 5672.63 | Seconds: 0.1
+Context epoch 210 | NLL Sum: 5669.69 | Seconds: 0.1
+Context epoch 211 | NLL Sum: 5666.77 | Seconds: 0.1
+Context epoch 212 | NLL Sum: 5663.85 | Seconds: 0.1
+Context epoch 213 | NLL Sum: 5660.94 | Seconds: 0.1
+Context epoch 214 | NLL Sum: 5658.05 | Seconds: 0.1
+Context epoch 215 | NLL Sum: 5655.15 | Seconds: 0.1
+Context epoch 216 | NLL Sum: 5652.26 | Seconds: 0.1
+Context epoch 217 | NLL Sum: 5649.37 | Seconds: 0.1
+Context epoch 218 | NLL Sum: 5646.48 | Seconds: 0.1
+Context epoch 219 | NLL Sum: 5643.60 | Seconds: 0.1
+Context epoch 220 | NLL Sum: 5640.72 | Seconds: 0.1
+Context epoch 221 | NLL Sum: 5637.85 | Seconds: 0.1
+Context epoch 222 | NLL Sum: 5634.99 | Seconds: 0.1
+Context epoch 223 | NLL Sum: 5632.13 | Seconds: 0.1
+Context epoch 224 | NLL Sum: 5629.28 | Seconds: 0.1
+Context epoch 225 | NLL Sum: 5626.44 | Seconds: 0.1
+Context epoch 226 | NLL Sum: 5623.61 | Seconds: 0.1
+Context epoch 227 | NLL Sum: 5620.78 | Seconds: 0.1
+Context epoch 228 | NLL Sum: 5617.97 | Seconds: 0.1
+Context epoch 229 | NLL Sum: 5615.16 | Seconds: 0.1
+Context epoch 230 | NLL Sum: 5612.35 | Seconds: 0.1
+Context epoch 231 | NLL Sum: 5609.56 | Seconds: 0.1
+Context epoch 232 | NLL Sum: 5606.78 | Seconds: 0.1
+Context epoch 233 | NLL Sum: 5604.00 | Seconds: 0.1
+Context epoch 234 | NLL Sum: 5601.24 | Seconds: 0.1
+Context epoch 235 | NLL Sum: 5598.48 | Seconds: 0.1
+Context epoch 236 | NLL Sum: 5595.74 | Seconds: 0.1
+Context epoch 237 | NLL Sum: 5593.00 | Seconds: 0.1
+Context epoch 238 | NLL Sum: 5590.27 | Seconds: 0.1
+Context epoch 239 | NLL Sum: 5587.55 | Seconds: 0.1
+Context epoch 240 | NLL Sum: 5584.83 | Seconds: 0.1
+Context epoch 241 | NLL Sum: 5582.13 | Seconds: 0.1
+Context epoch 242 | NLL Sum: 5579.43 | Seconds: 0.1
+Context epoch 243 | NLL Sum: 5576.75 | Seconds: 0.1
+Context epoch 244 | NLL Sum: 5574.06 | Seconds: 0.1
+Context epoch 245 | NLL Sum: 5571.38 | Seconds: 0.1
+Context epoch 246 | NLL Sum: 5568.70 | Seconds: 0.1
+Context epoch 247 | NLL Sum: 5566.03 | Seconds: 0.1
+Context epoch 248 | NLL Sum: 5563.38 | Seconds: 0.1
+Context epoch 249 | NLL Sum: 5560.72 | Seconds: 0.1
+Context epoch 250 | NLL Sum: 5558.08 | Seconds: 0.1
+Context epoch 251 | NLL Sum: 5555.44 | Seconds: 0.1
+Context epoch 252 | NLL Sum: 5552.81 | Seconds: 0.1
+Context epoch 253 | NLL Sum: 5550.20 | Seconds: 0.1
+Context epoch 254 | NLL Sum: 5547.58 | Seconds: 0.1
+Context epoch 255 | NLL Sum: 5544.98 | Seconds: 0.1
+Context epoch 256 | NLL Sum: 5542.39 | Seconds: 0.1
+Context epoch 257 | NLL Sum: 5539.80 | Seconds: 0.1
+Context epoch 258 | NLL Sum: 5537.21 | Seconds: 0.1
+Context epoch 259 | NLL Sum: 5534.64 | Seconds: 0.1
+Context epoch 260 | NLL Sum: 5532.08 | Seconds: 0.1
+Context epoch 261 | NLL Sum: 5529.53 | Seconds: 0.1
+Context epoch 262 | NLL Sum: 5526.99 | Seconds: 0.1
+Context epoch 263 | NLL Sum: 5524.45 | Seconds: 0.1
+Context epoch 264 | NLL Sum: 5521.91 | Seconds: 0.1
+Context epoch 265 | NLL Sum: 5519.38 | Seconds: 0.1
+Context epoch 266 | NLL Sum: 5516.85 | Seconds: 0.1
+Context epoch 267 | NLL Sum: 5514.33 | Seconds: 0.1
+Context epoch 268 | NLL Sum: 5511.82 | Seconds: 0.1
+Context epoch 269 | NLL Sum: 5509.30 | Seconds: 0.1
+Context epoch 270 | NLL Sum: 5506.79 | Seconds: 0.1
+Context epoch 271 | NLL Sum: 5504.29 | Seconds: 0.1
+Context epoch 272 | NLL Sum: 5501.79 | Seconds: 0.1
+Context epoch 273 | NLL Sum: 5499.30 | Seconds: 0.1
+Context epoch 274 | NLL Sum: 5496.82 | Seconds: 0.1
+Context epoch 275 | NLL Sum: 5494.34 | Seconds: 0.1
+Context epoch 276 | NLL Sum: 5491.88 | Seconds: 0.1
+Context epoch 277 | NLL Sum: 5489.41 | Seconds: 0.1
+Context epoch 278 | NLL Sum: 5486.96 | Seconds: 0.1
+Context epoch 279 | NLL Sum: 5484.51 | Seconds: 0.1
+Context epoch 280 | NLL Sum: 5482.06 | Seconds: 0.1
+Context epoch 281 | NLL Sum: 5479.63 | Seconds: 0.1
+Context epoch 282 | NLL Sum: 5477.20 | Seconds: 0.1
+Context epoch 283 | NLL Sum: 5474.78 | Seconds: 0.1
+Context epoch 284 | NLL Sum: 5472.36 | Seconds: 0.1
+Context epoch 285 | NLL Sum: 5469.95 | Seconds: 0.1
+Context epoch 286 | NLL Sum: 5467.54 | Seconds: 0.1
+Context epoch 287 | NLL Sum: 5465.13 | Seconds: 0.1
+Context epoch 288 | NLL Sum: 5462.73 | Seconds: 0.1
+Context epoch 289 | NLL Sum: 5460.34 | Seconds: 0.1
+Context epoch 290 | NLL Sum: 5457.95 | Seconds: 0.1
+Context epoch 291 | NLL Sum: 5455.56 | Seconds: 0.1
+Context epoch 292 | NLL Sum: 5453.19 | Seconds: 0.1
+Context epoch 293 | NLL Sum: 5450.82 | Seconds: 0.1
+Context epoch 294 | NLL Sum: 5448.45 | Seconds: 0.1
+Context epoch 295 | NLL Sum: 5446.10 | Seconds: 0.1
+Context epoch 296 | NLL Sum: 5443.74 | Seconds: 0.1
+Context epoch 297 | NLL Sum: 5441.40 | Seconds: 0.1
+Context epoch 298 | NLL Sum: 5439.06 | Seconds: 0.1
+Context epoch 299 | NLL Sum: 5436.72 | Seconds: 0.1
+
+==========================================================
+ E65 MODEL COMPARISON
+==========================================================
+Metric             |         Geodesic |             Free
+----------------------------------------------------------
+Parameters         |            26507 |            59841
+Train NLL          |       9855992.79 |         59919.54
+Train MSE          |   96877.80145922 |       0.00544178
+Train R2           |   -11797835.2041 |           0.3373
+Train r            |           0.0123 |           0.5828
+Forecast R2        |    -3605080.3075 |          -0.1302
+Forecast r         |          -0.0007 |           0.1763
+AIC                |      19764999.58 |        239521.07
+BIC                |      20097869.14 |        990992.28
+==========================================================
+Saved outputs to runs/geodesic_e65_trials_5d_e300
+Finished: Sat Oct 24 04:38:25 EDT 2026

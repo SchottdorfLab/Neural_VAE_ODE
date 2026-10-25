@@ -1,0 +1,68 @@
+{
+  "config": {
+    "data_path": "src/npz_e65_data/E65_data.npz",
+    "num_trials": 188,
+    "num_train_trials": 150,
+    "num_heldout_trials": 38,
+    "heldout_fraction": 0.2,
+    "heldout_evaluation": "context_prefix_fit_then_suffix_forecast",
+    "context_steps": 10,
+    "context_epochs": 300,
+    "n_neurons_raw": 375,
+    "n_neurons_modeled": 352,
+    "latent_dim": 5,
+    "epochs": 300,
+    "learning_rate": 0.001,
+    "batch_size": 16,
+    "solver": "rk4",
+    "checkpoint_every": 1,
+    "resume_checkpoints": true,
+    "vectorized_christoffel": true,
+    "device": "cuda",
+    "dtype": "torch.float32",
+    "filter_train_silent": true,
+    "uses_position": false,
+    "uses_behavior": false,
+    "uses_raw_frame_times": true
+  },
+  "geodesic": {
+    "parameters": 26507,
+    "train": {
+      "nll": 9855992.790579613,
+      "mse": 96877.80145921974,
+      "r2": -11797835.204129348,
+      "r": 0.012257672654518941,
+      "n": 2100736
+    },
+    "forecast": {
+      "nll": 510910.69309251814,
+      "mse": 27341.652840946685,
+      "r2": -3605080.3074797005,
+      "r": -0.0007266645865533827,
+      "n": 382272
+    },
+    "AIC": 19764999.581159227,
+    "BIC": 20097869.141160715
+  },
+  "free": {
+    "parameters": 59841,
+    "train": {
+      "nll": 59919.53650198503,
+      "mse": 0.005441779081147692,
+      "r2": 0.3372969112489287,
+      "r": 0.5827610787290434,
+      "n": 2100736
+    },
+    "forecast": {
+      "nll": 18647.346829688006,
+      "mse": 0.008571317249675112,
+      "r2": -0.13015463172752972,
+      "r": 0.17633177460905863,
+      "n": 382272
+    },
+    "AIC": 239521.07300397006,
+    "BIC": 990992.2821203922
+  },
+  "preferred_by_AIC": "free",
+  "preferred_by_BIC": "free"
+}

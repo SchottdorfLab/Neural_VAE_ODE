@@ -33,6 +33,10 @@ export MPLBACKEND=Agg
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 export XLA_PYTHON_CLIENT_PREALLOCATE=false
 
+# The JAX CUDA installation supplies its own CUDA/cuDNN libraries. An inherited
+# LD_LIBRARY_PATH can make JAX load an incompatible system copy instead.
+unset LD_LIBRARY_PATH
+
 export JAX_E65_DATA_PATH="${JAX_E65_DATA_PATH:-src/npz_e65_data/E65_data.npz}"
 export JAX_E65_OUT_DIR="${JAX_E65_OUT_DIR:-runs/jax_tmp_e65_5d_large}"
 export JAX_E65_SEED="${JAX_E65_SEED:-42}"

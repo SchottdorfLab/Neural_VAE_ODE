@@ -4,4 +4,5 @@
 # that DARWIN receives the NVIDIA/CUDA build while macOS receives the CPU build.
 numpy
 matplotlib
-optax
+optax==0.2.3
+chex==0.1.86

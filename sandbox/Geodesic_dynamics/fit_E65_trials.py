@@ -58,7 +58,7 @@ def choose_device() -> torch.device:
     else:
         selected = torch.device("cpu")
     if selected.type == "mps" and TORCH_DTYPE == torch.float64:
-        raise RuntimeError("PyTorch MPS does not support float64; use E65_DTYPE=float32 or E65_DEVICE=cpu.")
+        raise RuntimeError("PyTorch MPS does not support float64, so please use E65_DTYPE=float32 or E65_DEVICE=cpu.")
     return selected
 
 
@@ -309,7 +309,7 @@ def load_e65(npz_path: Path):
 
 def split_trials(trial_ids: np.ndarray, heldout_fraction: float, seed: int):
     rng = np.random.default_rng(seed)
-    shuffled = rng.permutation(len(trial_ids))
+    shuffled = rng.permutation(len(trial_ids)) # randomly reorder trial indices (splits whole trials, not frames)
     if heldout_fraction <= 0.0 or len(trial_ids) == 1:
         return shuffled, np.empty(0, dtype=np.int64)
     n_heldout = max(1, int(round(heldout_fraction * len(trial_ids))))
@@ -429,7 +429,7 @@ def masked_statistics(prediction: torch.Tensor, target: torch.Tensor, mask: torc
         int(values.numel()),
     )
 
-
+#=======Asked Codex to add in checkpointing functionality========#
 def atomic_torch_save(payload, checkpoint_path: Path):
     """Write a checkpoint atomically so interruption cannot corrupt the last save."""
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
@@ -494,7 +494,7 @@ def save_training_checkpoint(
         },
         checkpoint_path,
     )
-
+#===========End checkpointing functionality==================#
 
 def train_model(
     model: nn.Module,
@@ -652,6 +652,7 @@ def fit_context_initial_conditions(
                     history,
                 )
             if epoch % log_every == 0 or epoch == epochs - 1:
+                # logging the time taken per epoch to see correlation with NLL sum
                 epoch_seconds = time.perf_counter() - epoch_started
                 print(
                     f"Context epoch {epoch:03d} | NLL Sum: {epoch_nll:.2f} | "
@@ -674,6 +675,12 @@ def predict_padded(
     n_neurons: int,
     latent_dim: int,
 ):
+    """
+    Runs the trained model on multiple variable-length trials 
+    E65 trials have different lengths, so using NaN entries are placeholders
+    (excluded from evaluation)
+    """
+    
     rate_output = np.full((n_trials, max_length, n_neurons), np.nan, dtype=NP_DTYPE)
     latent_output = np.full((n_trials, max_length, latent_dim), np.nan, dtype=NP_DTYPE)
     for batch_indices in iter_index_batches(indices, batch_size, False, np.random.default_rng(0)):
@@ -792,6 +799,7 @@ def main():
     np.random.seed(seed)
     torch.manual_seed(seed)
 
+    # Hyperparameter selection from input
     selected_device = choose_device()
     data_path = Path(os.environ.get("E65_NPZ_PATH", "src/npz_e65_data/E65_data.npz")).expanduser()
     output_dir = Path(os.environ.get("E65_OUT_DIR", "runs/geodesic_e65_trials")).expanduser()
@@ -815,6 +823,8 @@ def main():
         os.environ.get("E65_CHECKPOINT_DIR", str(output_dir / "checkpoints"))
     ).expanduser()
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    # Error checking for hyperparamters (only the major ones)
     if solver not in {"rk4", "euler"}:
         raise ValueError("E65_MODEL_SOLVER must be 'rk4' or 'euler'.")
     if not 0.0 <= heldout_fraction < 1.0:

@@ -2,6 +2,24 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+# October 25th, 11:36am:
+- I've been continuing to work on this project throughout, but I haven't been taking notes, so I'll provide a brief update here.
+- The first big thing is that Dr. Schottdorf's JAX code works. Also, it's important to note that where the fit_sphere_trials.py/simulate_geodesic_sphere.py code found the initial velocity and point by gradient descent, the JAX code finds it using the first 2 frames. I am not quite sure that 2 frames is enough to definitvely determine intial conditions, and so I've been doing tests with more "context frames." I'll have to go back and look at what these results are, if I am remembering correctly (or perhaps I am just justifying my hunch) they improved scores. 
+- Initially, I was a little concerned about the JAX code, because while it worked well on the little simple trajectory Dr. Schottdorf tested, it didn't appear to work well relative to the 3d Cartestian fit_sphere_trials.py on the dataset I had been testing everything on (about medium size, relative to the other datasets I've made). However, running on a larger dataset by epochs, and I believe just larger in general (again, will need to go back and check hyperparameters in the /runs folder), the JAX model actually outperformed the 3d Cartesian version by about 8 ish points (0.9 versus closer to 0.98 for R2). This was on the great-circle trajectories on the sphere. So there may just need to be *more data* for the JAX model to work well. Not sure. I'd need to do more testing on more datasets and do a hyperparameter scan to decide, and I'm not very interested in doing that right now (I'd like to skip to the E65 testing step). 
+- I am still, of course, tempted just by the idea that we have code that works in 3 dimensions and is Cartesian that works on a 2-manifold. Pretty cool. But I guess the only reason it would be *really* cool is if it works on E65. So if the JAX model doesn't work, then we have this. Though it makes less intuitive sense, and the math behind the space it is creating/working in is probably weird (Ricci curvature?) 
+- After getting fit_sphere_trials converted to work on E65 (fit_e65_trials.py), I started the run, but it took horrifically long. So I asked Codex to speed it up, and it vectorized it and also I think realized that time could be saved because of something to do with the lower triangular matrix for the metric tensor. 
+    - Also, the fit_E65_trials.py code uses a generic, unconstrained 5D latent coordinate system (5D just because I wanted to try 5D). It's z = (z1, z2, z3, z4, z5) in R5. So this is good, because I believe (but I would have to verify) that there are no longitude wraparounds or pole singularities with this implementation. - **Here, g_theta(z) = L_theta(z) * L_theta(z)^T (the transpose of the matrix) + epsilonI5, where z is the current point in the latent space, L_theta is a lower-triangular matrix, and I5 is the 5 by 5 identity matrix.** 
+    - Reminder that the transpose of the matrix swaps its rows and columns. 
+- The initial results of fit_e65_trials.py was quite suprising. You can see the results in runs/geodesic_e65_trials_5d_e300/summary.json. The interesting thing is this: 
+    ```
+        Free Dynamics:
+        "r2": 0.3372969112489287,
+        "r": 0.5827610787290434,
+    ```
+- So, it looks like the free dynamics model actually worked quite well, at least in training. Forecast scores were still poor, but the forecast stuff is something I am still quite unsure about the way in which I should implement that kind of idea (like there's not an easy way for me to think of how to do heldout trials, forecast is my version of that). 
+- The geodesic score was poor, but I think that I may need to do some gradient clipping. It looked like scores started randomly blowing up. And this is just a hypothesis, but I wonder if this is because there are so few active neurons, if there is an epoch where the model randomly sees a lot of neuron activity, I could imagine the entire process blowing up. 
+- The next step is to run the JAX code. It's implemented with E65, and I'm pushing it on this commit, and then I'll have it pulled to DARWIN to run it (hopefully at a normal pace, I think the JAX code is a good bit faster than the fit_e65_trials.py code, but I haven't sat for a while and watched it). 
+
 # October 5th, 8:55pm:
 - Added the code from Dr. Schottdorf in JAX
 - The JAX code works in 2D, but I'm not sure whether it will work on the same data that I gave it. 

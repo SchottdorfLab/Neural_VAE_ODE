@@ -1,0 +1,911 @@
+Batch shell started: Sun Oct 25 13:06:20 EDT 2026
+Host: r1t01
+Working directory before setup: /home/4429/projects/Neural_VAE_ODE
+Job ID: 7605080
+Host: r1t01
+Started: Sun Oct 25 13:06:20 EDT 2026
+Python: /home/4429/envs/odevae/bin/python
+Python 3.11.15
+Sun Oct 25 13:06:21 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   46C    P0             27W /   70W |       1MiB /  15360MiB |      9%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+JAX: 0.4.28
+Optax: 0.2.3
+NumPy: 2.4.3
+Matplotlib: 3.10.8
+Devices: [cuda(id=0)]
+
+--- executing notebook cell 0 ---
+JAX devices: [cuda(id=0)]
+E65: 188 trials, train=150, heldout=38
+Trial lengths: 29-78 frames; neurons: 375 raw -> 352 modeled
+Encoder input: first 10 neural frames; heldout forecast begins at frame 10.
+Latent dimensions: 5; precision: float64; resume: True.
+
+--- executing notebook cell 1 ---
+
+--- executing notebook cell 2 ---
+Geodesic parameters: 536697
+Free parameters:     536367
+
+Training geodesic model...
+geodesic epoch 0000 | masked reconstruction MSE: 0.47803403
+geodesic epoch 0010 | masked reconstruction MSE: 0.34196280
+geodesic epoch 0020 | masked reconstruction MSE: 0.13072143
+Saved geodesic checkpoint at epoch 25: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0030 | masked reconstruction MSE: 0.01818170
+geodesic epoch 0040 | masked reconstruction MSE: 0.00881946
+Saved geodesic checkpoint at epoch 50: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0050 | masked reconstruction MSE: 0.00923346
+geodesic epoch 0060 | masked reconstruction MSE: 0.00770813
+geodesic epoch 0070 | masked reconstruction MSE: 0.00689038
+Saved geodesic checkpoint at epoch 75: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0080 | masked reconstruction MSE: 0.00669906
+geodesic epoch 0090 | masked reconstruction MSE: 0.00802580
+Saved geodesic checkpoint at epoch 100: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0100 | masked reconstruction MSE: 0.00844863
+geodesic epoch 0110 | masked reconstruction MSE: 0.00788192
+geodesic epoch 0120 | masked reconstruction MSE: 0.00899090
+Saved geodesic checkpoint at epoch 125: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0130 | masked reconstruction MSE: 0.00793265
+geodesic epoch 0140 | masked reconstruction MSE: 0.00813592
+Saved geodesic checkpoint at epoch 150: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0150 | masked reconstruction MSE: 0.00963258
+geodesic epoch 0160 | masked reconstruction MSE: 0.00907280
+geodesic epoch 0170 | masked reconstruction MSE: 0.00966064
+Saved geodesic checkpoint at epoch 175: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0180 | masked reconstruction MSE: 0.00793493
+geodesic epoch 0190 | masked reconstruction MSE: 0.00819787
+Saved geodesic checkpoint at epoch 200: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0200 | masked reconstruction MSE: 0.00798189
+geodesic epoch 0210 | masked reconstruction MSE: 0.00958571
+geodesic epoch 0220 | masked reconstruction MSE: 0.00793156
+Saved geodesic checkpoint at epoch 225: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0230 | masked reconstruction MSE: 0.00691276
+geodesic epoch 0240 | masked reconstruction MSE: 0.00705410
+Saved geodesic checkpoint at epoch 250: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0250 | masked reconstruction MSE: 0.00703104
+geodesic epoch 0260 | masked reconstruction MSE: 0.00774354
+geodesic epoch 0270 | masked reconstruction MSE: 0.01008907
+Saved geodesic checkpoint at epoch 275: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0280 | masked reconstruction MSE: 0.00670082
+geodesic epoch 0290 | masked reconstruction MSE: 0.00894620
+Saved geodesic checkpoint at epoch 300: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0300 | masked reconstruction MSE: 0.00648911
+geodesic epoch 0310 | masked reconstruction MSE: 0.00795904
+geodesic epoch 0320 | masked reconstruction MSE: 0.00874899
+Saved geodesic checkpoint at epoch 325: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0330 | masked reconstruction MSE: 0.00854944
+geodesic epoch 0340 | masked reconstruction MSE: 0.00676339
+Saved geodesic checkpoint at epoch 350: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0350 | masked reconstruction MSE: 0.00798767
+geodesic epoch 0360 | masked reconstruction MSE: 0.00792501
+geodesic epoch 0370 | masked reconstruction MSE: 0.00830788
+Saved geodesic checkpoint at epoch 375: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0380 | masked reconstruction MSE: 0.00941383
+geodesic epoch 0390 | masked reconstruction MSE: 0.00782100
+Saved geodesic checkpoint at epoch 400: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0400 | masked reconstruction MSE: 0.00599451
+geodesic epoch 0410 | masked reconstruction MSE: 0.01059839
+geodesic epoch 0420 | masked reconstruction MSE: 0.00841262
+Saved geodesic checkpoint at epoch 425: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0430 | masked reconstruction MSE: 0.00700211
+geodesic epoch 0440 | masked reconstruction MSE: 0.00740999
+Saved geodesic checkpoint at epoch 450: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0450 | masked reconstruction MSE: 0.00681067
+geodesic epoch 0460 | masked reconstruction MSE: 0.00830101
+geodesic epoch 0470 | masked reconstruction MSE: 0.01073115
+Saved geodesic checkpoint at epoch 475: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0480 | masked reconstruction MSE: 0.00743763
+geodesic epoch 0490 | masked reconstruction MSE: 0.00659356
+Saved geodesic checkpoint at epoch 500: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0500 | masked reconstruction MSE: 0.00691378
+geodesic epoch 0510 | masked reconstruction MSE: 0.00794088
+geodesic epoch 0520 | masked reconstruction MSE: 0.00778706
+Saved geodesic checkpoint at epoch 525: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0530 | masked reconstruction MSE: 0.00824765
+geodesic epoch 0540 | masked reconstruction MSE: 0.00614701
+Saved geodesic checkpoint at epoch 550: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0550 | masked reconstruction MSE: 0.00619262
+geodesic epoch 0560 | masked reconstruction MSE: 0.00869571
+geodesic epoch 0570 | masked reconstruction MSE: 0.00792830
+Saved geodesic checkpoint at epoch 575: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0580 | masked reconstruction MSE: 0.00750436
+geodesic epoch 0590 | masked reconstruction MSE: 0.00932099
+Saved geodesic checkpoint at epoch 600: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0600 | masked reconstruction MSE: 0.00692266
+geodesic epoch 0610 | masked reconstruction MSE: 0.00618793
+geodesic epoch 0620 | masked reconstruction MSE: 0.00925605
+Saved geodesic checkpoint at epoch 625: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0630 | masked reconstruction MSE: 0.00902825
+geodesic epoch 0640 | masked reconstruction MSE: 0.00828661
+Saved geodesic checkpoint at epoch 650: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0650 | masked reconstruction MSE: 0.00784095
+geodesic epoch 0660 | masked reconstruction MSE: 0.00810657
+geodesic epoch 0670 | masked reconstruction MSE: 0.00815916
+Saved geodesic checkpoint at epoch 675: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0680 | masked reconstruction MSE: 0.00720849
+geodesic epoch 0690 | masked reconstruction MSE: 0.00823793
+Saved geodesic checkpoint at epoch 700: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0700 | masked reconstruction MSE: 0.00867245
+geodesic epoch 0710 | masked reconstruction MSE: 0.00584016
+geodesic epoch 0720 | masked reconstruction MSE: 0.00825750
+Saved geodesic checkpoint at epoch 725: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0730 | masked reconstruction MSE: 0.00682894
+geodesic epoch 0740 | masked reconstruction MSE: 0.00763944
+Saved geodesic checkpoint at epoch 750: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0750 | masked reconstruction MSE: 0.00821403
+geodesic epoch 0760 | masked reconstruction MSE: 0.00795351
+geodesic epoch 0770 | masked reconstruction MSE: 0.00812462
+Saved geodesic checkpoint at epoch 775: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0780 | masked reconstruction MSE: 0.00567972
+geodesic epoch 0790 | masked reconstruction MSE: 0.00707059
+Saved geodesic checkpoint at epoch 800: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0800 | masked reconstruction MSE: 0.00658299
+geodesic epoch 0810 | masked reconstruction MSE: 0.00888741
+geodesic epoch 0820 | masked reconstruction MSE: 0.00557879
+Saved geodesic checkpoint at epoch 825: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0830 | masked reconstruction MSE: 0.00635794
+geodesic epoch 0840 | masked reconstruction MSE: 0.00613967
+Saved geodesic checkpoint at epoch 850: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0850 | masked reconstruction MSE: 0.00886431
+geodesic epoch 0860 | masked reconstruction MSE: 0.00555079
+geodesic epoch 0870 | masked reconstruction MSE: 0.00670472
+Saved geodesic checkpoint at epoch 875: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0880 | masked reconstruction MSE: 0.00816703
+geodesic epoch 0890 | masked reconstruction MSE: 0.00819751
+Saved geodesic checkpoint at epoch 900: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0900 | masked reconstruction MSE: 0.00696557
+geodesic epoch 0910 | masked reconstruction MSE: 0.00725559
+geodesic epoch 0920 | masked reconstruction MSE: 0.00701690
+Saved geodesic checkpoint at epoch 925: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0930 | masked reconstruction MSE: 0.00590162
+geodesic epoch 0940 | masked reconstruction MSE: 0.00925705
+Saved geodesic checkpoint at epoch 950: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0950 | masked reconstruction MSE: 0.00676021
+geodesic epoch 0960 | masked reconstruction MSE: 0.00593189
+geodesic epoch 0970 | masked reconstruction MSE: 0.00888067
+Saved geodesic checkpoint at epoch 975: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 0980 | masked reconstruction MSE: 0.00761052
+geodesic epoch 0990 | masked reconstruction MSE: 0.00744777
+Saved geodesic checkpoint at epoch 1000: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1000 | masked reconstruction MSE: 0.00697035
+geodesic epoch 1010 | masked reconstruction MSE: 0.01012895
+geodesic epoch 1020 | masked reconstruction MSE: 0.00893657
+Saved geodesic checkpoint at epoch 1025: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1030 | masked reconstruction MSE: 0.00736885
+geodesic epoch 1040 | masked reconstruction MSE: 0.00653853
+Saved geodesic checkpoint at epoch 1050: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1050 | masked reconstruction MSE: 0.00616479
+geodesic epoch 1060 | masked reconstruction MSE: 0.00723362
+geodesic epoch 1070 | masked reconstruction MSE: 0.00619005
+Saved geodesic checkpoint at epoch 1075: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1080 | masked reconstruction MSE: 0.00714142
+geodesic epoch 1090 | masked reconstruction MSE: 0.00722788
+Saved geodesic checkpoint at epoch 1100: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1100 | masked reconstruction MSE: 0.00927985
+geodesic epoch 1110 | masked reconstruction MSE: 0.00733844
+geodesic epoch 1120 | masked reconstruction MSE: 0.00564444
+Saved geodesic checkpoint at epoch 1125: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1130 | masked reconstruction MSE: 0.00614783
+geodesic epoch 1140 | masked reconstruction MSE: 0.00740400
+Saved geodesic checkpoint at epoch 1150: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1150 | masked reconstruction MSE: 0.00660327
+geodesic epoch 1160 | masked reconstruction MSE: 0.00659436
+geodesic epoch 1170 | masked reconstruction MSE: 0.00662226
+Saved geodesic checkpoint at epoch 1175: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1180 | masked reconstruction MSE: 0.00785796
+geodesic epoch 1190 | masked reconstruction MSE: 0.00812059
+Saved geodesic checkpoint at epoch 1200: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1200 | masked reconstruction MSE: 0.00689923
+geodesic epoch 1210 | masked reconstruction MSE: 0.00852151
+geodesic epoch 1220 | masked reconstruction MSE: 0.00841758
+Saved geodesic checkpoint at epoch 1225: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1230 | masked reconstruction MSE: 0.00844436
+geodesic epoch 1240 | masked reconstruction MSE: 0.00956376
+Saved geodesic checkpoint at epoch 1250: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1250 | masked reconstruction MSE: 0.00587637
+geodesic epoch 1260 | masked reconstruction MSE: 0.00711916
+geodesic epoch 1270 | masked reconstruction MSE: 0.00882379
+Saved geodesic checkpoint at epoch 1275: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1280 | masked reconstruction MSE: 0.00744618
+geodesic epoch 1290 | masked reconstruction MSE: 0.00977076
+Saved geodesic checkpoint at epoch 1300: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1300 | masked reconstruction MSE: 0.00615583
+geodesic epoch 1310 | masked reconstruction MSE: 0.00581073
+geodesic epoch 1320 | masked reconstruction MSE: 0.00794739
+Saved geodesic checkpoint at epoch 1325: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1330 | masked reconstruction MSE: 0.00788201
+geodesic epoch 1340 | masked reconstruction MSE: 0.00804077
+Saved geodesic checkpoint at epoch 1350: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1350 | masked reconstruction MSE: 0.00876565
+geodesic epoch 1360 | masked reconstruction MSE: 0.00744603
+geodesic epoch 1370 | masked reconstruction MSE: 0.00772922
+Saved geodesic checkpoint at epoch 1375: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1380 | masked reconstruction MSE: 0.00779463
+geodesic epoch 1390 | masked reconstruction MSE: 0.00646396
+Saved geodesic checkpoint at epoch 1400: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1400 | masked reconstruction MSE: 0.00603882
+geodesic epoch 1410 | masked reconstruction MSE: 0.00834916
+geodesic epoch 1420 | masked reconstruction MSE: 0.00772220
+Saved geodesic checkpoint at epoch 1425: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1430 | masked reconstruction MSE: 0.00773695
+geodesic epoch 1440 | masked reconstruction MSE: 0.00714180
+Saved geodesic checkpoint at epoch 1450: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1450 | masked reconstruction MSE: 0.00646980
+geodesic epoch 1460 | masked reconstruction MSE: 0.00730968
+geodesic epoch 1470 | masked reconstruction MSE: 0.00791800
+Saved geodesic checkpoint at epoch 1475: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1480 | masked reconstruction MSE: 0.00822963
+geodesic epoch 1490 | masked reconstruction MSE: 0.00582008
+Saved geodesic checkpoint at epoch 1500: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1500 | masked reconstruction MSE: 0.00634316
+geodesic epoch 1510 | masked reconstruction MSE: 0.00712447
+geodesic epoch 1520 | masked reconstruction MSE: 0.00544314
+Saved geodesic checkpoint at epoch 1525: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1530 | masked reconstruction MSE: 0.00568289
+geodesic epoch 1540 | masked reconstruction MSE: 0.00707212
+Saved geodesic checkpoint at epoch 1550: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1550 | masked reconstruction MSE: 0.00602987
+geodesic epoch 1560 | masked reconstruction MSE: 0.00694842
+geodesic epoch 1570 | masked reconstruction MSE: 0.00677687
+Saved geodesic checkpoint at epoch 1575: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1580 | masked reconstruction MSE: 0.00761376
+geodesic epoch 1590 | masked reconstruction MSE: 0.00690102
+Saved geodesic checkpoint at epoch 1600: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1600 | masked reconstruction MSE: 0.00486158
+geodesic epoch 1610 | masked reconstruction MSE: 0.00731900
+geodesic epoch 1620 | masked reconstruction MSE: 0.00621136
+Saved geodesic checkpoint at epoch 1625: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1630 | masked reconstruction MSE: 0.00799148
+geodesic epoch 1640 | masked reconstruction MSE: 0.00557462
+Saved geodesic checkpoint at epoch 1650: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1650 | masked reconstruction MSE: 0.00679784
+geodesic epoch 1660 | masked reconstruction MSE: 0.00716411
+geodesic epoch 1670 | masked reconstruction MSE: 0.00738415
+Saved geodesic checkpoint at epoch 1675: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1680 | masked reconstruction MSE: 0.00530409
+geodesic epoch 1690 | masked reconstruction MSE: 0.00703731
+Saved geodesic checkpoint at epoch 1700: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1700 | masked reconstruction MSE: 0.00705826
+geodesic epoch 1710 | masked reconstruction MSE: 0.00652221
+geodesic epoch 1720 | masked reconstruction MSE: 0.00684206
+Saved geodesic checkpoint at epoch 1725: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1730 | masked reconstruction MSE: 0.00571899
+geodesic epoch 1740 | masked reconstruction MSE: 0.00821584
+Saved geodesic checkpoint at epoch 1750: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1750 | masked reconstruction MSE: 0.00736766
+geodesic epoch 1760 | masked reconstruction MSE: 0.00541018
+geodesic epoch 1770 | masked reconstruction MSE: 0.00613802
+Saved geodesic checkpoint at epoch 1775: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1780 | masked reconstruction MSE: 0.00761989
+geodesic epoch 1790 | masked reconstruction MSE: 0.00736061
+Saved geodesic checkpoint at epoch 1800: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1800 | masked reconstruction MSE: 0.00506849
+geodesic epoch 1810 | masked reconstruction MSE: 0.00578409
+geodesic epoch 1820 | masked reconstruction MSE: 0.00551156
+Saved geodesic checkpoint at epoch 1825: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1830 | masked reconstruction MSE: 0.00426741
+geodesic epoch 1840 | masked reconstruction MSE: 0.00513638
+Saved geodesic checkpoint at epoch 1850: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1850 | masked reconstruction MSE: 0.00760678
+geodesic epoch 1860 | masked reconstruction MSE: 0.00507231
+geodesic epoch 1870 | masked reconstruction MSE: 0.00590076
+Saved geodesic checkpoint at epoch 1875: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1880 | masked reconstruction MSE: 0.00586703
+geodesic epoch 1890 | masked reconstruction MSE: 0.00608390
+Saved geodesic checkpoint at epoch 1900: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1900 | masked reconstruction MSE: 0.00543819
+geodesic epoch 1910 | masked reconstruction MSE: 0.00783017
+geodesic epoch 1920 | masked reconstruction MSE: 0.00766459
+Saved geodesic checkpoint at epoch 1925: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1930 | masked reconstruction MSE: 0.00573569
+geodesic epoch 1940 | masked reconstruction MSE: 0.00718709
+Saved geodesic checkpoint at epoch 1950: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1950 | masked reconstruction MSE: 0.00645092
+geodesic epoch 1960 | masked reconstruction MSE: 0.00595736
+geodesic epoch 1970 | masked reconstruction MSE: 0.00585993
+Saved geodesic checkpoint at epoch 1975: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 1980 | masked reconstruction MSE: 0.00665793
+geodesic epoch 1990 | masked reconstruction MSE: 0.00650689
+Saved geodesic checkpoint at epoch 2000: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2000 | masked reconstruction MSE: 0.00772199
+geodesic epoch 2010 | masked reconstruction MSE: 0.00575699
+geodesic epoch 2020 | masked reconstruction MSE: 0.00573287
+Saved geodesic checkpoint at epoch 2025: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2030 | masked reconstruction MSE: 0.00777929
+geodesic epoch 2040 | masked reconstruction MSE: 0.00705946
+Saved geodesic checkpoint at epoch 2050: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2050 | masked reconstruction MSE: 0.00571568
+geodesic epoch 2060 | masked reconstruction MSE: 0.00755574
+geodesic epoch 2070 | masked reconstruction MSE: 0.00649532
+Saved geodesic checkpoint at epoch 2075: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2080 | masked reconstruction MSE: 0.00675122
+geodesic epoch 2090 | masked reconstruction MSE: 0.00511666
+Saved geodesic checkpoint at epoch 2100: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2100 | masked reconstruction MSE: 0.00574601
+geodesic epoch 2110 | masked reconstruction MSE: 0.00480174
+geodesic epoch 2120 | masked reconstruction MSE: 0.00661030
+Saved geodesic checkpoint at epoch 2125: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2130 | masked reconstruction MSE: 0.00616577
+geodesic epoch 2140 | masked reconstruction MSE: 0.00493592
+Saved geodesic checkpoint at epoch 2150: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2150 | masked reconstruction MSE: 0.00521264
+geodesic epoch 2160 | masked reconstruction MSE: 0.00682984
+geodesic epoch 2170 | masked reconstruction MSE: 0.00614767
+Saved geodesic checkpoint at epoch 2175: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2180 | masked reconstruction MSE: 0.00452887
+geodesic epoch 2190 | masked reconstruction MSE: 0.00786217
+Saved geodesic checkpoint at epoch 2200: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2200 | masked reconstruction MSE: 0.00557468
+geodesic epoch 2210 | masked reconstruction MSE: 0.00539869
+geodesic epoch 2220 | masked reconstruction MSE: 0.00647065
+Saved geodesic checkpoint at epoch 2225: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2230 | masked reconstruction MSE: 0.00721925
+geodesic epoch 2240 | masked reconstruction MSE: 0.00506374
+Saved geodesic checkpoint at epoch 2250: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2250 | masked reconstruction MSE: 0.00533536
+geodesic epoch 2260 | masked reconstruction MSE: 0.00557833
+geodesic epoch 2270 | masked reconstruction MSE: 0.00715373
+Saved geodesic checkpoint at epoch 2275: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2280 | masked reconstruction MSE: 0.00567924
+geodesic epoch 2290 | masked reconstruction MSE: 0.00478838
+Saved geodesic checkpoint at epoch 2300: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2300 | masked reconstruction MSE: 0.00639592
+geodesic epoch 2310 | masked reconstruction MSE: 0.00588218
+geodesic epoch 2320 | masked reconstruction MSE: 0.00665558
+Saved geodesic checkpoint at epoch 2325: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2330 | masked reconstruction MSE: 0.00647182
+geodesic epoch 2340 | masked reconstruction MSE: 0.00593604
+Saved geodesic checkpoint at epoch 2350: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2350 | masked reconstruction MSE: 0.00476286
+geodesic epoch 2360 | masked reconstruction MSE: 0.00454087
+geodesic epoch 2370 | masked reconstruction MSE: 0.00458277
+Saved geodesic checkpoint at epoch 2375: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2380 | masked reconstruction MSE: 0.00530707
+geodesic epoch 2390 | masked reconstruction MSE: 0.00613379
+Saved geodesic checkpoint at epoch 2400: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2400 | masked reconstruction MSE: 0.00600498
+geodesic epoch 2410 | masked reconstruction MSE: 0.00533404
+geodesic epoch 2420 | masked reconstruction MSE: 0.00529789
+Saved geodesic checkpoint at epoch 2425: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2430 | masked reconstruction MSE: 0.00378599
+geodesic epoch 2440 | masked reconstruction MSE: 0.00686873
+Saved geodesic checkpoint at epoch 2450: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2450 | masked reconstruction MSE: 0.00454501
+geodesic epoch 2460 | masked reconstruction MSE: 0.00523034
+geodesic epoch 2470 | masked reconstruction MSE: 0.00517933
+Saved geodesic checkpoint at epoch 2475: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2480 | masked reconstruction MSE: 0.00429752
+geodesic epoch 2490 | masked reconstruction MSE: 0.00651475
+Saved geodesic checkpoint at epoch 2500: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2500 | masked reconstruction MSE: 0.00472337
+geodesic epoch 2510 | masked reconstruction MSE: 0.00825489
+geodesic epoch 2520 | masked reconstruction MSE: 0.00846761
+Saved geodesic checkpoint at epoch 2525: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2530 | masked reconstruction MSE: 0.00664514
+geodesic epoch 2540 | masked reconstruction MSE: 0.00447685
+Saved geodesic checkpoint at epoch 2550: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2550 | masked reconstruction MSE: 0.00777030
+geodesic epoch 2560 | masked reconstruction MSE: 0.00510018
+geodesic epoch 2570 | masked reconstruction MSE: 0.00632128
+Saved geodesic checkpoint at epoch 2575: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2580 | masked reconstruction MSE: 0.00562164
+geodesic epoch 2590 | masked reconstruction MSE: 0.00600309
+Saved geodesic checkpoint at epoch 2600: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2600 | masked reconstruction MSE: 0.00526831
+geodesic epoch 2610 | masked reconstruction MSE: 0.00836074
+geodesic epoch 2620 | masked reconstruction MSE: 0.00495717
+Saved geodesic checkpoint at epoch 2625: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2630 | masked reconstruction MSE: 0.00511442
+geodesic epoch 2640 | masked reconstruction MSE: 0.00788070
+Saved geodesic checkpoint at epoch 2650: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2650 | masked reconstruction MSE: 0.00543891
+geodesic epoch 2660 | masked reconstruction MSE: 0.00425963
+geodesic epoch 2670 | masked reconstruction MSE: 0.00596301
+Saved geodesic checkpoint at epoch 2675: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2680 | masked reconstruction MSE: 0.00637663
+geodesic epoch 2690 | masked reconstruction MSE: 0.00600635
+Saved geodesic checkpoint at epoch 2700: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2700 | masked reconstruction MSE: 0.00636390
+geodesic epoch 2710 | masked reconstruction MSE: 0.00439882
+geodesic epoch 2720 | masked reconstruction MSE: 0.00541312
+Saved geodesic checkpoint at epoch 2725: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2730 | masked reconstruction MSE: 0.00486579
+geodesic epoch 2740 | masked reconstruction MSE: 0.00606179
+Saved geodesic checkpoint at epoch 2750: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2750 | masked reconstruction MSE: 0.00447332
+geodesic epoch 2760 | masked reconstruction MSE: 0.00689114
+geodesic epoch 2770 | masked reconstruction MSE: 0.00447739
+Saved geodesic checkpoint at epoch 2775: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2780 | masked reconstruction MSE: 0.00522559
+geodesic epoch 2790 | masked reconstruction MSE: 0.00485368
+Saved geodesic checkpoint at epoch 2800: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2800 | masked reconstruction MSE: 0.00418350
+geodesic epoch 2810 | masked reconstruction MSE: 0.00608778
+geodesic epoch 2820 | masked reconstruction MSE: 0.00580966
+Saved geodesic checkpoint at epoch 2825: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2830 | masked reconstruction MSE: 0.00460964
+geodesic epoch 2840 | masked reconstruction MSE: 0.00534220
+Saved geodesic checkpoint at epoch 2850: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2850 | masked reconstruction MSE: 0.00414957
+geodesic epoch 2860 | masked reconstruction MSE: 0.00512251
+geodesic epoch 2870 | masked reconstruction MSE: 0.00531168
+Saved geodesic checkpoint at epoch 2875: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2880 | masked reconstruction MSE: 0.00696727
+geodesic epoch 2890 | masked reconstruction MSE: 0.00659055
+Saved geodesic checkpoint at epoch 2900: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2900 | masked reconstruction MSE: 0.00540651
+geodesic epoch 2910 | masked reconstruction MSE: 0.00645565
+geodesic epoch 2920 | masked reconstruction MSE: 0.00363449
+Saved geodesic checkpoint at epoch 2925: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2930 | masked reconstruction MSE: 0.00511899
+geodesic epoch 2940 | masked reconstruction MSE: 0.00558463
+Saved geodesic checkpoint at epoch 2950: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2950 | masked reconstruction MSE: 0.00627238
+geodesic epoch 2960 | masked reconstruction MSE: 0.00945559
+geodesic epoch 2970 | masked reconstruction MSE: 0.00446048
+Saved geodesic checkpoint at epoch 2975: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic epoch 2980 | masked reconstruction MSE: 0.00560666
+geodesic epoch 2990 | masked reconstruction MSE: 0.00474564
+geodesic epoch 2999 | masked reconstruction MSE: 0.00768230
+Saved geodesic checkpoint at epoch 3000: runs/jax_tmp_e65_5d_large/checkpoint_geodesic.pkl
+geodesic optimization: 1522.06 seconds.
+
+Training free model...
+free epoch 0000 | masked reconstruction MSE: 0.82814829
+free epoch 0010 | masked reconstruction MSE: 0.41066143
+free epoch 0020 | masked reconstruction MSE: 0.18357744
+Saved free checkpoint at epoch 25: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0030 | masked reconstruction MSE: 0.03591809
+free epoch 0040 | masked reconstruction MSE: 0.01058411
+Saved free checkpoint at epoch 50: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0050 | masked reconstruction MSE: 0.00930264
+free epoch 0060 | masked reconstruction MSE: 0.00841385
+free epoch 0070 | masked reconstruction MSE: 0.00694765
+Saved free checkpoint at epoch 75: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0080 | masked reconstruction MSE: 0.00669218
+free epoch 0090 | masked reconstruction MSE: 0.00810045
+Saved free checkpoint at epoch 100: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0100 | masked reconstruction MSE: 0.00850517
+free epoch 0110 | masked reconstruction MSE: 0.00819212
+free epoch 0120 | masked reconstruction MSE: 0.00905078
+Saved free checkpoint at epoch 125: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0130 | masked reconstruction MSE: 0.00799664
+free epoch 0140 | masked reconstruction MSE: 0.00810768
+Saved free checkpoint at epoch 150: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0150 | masked reconstruction MSE: 0.00964560
+free epoch 0160 | masked reconstruction MSE: 0.00912906
+free epoch 0170 | masked reconstruction MSE: 0.00971385
+Saved free checkpoint at epoch 175: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0180 | masked reconstruction MSE: 0.00789623
+free epoch 0190 | masked reconstruction MSE: 0.00826132
+Saved free checkpoint at epoch 200: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0200 | masked reconstruction MSE: 0.00799163
+free epoch 0210 | masked reconstruction MSE: 0.00958869
+free epoch 0220 | masked reconstruction MSE: 0.00798865
+Saved free checkpoint at epoch 225: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0230 | masked reconstruction MSE: 0.00703759
+free epoch 0240 | masked reconstruction MSE: 0.00702363
+Saved free checkpoint at epoch 250: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0250 | masked reconstruction MSE: 0.00714129
+free epoch 0260 | masked reconstruction MSE: 0.00779798
+free epoch 0270 | masked reconstruction MSE: 0.01012036
+Saved free checkpoint at epoch 275: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0280 | masked reconstruction MSE: 0.00665117
+free epoch 0290 | masked reconstruction MSE: 0.00904958
+Saved free checkpoint at epoch 300: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0300 | masked reconstruction MSE: 0.00649364
+free epoch 0310 | masked reconstruction MSE: 0.00799672
+free epoch 0320 | masked reconstruction MSE: 0.00884994
+Saved free checkpoint at epoch 325: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0330 | masked reconstruction MSE: 0.00861503
+free epoch 0340 | masked reconstruction MSE: 0.00670570
+Saved free checkpoint at epoch 350: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0350 | masked reconstruction MSE: 0.00801811
+free epoch 0360 | masked reconstruction MSE: 0.00795514
+free epoch 0370 | masked reconstruction MSE: 0.00847212
+Saved free checkpoint at epoch 375: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0380 | masked reconstruction MSE: 0.00951008
+free epoch 0390 | masked reconstruction MSE: 0.00797830
+Saved free checkpoint at epoch 400: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0400 | masked reconstruction MSE: 0.00608198
+free epoch 0410 | masked reconstruction MSE: 0.01076036
+free epoch 0420 | masked reconstruction MSE: 0.00875853
+Saved free checkpoint at epoch 425: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0430 | masked reconstruction MSE: 0.00693842
+free epoch 0440 | masked reconstruction MSE: 0.00755195
+Saved free checkpoint at epoch 450: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0450 | masked reconstruction MSE: 0.00689694
+free epoch 0460 | masked reconstruction MSE: 0.00857206
+free epoch 0470 | masked reconstruction MSE: 0.01087436
+Saved free checkpoint at epoch 475: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0480 | masked reconstruction MSE: 0.00792443
+free epoch 0490 | masked reconstruction MSE: 0.00699300
+Saved free checkpoint at epoch 500: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0500 | masked reconstruction MSE: 0.00733097
+free epoch 0510 | masked reconstruction MSE: 0.00827158
+free epoch 0520 | masked reconstruction MSE: 0.00794915
+Saved free checkpoint at epoch 525: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0530 | masked reconstruction MSE: 0.00896233
+free epoch 0540 | masked reconstruction MSE: 0.00652272
+Saved free checkpoint at epoch 550: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0550 | masked reconstruction MSE: 0.00629715
+free epoch 0560 | masked reconstruction MSE: 0.00881958
+free epoch 0570 | masked reconstruction MSE: 0.00862976
+Saved free checkpoint at epoch 575: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0580 | masked reconstruction MSE: 0.00800803
+free epoch 0590 | masked reconstruction MSE: 0.00969009
+Saved free checkpoint at epoch 600: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0600 | masked reconstruction MSE: 0.00715010
+free epoch 0610 | masked reconstruction MSE: 0.00621651
+free epoch 0620 | masked reconstruction MSE: 0.00988547
+Saved free checkpoint at epoch 625: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0630 | masked reconstruction MSE: 0.00951029
+free epoch 0640 | masked reconstruction MSE: 0.00847593
+Saved free checkpoint at epoch 650: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0650 | masked reconstruction MSE: 0.00797310
+free epoch 0660 | masked reconstruction MSE: 0.00885209
+free epoch 0670 | masked reconstruction MSE: 0.00830113
+Saved free checkpoint at epoch 675: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0680 | masked reconstruction MSE: 0.00740429
+free epoch 0690 | masked reconstruction MSE: 0.00849620
+Saved free checkpoint at epoch 700: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0700 | masked reconstruction MSE: 0.00927589
+free epoch 0710 | masked reconstruction MSE: 0.00627033
+free epoch 0720 | masked reconstruction MSE: 0.00881279
+Saved free checkpoint at epoch 725: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0730 | masked reconstruction MSE: 0.00693246
+free epoch 0740 | masked reconstruction MSE: 0.00840178
+Saved free checkpoint at epoch 750: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0750 | masked reconstruction MSE: 0.00851531
+free epoch 0760 | masked reconstruction MSE: 0.00833933
+free epoch 0770 | masked reconstruction MSE: 0.00854785
+Saved free checkpoint at epoch 775: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0780 | masked reconstruction MSE: 0.00551554
+free epoch 0790 | masked reconstruction MSE: 0.00774174
+Saved free checkpoint at epoch 800: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0800 | masked reconstruction MSE: 0.00674875
+free epoch 0810 | masked reconstruction MSE: 0.00948121
+free epoch 0820 | masked reconstruction MSE: 0.00630144
+Saved free checkpoint at epoch 825: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0830 | masked reconstruction MSE: 0.00667227
+free epoch 0840 | masked reconstruction MSE: 0.00630509
+Saved free checkpoint at epoch 850: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0850 | masked reconstruction MSE: 0.00971846
+free epoch 0860 | masked reconstruction MSE: 0.00594348
+free epoch 0870 | masked reconstruction MSE: 0.00677884
+Saved free checkpoint at epoch 875: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0880 | masked reconstruction MSE: 0.00827290
+free epoch 0890 | masked reconstruction MSE: 0.00933041
+Saved free checkpoint at epoch 900: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0900 | masked reconstruction MSE: 0.00766914
+free epoch 0910 | masked reconstruction MSE: 0.00737307
+free epoch 0920 | masked reconstruction MSE: 0.00736912
+Saved free checkpoint at epoch 925: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0930 | masked reconstruction MSE: 0.00660089
+free epoch 0940 | masked reconstruction MSE: 0.01001024
+Saved free checkpoint at epoch 950: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0950 | masked reconstruction MSE: 0.00720540
+free epoch 0960 | masked reconstruction MSE: 0.00728405
+free epoch 0970 | masked reconstruction MSE: 0.00957286
+Saved free checkpoint at epoch 975: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 0980 | masked reconstruction MSE: 0.00746306
+free epoch 0990 | masked reconstruction MSE: 0.00786790
+Saved free checkpoint at epoch 1000: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1000 | masked reconstruction MSE: 0.00714863
+free epoch 1010 | masked reconstruction MSE: 0.01127340
+free epoch 1020 | masked reconstruction MSE: 0.00960107
+Saved free checkpoint at epoch 1025: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1030 | masked reconstruction MSE: 0.00711353
+free epoch 1040 | masked reconstruction MSE: 0.00704983
+Saved free checkpoint at epoch 1050: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1050 | masked reconstruction MSE: 0.00665203
+free epoch 1060 | masked reconstruction MSE: 0.00808249
+free epoch 1070 | masked reconstruction MSE: 0.00695487
+Saved free checkpoint at epoch 1075: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1080 | masked reconstruction MSE: 0.00740695
+free epoch 1090 | masked reconstruction MSE: 0.00777692
+Saved free checkpoint at epoch 1100: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1100 | masked reconstruction MSE: 0.00975479
+free epoch 1110 | masked reconstruction MSE: 0.00797174
+free epoch 1120 | masked reconstruction MSE: 0.00630042
+Saved free checkpoint at epoch 1125: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1130 | masked reconstruction MSE: 0.00671781
+free epoch 1140 | masked reconstruction MSE: 0.00768413
+Saved free checkpoint at epoch 1150: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1150 | masked reconstruction MSE: 0.00681377
+free epoch 1160 | masked reconstruction MSE: 0.00769019
+free epoch 1170 | masked reconstruction MSE: 0.00687757
+Saved free checkpoint at epoch 1175: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1180 | masked reconstruction MSE: 0.00789574
+free epoch 1190 | masked reconstruction MSE: 0.00827686
+Saved free checkpoint at epoch 1200: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1200 | masked reconstruction MSE: 0.00734234
+free epoch 1210 | masked reconstruction MSE: 0.00919943
+free epoch 1220 | masked reconstruction MSE: 0.00902222
+Saved free checkpoint at epoch 1225: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1230 | masked reconstruction MSE: 0.00940950
+free epoch 1240 | masked reconstruction MSE: 0.00955381
+Saved free checkpoint at epoch 1250: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1250 | masked reconstruction MSE: 0.00663152
+free epoch 1260 | masked reconstruction MSE: 0.00696092
+free epoch 1270 | masked reconstruction MSE: 0.00957997
+Saved free checkpoint at epoch 1275: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1280 | masked reconstruction MSE: 0.00798469
+free epoch 1290 | masked reconstruction MSE: 0.01004022
+Saved free checkpoint at epoch 1300: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1300 | masked reconstruction MSE: 0.00630525
+free epoch 1310 | masked reconstruction MSE: 0.00637103
+free epoch 1320 | masked reconstruction MSE: 0.00817138
+Saved free checkpoint at epoch 1325: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1330 | masked reconstruction MSE: 0.00852308
+free epoch 1340 | masked reconstruction MSE: 0.00877094
+Saved free checkpoint at epoch 1350: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1350 | masked reconstruction MSE: 0.00850069
+free epoch 1360 | masked reconstruction MSE: 0.00759874
+free epoch 1370 | masked reconstruction MSE: 0.00913503
+Saved free checkpoint at epoch 1375: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1380 | masked reconstruction MSE: 0.00775656
+free epoch 1390 | masked reconstruction MSE: 0.00657303
+Saved free checkpoint at epoch 1400: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1400 | masked reconstruction MSE: 0.00684410
+free epoch 1410 | masked reconstruction MSE: 0.00920004
+free epoch 1420 | masked reconstruction MSE: 0.00822959
+Saved free checkpoint at epoch 1425: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1430 | masked reconstruction MSE: 0.00777874
+free epoch 1440 | masked reconstruction MSE: 0.00788450
+Saved free checkpoint at epoch 1450: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1450 | masked reconstruction MSE: 0.00714732
+free epoch 1460 | masked reconstruction MSE: 0.00784171
+free epoch 1470 | masked reconstruction MSE: 0.00833592
+Saved free checkpoint at epoch 1475: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1480 | masked reconstruction MSE: 0.00853841
+free epoch 1490 | masked reconstruction MSE: 0.00723089
+Saved free checkpoint at epoch 1500: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1500 | masked reconstruction MSE: 0.00656216
+free epoch 1510 | masked reconstruction MSE: 0.00809358
+free epoch 1520 | masked reconstruction MSE: 0.00602251
+Saved free checkpoint at epoch 1525: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1530 | masked reconstruction MSE: 0.00591630
+free epoch 1540 | masked reconstruction MSE: 0.00744039
+Saved free checkpoint at epoch 1550: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1550 | masked reconstruction MSE: 0.00663773
+free epoch 1560 | masked reconstruction MSE: 0.00723624
+free epoch 1570 | masked reconstruction MSE: 0.00763041
+Saved free checkpoint at epoch 1575: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1580 | masked reconstruction MSE: 0.00794137
+free epoch 1590 | masked reconstruction MSE: 0.00724463
+Saved free checkpoint at epoch 1600: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1600 | masked reconstruction MSE: 0.00611389
+free epoch 1610 | masked reconstruction MSE: 0.00800693
+free epoch 1620 | masked reconstruction MSE: 0.00739693
+Saved free checkpoint at epoch 1625: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1630 | masked reconstruction MSE: 0.00921340
+free epoch 1640 | masked reconstruction MSE: 0.00623440
+Saved free checkpoint at epoch 1650: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1650 | masked reconstruction MSE: 0.00725058
+free epoch 1660 | masked reconstruction MSE: 0.00752430
+free epoch 1670 | masked reconstruction MSE: 0.00781993
+Saved free checkpoint at epoch 1675: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1680 | masked reconstruction MSE: 0.00584593
+free epoch 1690 | masked reconstruction MSE: 0.00749574
+Saved free checkpoint at epoch 1700: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1700 | masked reconstruction MSE: 0.00840637
+free epoch 1710 | masked reconstruction MSE: 0.00590732
+free epoch 1720 | masked reconstruction MSE: 0.00723758
+Saved free checkpoint at epoch 1725: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1730 | masked reconstruction MSE: 0.00601072
+free epoch 1740 | masked reconstruction MSE: 0.00765110
+Saved free checkpoint at epoch 1750: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1750 | masked reconstruction MSE: 0.00734809
+free epoch 1760 | masked reconstruction MSE: 0.00590347
+free epoch 1770 | masked reconstruction MSE: 0.00686245
+Saved free checkpoint at epoch 1775: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1780 | masked reconstruction MSE: 0.00853729
+free epoch 1790 | masked reconstruction MSE: 0.00775136
+Saved free checkpoint at epoch 1800: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1800 | masked reconstruction MSE: 0.00565681
+free epoch 1810 | masked reconstruction MSE: 0.00641652
+free epoch 1820 | masked reconstruction MSE: 0.00613854
+Saved free checkpoint at epoch 1825: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1830 | masked reconstruction MSE: 0.00511886
+free epoch 1840 | masked reconstruction MSE: 0.00534754
+Saved free checkpoint at epoch 1850: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1850 | masked reconstruction MSE: 0.00819026
+free epoch 1860 | masked reconstruction MSE: 0.00602491
+free epoch 1870 | masked reconstruction MSE: 0.00663873
+Saved free checkpoint at epoch 1875: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1880 | masked reconstruction MSE: 0.00670081
+free epoch 1890 | masked reconstruction MSE: 0.00591504
+Saved free checkpoint at epoch 1900: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1900 | masked reconstruction MSE: 0.00582871
+free epoch 1910 | masked reconstruction MSE: 0.00787310
+free epoch 1920 | masked reconstruction MSE: 0.00806417
+Saved free checkpoint at epoch 1925: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1930 | masked reconstruction MSE: 0.00593762
+free epoch 1940 | masked reconstruction MSE: 0.00681440
+Saved free checkpoint at epoch 1950: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1950 | masked reconstruction MSE: 0.00620399
+free epoch 1960 | masked reconstruction MSE: 0.00686669
+free epoch 1970 | masked reconstruction MSE: 0.00573744
+Saved free checkpoint at epoch 1975: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 1980 | masked reconstruction MSE: 0.00661361
+free epoch 1990 | masked reconstruction MSE: 0.00683954
+Saved free checkpoint at epoch 2000: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2000 | masked reconstruction MSE: 0.00774915
+free epoch 2010 | masked reconstruction MSE: 0.00586586
+free epoch 2020 | masked reconstruction MSE: 0.00647204
+Saved free checkpoint at epoch 2025: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2030 | masked reconstruction MSE: 0.00832501
+free epoch 2040 | masked reconstruction MSE: 0.00715372
+Saved free checkpoint at epoch 2050: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2050 | masked reconstruction MSE: 0.00574372
+free epoch 2060 | masked reconstruction MSE: 0.00784348
+free epoch 2070 | masked reconstruction MSE: 0.00644363
+Saved free checkpoint at epoch 2075: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2080 | masked reconstruction MSE: 0.00628561
+free epoch 2090 | masked reconstruction MSE: 0.00568721
+Saved free checkpoint at epoch 2100: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2100 | masked reconstruction MSE: 0.00597254
+free epoch 2110 | masked reconstruction MSE: 0.00522189
+free epoch 2120 | masked reconstruction MSE: 0.00667566
+Saved free checkpoint at epoch 2125: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2130 | masked reconstruction MSE: 0.00665713
+free epoch 2140 | masked reconstruction MSE: 0.00595970
+Saved free checkpoint at epoch 2150: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2150 | masked reconstruction MSE: 0.00562382
+free epoch 2160 | masked reconstruction MSE: 0.00691449
+free epoch 2170 | masked reconstruction MSE: 0.00664044
+Saved free checkpoint at epoch 2175: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2180 | masked reconstruction MSE: 0.00487875
+free epoch 2190 | masked reconstruction MSE: 0.00872601
+Saved free checkpoint at epoch 2200: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2200 | masked reconstruction MSE: 0.00674858
+free epoch 2210 | masked reconstruction MSE: 0.00606375
+free epoch 2220 | masked reconstruction MSE: 0.00701532
+Saved free checkpoint at epoch 2225: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2230 | masked reconstruction MSE: 0.00795230
+free epoch 2240 | masked reconstruction MSE: 0.00572003
+Saved free checkpoint at epoch 2250: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2250 | masked reconstruction MSE: 0.00598835
+free epoch 2260 | masked reconstruction MSE: 0.00668698
+free epoch 2270 | masked reconstruction MSE: 0.00707282
+Saved free checkpoint at epoch 2275: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2280 | masked reconstruction MSE: 0.00536344
+free epoch 2290 | masked reconstruction MSE: 0.00571630
+Saved free checkpoint at epoch 2300: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2300 | masked reconstruction MSE: 0.00660397
+free epoch 2310 | masked reconstruction MSE: 0.00655620
+free epoch 2320 | masked reconstruction MSE: 0.00730883
+Saved free checkpoint at epoch 2325: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2330 | masked reconstruction MSE: 0.00699257
+free epoch 2340 | masked reconstruction MSE: 0.00593762
+Saved free checkpoint at epoch 2350: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2350 | masked reconstruction MSE: 0.00528734
+free epoch 2360 | masked reconstruction MSE: 0.00536204
+free epoch 2370 | masked reconstruction MSE: 0.00464501
+Saved free checkpoint at epoch 2375: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2380 | masked reconstruction MSE: 0.00581462
+free epoch 2390 | masked reconstruction MSE: 0.00731501
+Saved free checkpoint at epoch 2400: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2400 | masked reconstruction MSE: 0.00697836
+free epoch 2410 | masked reconstruction MSE: 0.00551982
+free epoch 2420 | masked reconstruction MSE: 0.00532500
+Saved free checkpoint at epoch 2425: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2430 | masked reconstruction MSE: 0.00405842
+free epoch 2440 | masked reconstruction MSE: 0.00704186
+Saved free checkpoint at epoch 2450: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2450 | masked reconstruction MSE: 0.00468285
+free epoch 2460 | masked reconstruction MSE: 0.00525386
+free epoch 2470 | masked reconstruction MSE: 0.00530536
+Saved free checkpoint at epoch 2475: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2480 | masked reconstruction MSE: 0.00427913
+free epoch 2490 | masked reconstruction MSE: 0.00673736
+Saved free checkpoint at epoch 2500: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2500 | masked reconstruction MSE: 0.00549950
+free epoch 2510 | masked reconstruction MSE: 0.00817067
+free epoch 2520 | masked reconstruction MSE: 0.00774932
+Saved free checkpoint at epoch 2525: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2530 | masked reconstruction MSE: 0.00657284
+free epoch 2540 | masked reconstruction MSE: 0.00555393
+Saved free checkpoint at epoch 2550: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2550 | masked reconstruction MSE: 0.00743783
+free epoch 2560 | masked reconstruction MSE: 0.00511987
+free epoch 2570 | masked reconstruction MSE: 0.00671757
+Saved free checkpoint at epoch 2575: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2580 | masked reconstruction MSE: 0.00651534
+free epoch 2590 | masked reconstruction MSE: 0.00658892
+Saved free checkpoint at epoch 2600: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2600 | masked reconstruction MSE: 0.00557532
+free epoch 2610 | masked reconstruction MSE: 0.00796901
+free epoch 2620 | masked reconstruction MSE: 0.00517863
+Saved free checkpoint at epoch 2625: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2630 | masked reconstruction MSE: 0.00543082
+free epoch 2640 | masked reconstruction MSE: 0.00828235
+Saved free checkpoint at epoch 2650: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2650 | masked reconstruction MSE: 0.00516880
+free epoch 2660 | masked reconstruction MSE: 0.00378780
+free epoch 2670 | masked reconstruction MSE: 0.00642519
+Saved free checkpoint at epoch 2675: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2680 | masked reconstruction MSE: 0.00627788
+free epoch 2690 | masked reconstruction MSE: 0.00690255
+Saved free checkpoint at epoch 2700: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2700 | masked reconstruction MSE: 0.00635633
+free epoch 2710 | masked reconstruction MSE: 0.00464738
+free epoch 2720 | masked reconstruction MSE: 0.00563947
+Saved free checkpoint at epoch 2725: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2730 | masked reconstruction MSE: 0.00529517
+free epoch 2740 | masked reconstruction MSE: 0.00854841
+Saved free checkpoint at epoch 2750: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2750 | masked reconstruction MSE: 0.00507704
+free epoch 2760 | masked reconstruction MSE: 0.00720807
+free epoch 2770 | masked reconstruction MSE: 0.00514929
+Saved free checkpoint at epoch 2775: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2780 | masked reconstruction MSE: 0.00604901
+free epoch 2790 | masked reconstruction MSE: 0.00524586
+Saved free checkpoint at epoch 2800: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2800 | masked reconstruction MSE: 0.00487241
+free epoch 2810 | masked reconstruction MSE: 0.00602123
+free epoch 2820 | masked reconstruction MSE: 0.00620173
+Saved free checkpoint at epoch 2825: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2830 | masked reconstruction MSE: 0.00413566
+free epoch 2840 | masked reconstruction MSE: 0.00563265
+Saved free checkpoint at epoch 2850: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2850 | masked reconstruction MSE: 0.00426022
+free epoch 2860 | masked reconstruction MSE: 0.00508793
+free epoch 2870 | masked reconstruction MSE: 0.00548172
+Saved free checkpoint at epoch 2875: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2880 | masked reconstruction MSE: 0.00639393
+free epoch 2890 | masked reconstruction MSE: 0.00673709
+Saved free checkpoint at epoch 2900: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2900 | masked reconstruction MSE: 0.00631660
+free epoch 2910 | masked reconstruction MSE: 0.00712288
+free epoch 2920 | masked reconstruction MSE: 0.00373303
+Saved free checkpoint at epoch 2925: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2930 | masked reconstruction MSE: 0.00508287
+free epoch 2940 | masked reconstruction MSE: 0.00543351
+Saved free checkpoint at epoch 2950: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2950 | masked reconstruction MSE: 0.00569697
+free epoch 2960 | masked reconstruction MSE: 0.00917288
+free epoch 2970 | masked reconstruction MSE: 0.00561545
+Saved free checkpoint at epoch 2975: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free epoch 2980 | masked reconstruction MSE: 0.00568012
+free epoch 2990 | masked reconstruction MSE: 0.00711096
+free epoch 2999 | masked reconstruction MSE: 0.00681829
+Saved free checkpoint at epoch 3000: runs/jax_tmp_e65_5d_large/checkpoint_free.pkl
+free optimization: 222.69 seconds.
+
+--- executing notebook cell 3 ---
+
+========================================================================
+E65 GEODESIC VERSUS FREE-DYNAMICS COMPARISON
+========================================================================
+Metric                 |             Geodesic |                 Free
+------------------------------------------------------------------------
+Train MSE              |           0.00567720 |           0.00579860
+Train R2               |           0.30862683 |           0.29384332
+Train r                |           0.55713162 |           0.54313853
+Forecast MSE           |           0.01047682 |           0.00868286
+Forecast R2            |          -0.38140080 |          -0.14486195
+Forecast r             |           0.15266925 |           0.16999384
+========================================================================
+Saved outputs to runs/jax_tmp_e65_5d_large
+Finished: Sun Oct 25 13:35:53 EDT 2026, exit status: 0

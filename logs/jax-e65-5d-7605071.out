@@ -1,0 +1,73 @@
+Batch shell started: Sun Oct 25 13:02:04 EDT 2026
+Host: r1t06
+Working directory before setup: /home/4429/projects/Neural_VAE_ODE
+Job ID: 7605071
+Host: r1t06
+Started: Sun Oct 25 13:02:04 EDT 2026
+Python: /home/4429/envs/odevae/bin/python
+Python 3.11.15
+Sun Oct 25 13:02:06 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   46C    P0             28W /   70W |       1MiB /  15360MiB |      8%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+JAX: 0.4.28
+Optax: 0.2.3
+NumPy: 2.4.3
+Matplotlib: 3.10.8
+Devices: [cuda(id=0)]
+
+--- executing notebook cell 0 ---
+JAX devices: [cuda(id=0)]
+E65: 188 trials, train=150, heldout=38
+Trial lengths: 29-78 frames; neurons: 375 raw -> 352 modeled
+Encoder input: first 10 neural frames; heldout forecast begins at frame 10.
+Latent dimensions: 5; precision: float64; resume: False.
+
+--- executing notebook cell 1 ---
+
+--- executing notebook cell 2 ---
+Geodesic parameters: 536697
+Free parameters:     536367
+
+Training geodesic model...
+geodesic epoch 0000 | masked reconstruction MSE: 0.47803403
+Saved geodesic checkpoint at epoch 1: runs/jax_tmp_e65_smoke/checkpoint_geodesic.pkl
+geodesic optimization: 18.26 seconds.
+
+Training free model...
+free epoch 0000 | masked reconstruction MSE: 0.82814829
+Saved free checkpoint at epoch 1: runs/jax_tmp_e65_smoke/checkpoint_free.pkl
+free optimization: 2.67 seconds.
+
+--- executing notebook cell 3 ---
+
+========================================================================
+E65 GEODESIC VERSUS FREE-DYNAMICS COMPARISON
+========================================================================
+Metric                 |             Geodesic |                 Free
+------------------------------------------------------------------------
+Train MSE              |           0.47431376 |           0.87449336
+Train R2               |         -56.76221139 |        -105.49632034
+Train r                |          -0.00061696 |           0.00782183
+Forecast MSE           |           0.47536362 |           0.49136083
+Forecast R2            |         -61.67816001 |         -63.78744227
+Forecast r             |          -0.00064576 |           0.01121442
+========================================================================
+Saved outputs to runs/jax_tmp_e65_smoke
+Finished: Sun Oct 25 13:02:54 EDT 2026, exit status: 0

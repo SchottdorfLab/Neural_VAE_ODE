@@ -1,0 +1,28 @@
+Batch shell started: Sun Oct 25 12:13:12 EDT 2026
+Host: r1t06
+Working directory before setup: /home/4429/projects/Neural_VAE_ODE
+Job ID: 7604818
+Host: r1t06
+Started: Sun Oct 25 12:13:12 EDT 2026
+Python: /home/4429/envs/odevae/bin/python
+Python 3.11.15
+Sun Oct 25 12:13:13 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.28.03              Driver Version: 560.28.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  Tesla T4                       Off |   00000000:81:00.0 Off |                    0 |
+| N/A   46C    P0             28W /   70W |       1MiB /  15360MiB |      8%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+

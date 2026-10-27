@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ModuleNotFoundError: No module named 'jax'
+JAX dependency/GPU startup check failed.
+Run: bash scripts/install_jax_environment.sh

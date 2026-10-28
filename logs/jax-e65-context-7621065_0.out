@@ -1,0 +1,146 @@
+Context scan task: 0
+Context frames: 2
+Trials: 60 (fixed seed 42)
+Epochs: 1000
+Output: runs/jax_e65_context_scan_n60_c2_e1000
+Host: r1t01
+Started: Wed Oct 28 16:58:41 EDT 2026
+JAX devices: [cuda(id=0)]
+
+--- executing notebook cell 0 ---
+JAX devices: [cuda(id=0)]
+E65: 60 trials, train=48, heldout=12
+Trial lengths: 29-64 frames; neurons: 375 raw -> 281 modeled
+Encoder input: first 2 neural frames; heldout forecast begins at frame 2.
+Latent dimensions: 5; precision: float64; resume: False.
+
+--- executing notebook cell 1 ---
+
+--- executing notebook cell 2 ---
+Geodesic parameters: 148914
+Free parameters:     148584
+
+Training geodesic model...
+geodesic epoch 0000 | masked reconstruction MSE: 0.47704154
+geodesic epoch 0025 | masked reconstruction MSE: 0.03730823
+geodesic epoch 0050 | masked reconstruction MSE: 0.01083560
+geodesic epoch 0075 | masked reconstruction MSE: 0.01171287
+Saved geodesic checkpoint at epoch 100: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0100 | masked reconstruction MSE: 0.00988229
+geodesic epoch 0125 | masked reconstruction MSE: 0.01088216
+geodesic epoch 0150 | masked reconstruction MSE: 0.01192277
+geodesic epoch 0175 | masked reconstruction MSE: 0.01105298
+Saved geodesic checkpoint at epoch 200: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0200 | masked reconstruction MSE: 0.01149874
+geodesic epoch 0225 | masked reconstruction MSE: 0.01230295
+geodesic epoch 0250 | masked reconstruction MSE: 0.00981110
+geodesic epoch 0275 | masked reconstruction MSE: 0.01135762
+Saved geodesic checkpoint at epoch 300: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0300 | masked reconstruction MSE: 0.01065291
+geodesic epoch 0325 | masked reconstruction MSE: 0.00984997
+geodesic epoch 0350 | masked reconstruction MSE: 0.01075529
+geodesic epoch 0375 | masked reconstruction MSE: 0.01035973
+Saved geodesic checkpoint at epoch 400: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0400 | masked reconstruction MSE: 0.01208346
+geodesic epoch 0425 | masked reconstruction MSE: 0.01113173
+geodesic epoch 0450 | masked reconstruction MSE: 0.01060878
+geodesic epoch 0475 | masked reconstruction MSE: 0.01014767
+Saved geodesic checkpoint at epoch 500: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0500 | masked reconstruction MSE: 0.01082133
+geodesic epoch 0525 | masked reconstruction MSE: 0.00862566
+geodesic epoch 0550 | masked reconstruction MSE: 0.01004039
+geodesic epoch 0575 | masked reconstruction MSE: 0.01103464
+Saved geodesic checkpoint at epoch 600: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0600 | masked reconstruction MSE: 0.00998177
+geodesic epoch 0625 | masked reconstruction MSE: 0.00956816
+geodesic epoch 0650 | masked reconstruction MSE: 0.01042291
+geodesic epoch 0675 | masked reconstruction MSE: 0.00938333
+Saved geodesic checkpoint at epoch 700: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0700 | masked reconstruction MSE: 0.01072428
+geodesic epoch 0725 | masked reconstruction MSE: 0.00910955
+geodesic epoch 0750 | masked reconstruction MSE: 0.00973864
+geodesic epoch 0775 | masked reconstruction MSE: 0.00827580
+Saved geodesic checkpoint at epoch 800: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0800 | masked reconstruction MSE: 0.00921503
+geodesic epoch 0825 | masked reconstruction MSE: 0.00776555
+geodesic epoch 0850 | masked reconstruction MSE: 0.01007408
+geodesic epoch 0875 | masked reconstruction MSE: 0.00881609
+Saved geodesic checkpoint at epoch 900: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic epoch 0900 | masked reconstruction MSE: 0.00933782
+geodesic epoch 0925 | masked reconstruction MSE: 0.00746219
+geodesic epoch 0950 | masked reconstruction MSE: 0.00808861
+geodesic epoch 0975 | masked reconstruction MSE: 0.00778855
+geodesic epoch 0999 | masked reconstruction MSE: 0.00933184
+Saved geodesic checkpoint at epoch 1000: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_geodesic.pkl
+geodesic optimization: 421.99 seconds.
+
+Training free model...
+free epoch 0000 | masked reconstruction MSE: 0.61821569
+free epoch 0025 | masked reconstruction MSE: 0.10437533
+free epoch 0050 | masked reconstruction MSE: 0.01099839
+free epoch 0075 | masked reconstruction MSE: 0.01171105
+Saved free checkpoint at epoch 100: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0100 | masked reconstruction MSE: 0.00991548
+free epoch 0125 | masked reconstruction MSE: 0.01100104
+free epoch 0150 | masked reconstruction MSE: 0.01190784
+free epoch 0175 | masked reconstruction MSE: 0.01102720
+Saved free checkpoint at epoch 200: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0200 | masked reconstruction MSE: 0.01142167
+free epoch 0225 | masked reconstruction MSE: 0.01233408
+free epoch 0250 | masked reconstruction MSE: 0.00985241
+free epoch 0275 | masked reconstruction MSE: 0.01141613
+Saved free checkpoint at epoch 300: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0300 | masked reconstruction MSE: 0.01077465
+free epoch 0325 | masked reconstruction MSE: 0.00993510
+free epoch 0350 | masked reconstruction MSE: 0.01098194
+free epoch 0375 | masked reconstruction MSE: 0.01056238
+Saved free checkpoint at epoch 400: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0400 | masked reconstruction MSE: 0.01214999
+free epoch 0425 | masked reconstruction MSE: 0.01128529
+free epoch 0450 | masked reconstruction MSE: 0.01075025
+free epoch 0475 | masked reconstruction MSE: 0.01043762
+Saved free checkpoint at epoch 500: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0500 | masked reconstruction MSE: 0.01095229
+free epoch 0525 | masked reconstruction MSE: 0.00851859
+free epoch 0550 | masked reconstruction MSE: 0.01036899
+free epoch 0575 | masked reconstruction MSE: 0.01141671
+Saved free checkpoint at epoch 600: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0600 | masked reconstruction MSE: 0.01024780
+free epoch 0625 | masked reconstruction MSE: 0.01000608
+free epoch 0650 | masked reconstruction MSE: 0.01106622
+free epoch 0675 | masked reconstruction MSE: 0.01067624
+Saved free checkpoint at epoch 700: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0700 | masked reconstruction MSE: 0.01226661
+free epoch 0725 | masked reconstruction MSE: 0.00996484
+free epoch 0750 | masked reconstruction MSE: 0.01024793
+free epoch 0775 | masked reconstruction MSE: 0.00924172
+Saved free checkpoint at epoch 800: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0800 | masked reconstruction MSE: 0.01029623
+free epoch 0825 | masked reconstruction MSE: 0.00878508
+free epoch 0850 | masked reconstruction MSE: 0.01149658
+free epoch 0875 | masked reconstruction MSE: 0.00909280
+Saved free checkpoint at epoch 900: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free epoch 0900 | masked reconstruction MSE: 0.01044706
+free epoch 0925 | masked reconstruction MSE: 0.00882261
+free epoch 0950 | masked reconstruction MSE: 0.00901695
+free epoch 0975 | masked reconstruction MSE: 0.00837876
+free epoch 0999 | masked reconstruction MSE: 0.00964247
+Saved free checkpoint at epoch 1000: runs/jax_e65_context_scan_n60_c2_e1000/checkpoint_free.pkl
+free optimization: 61.21 seconds.
+
+--- executing notebook cell 3 ---
+
+========================================================================
+E65 GEODESIC VERSUS FREE-DYNAMICS COMPARISON
+========================================================================
+Metric                 |             Geodesic |                 Free
+------------------------------------------------------------------------
+Train MSE              |           0.00831406 |           0.00963518
+Train R2               |           0.18503292 |           0.05553283
+Train r                |           0.43180563 |           0.25059723
+Forecast MSE           |           0.01070830 |           0.01003734
+Forecast R2            |          -0.06105841 |           0.00542563
+Forecast r             |           0.07497180 |           0.11769041
+========================================================================
+Saved outputs to runs/jax_e65_context_scan_n60_c2_e1000
+Finished: Wed Oct 28 17:07:06 EDT 2026

@@ -1,0 +1,66 @@
+{
+  "config": {
+    "data_path": "src/npz_e65_data/E65_data.npz",
+    "latent_dim": 5,
+    "context_steps": 5,
+    "heldout_fraction": 0.2,
+    "max_trials": 60,
+    "num_trials": 60,
+    "num_train_trials": 48,
+    "num_heldout_trials": 12,
+    "n_neurons_raw": 375,
+    "n_neurons_modeled": 281,
+    "epochs": 1000,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "dtype": "float64",
+    "checkpoint_every": 100,
+    "resume": false,
+    "solver": "rk4",
+    "loss": "masked_mse",
+    "uses_raw_frame_times": true,
+    "uses_position_or_behavior": false,
+    "geodesic_parameters": 256818,
+    "free_parameters": 256488
+  },
+  "geodesic": {
+    "train": {
+      "mse": 0.00827661415885802,
+      "r2": 0.188703493289759,
+      "r": 0.43765266866261093,
+      "n": 526594
+    },
+    "heldout_context": {
+      "mse": 0.009989880019331486,
+      "r2": 0.07751603894786985,
+      "r": 0.2846618354136193,
+      "n": 16860
+    },
+    "forecast": {
+      "mse": 0.01025662854017286,
+      "r2": -0.021354959643134608,
+      "r": 0.06790351415130548,
+      "n": 112681
+    }
+  },
+  "free": {
+    "train": {
+      "mse": 0.008331370210977318,
+      "r2": 0.1833361543087474,
+      "r": 0.42995940964910095,
+      "n": 526594
+    },
+    "heldout_context": {
+      "mse": 0.010301807421030736,
+      "r2": 0.04871208689605344,
+      "r": 0.24916406910431588,
+      "n": 16860
+    },
+    "forecast": {
+      "mse": 0.010987988146315271,
+      "r2": -0.09418374135151586,
+      "r": 0.0727698469743107,
+      "n": 112681
+    }
+  }
+}

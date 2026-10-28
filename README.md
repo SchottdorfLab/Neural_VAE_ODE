@@ -4,6 +4,9 @@
 
 ## October 26th, 8:50pm:
 - Thinking about how I should measure forecast/heldout trials. 
+- If we do decide that forecast scores matter, I have a couple of ideas on what I want to try.
+    1. I want to give a hyperparameter scan of more context frames.
+    2. A type of the neural model where things are better-encoded temporally. Right now, with the MLP, I'm not sure we're getting the benefits of temporal changes.
 
 ## October 25th, 12:14pm:
 - Just spent a hot minute trying to figure out why the JAX code isn't running on DARWIN. I realized it's because I don't have the dependencies installed in the env! So working on that now. I had ChatGPT try and debug that issue and it didn't catch it, haha. Human error. 

@@ -2,6 +2,15 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## October 29th, 2:11am:
+Things I know:
+- The good thing is that training scores are working well on E65. That's good. Good scores on sphere => good scores on E65.
+- But as a reminder, we had bad forecast scores for all models on the sphere. That's not good, but it's good here that we had bad forecast scores on sphere => bad forecast scores on E65.
+    - That essentially means our toy problem (the sphere), so far, is a good indicator of performance on E65. 
+
+## October 29th, 2:10am:
+- GRU marginally improved scores, especially for 5 context frames, and best performing on free dynamics. 
+
 ## October 28th, 9:19pm:
 | Context | Model | Parameters | Train MSE | Train \(R^2\) | Train \(r\) | Context MSE | Context \(R^2\) | Context \(r\) | Forecast MSE | Forecast \(R^2\) | Forecast \(r\) |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|

@@ -3,7 +3,7 @@
 * Built for: Schottdorf Lab
 
 ## October 28th, 9:19pm:
-| Context | Model | Parameters | Train MSE ↓ | Train \(R^2\) ↑ | Train \(r\) ↑ | Context MSE ↓ | Context \(R^2\) ↑ | Context \(r\) ↑ | Forecast MSE ↓ | Forecast \(R^2\) ↑ | Forecast \(r\) ↑ |
+| Context | Model | Parameters | Train MSE | Train \(R^2\) | Train \(r\) | Context MSE | Context \(R^2\) | Context \(r\) | Forecast MSE | Forecast \(R^2\) | Forecast \(r\) |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 2 | Geodesic | 148,914 | 0.008314 | 0.1850 | 0.4318 | 0.010968 | 0.0122 | 0.1666 | 0.010708 | -0.0611 | 0.0750 |
 | **2** | **Free dynamics** | **148,584** | 0.009635 | 0.0555 | 0.2506 | 0.010671 | 0.0390 | 0.2073 | **0.010037** | **0.0054** | **0.1177** |

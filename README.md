@@ -2,6 +2,20 @@
 * Written by: Kathleen Higgins
 * Built for: Schottdorf Lab
 
+## October 28th, 9:19pm:
+- Finished the hyperparameter scan. 
+```
+| Context | Model | Parameters | Train MSE ↓ | Train \(R^2\) ↑ | Train \(r\) ↑ | Context MSE ↓ | Context \(R^2\) ↑ | Context \(r\) ↑ | Forecast MSE ↓ | Forecast \(R^2\) ↑ | Forecast \(r\) ↑ |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 | Geodesic | 148,914 | 0.008314 | 0.1850 | 0.4318 | 0.010968 | 0.0122 | 0.1666 | 0.010708 | -0.0611 | 0.0750 |
+| **2** | **Free dynamics** | **148,584** | 0.009635 | 0.0555 | 0.2506 | 0.010671 | 0.0390 | 0.2073 | **0.010037** | **0.0054** | **0.1177** |
+| **5** | **Geodesic** | **256,818** | 0.008277 | 0.1887 | 0.4377 | **0.009990** | **0.0775** | **0.2847** | **0.010257** | **-0.0214** | 0.0679 |
+| 5 | Free dynamics | 256,488 | 0.008331 | 0.1833 | 0.4300 | 0.010302 | 0.0487 | 0.2492 | 0.010988 | -0.0942 | 0.0728 |
+| 10 | Geodesic | 436,658 | 0.007453 | 0.2695 | 0.5275 | 0.012590 | -0.1370 | 0.0889 | 0.012903 | -0.3142 | 0.0599 |
+| 10 | Free dynamics | 436,328 | 0.008759 | 0.1414 | 0.3822 | 0.011751 | -0.0612 | 0.1379 | 0.010169 | -0.0358 | 0.0950 |
+| 20 | Geodesic | 796,338 | **0.007256** | **0.2887** | **0.5406** | 0.009447 | 0.0447 | 0.2496 | 0.012707 | -0.2192 | 0.0647 |
+| 20 | Free dynamics | 796,008 | 0.007443 | 0.2704 | 0.5232 | 0.010099 | -0.0212 | 0.1266 | 0.011546 | -0.1079 | 0.0510 |
+
 ## October 26th, 8:50pm:
 - Thinking about how I should measure forecast/heldout trials. 
 - If we do decide that forecast scores matter, I have a couple of ideas on what I want to try.

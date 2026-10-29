@@ -60,3 +60,27 @@ python -u sandbox/JAX/gru_e65/run_gru_e65.py
 
 Use a unique output directory for each configuration so checkpoints from
 different context lengths or encoder settings are never mixed.
+
+## Darwin context-length scan
+
+The included SLURM array tests 2, 5, 10, and 20 context frames. Each task uses
+the same seed, 60-trial subset, 48/12 whole-trial split, and 1,000 epochs.
+
+```bash
+JOB_ID=$(sbatch --parsable sandbox/JAX/gru_e65/jax_e65_gru_context_scan.sbatch)
+JOB_ID=${JOB_ID%%;*}
+echo "$JOB_ID"
+```
+
+Monitor the four tasks:
+
+```bash
+squeue -j "$JOB_ID"
+tail -F logs/jax-e65-gru-${JOB_ID}_*.out
+```
+
+After all four tasks finish:
+
+```bash
+python sandbox/JAX/gru_e65/summarize_context_scan.py
+```

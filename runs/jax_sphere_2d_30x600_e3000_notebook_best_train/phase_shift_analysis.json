@@ -1,0 +1,119 @@
+{
+  "important_warning": "Lag alignment uses the true future and is an oracle diagnostic, not a valid forecast.",
+  "lag_sign_convention": "positive lag moves the prediction later in time",
+  "max_abs_lag_scanned_frames": 250,
+  "original_forecast": {
+    "R2": -0.4872497403021665,
+    "r": 0.2320743608887948,
+    "MSE": 1.9694448371390645
+  },
+  "single_global_lag": {
+    "lag_frames": -7,
+    "overlap_frames": 591,
+    "R2": -0.4845322272410204,
+    "r": 0.23355096306119957,
+    "MSE": 1.965844051787295,
+    "unshifted_same_window": {
+      "R2": -0.481325982625602,
+      "r": 0.23520993000060045,
+      "MSE": 1.9615982854845255
+    },
+    "shifted": {
+      "R2": -0.4845322272410204,
+      "r": 0.23355096306119957,
+      "MSE": 1.965844051787295
+    }
+  },
+  "independent_per_trial_lags": {
+    "trials": [
+      {
+        "lag_frames": 250,
+        "overlap_frames": 348,
+        "R2": -0.6123132257187351,
+        "r": 0.17752768289577825,
+        "MSE": 2.1350781769744875,
+        "heldout_dataset_trial_index": 17,
+        "unshifted_same_window": {
+          "R2": -1.2671518087983946,
+          "r": -0.12784489664435345,
+          "MSE": 3.0022369559710556
+        }
+      },
+      {
+        "lag_frames": -11,
+        "overlap_frames": 587,
+        "R2": 0.842594631646338,
+        "r": 0.9185632020112261,
+        "MSE": 0.20843253201258213,
+        "heldout_dataset_trial_index": 19,
+        "unshifted_same_window": {
+          "R2": 0.8113326906777216,
+          "r": 0.9022273532191827,
+          "MSE": 0.24982886798173579
+        }
+      },
+      {
+        "lag_frames": 42,
+        "overlap_frames": 556,
+        "R2": 0.5415828699307705,
+        "r": 0.7610778905625871,
+        "MSE": 0.6070028466482636,
+        "heldout_dataset_trial_index": 27,
+        "unshifted_same_window": {
+          "R2": 0.22100930883450787,
+          "r": 0.5909264721236275,
+          "MSE": 1.0314831973633778
+        }
+      },
+      {
+        "lag_frames": 191,
+        "overlap_frames": 407,
+        "R2": -0.6053712373418765,
+        "r": 0.16658847811515493,
+        "MSE": 2.1258445599828546,
+        "heldout_dataset_trial_index": 5,
+        "unshifted_same_window": {
+          "R2": -1.0208638374106598,
+          "r": -0.048254102482796025,
+          "MSE": 2.6760429583494845
+        }
+      },
+      {
+        "lag_frames": -179,
+        "overlap_frames": 419,
+        "R2": -0.06930198997658077,
+        "r": 0.4761671309686716,
+        "MSE": 1.4160735411840508,
+        "heldout_dataset_trial_index": 24,
+        "unshifted_same_window": {
+          "R2": -1.3854529230534007,
+          "r": -0.23564281465751655,
+          "MSE": 3.1590484257399134
+        }
+      },
+      {
+        "lag_frames": -60,
+        "overlap_frames": 538,
+        "R2": 0.10389760567829087,
+        "r": 0.526232872711039,
+        "MSE": 1.1866614199124714,
+        "heldout_dataset_trial_index": 3,
+        "unshifted_same_window": {
+          "R2": -0.16913979765688159,
+          "r": 0.38465255490387534,
+          "MSE": 1.5482305383346793
+        }
+      }
+    ],
+    "aggregate_unshifted_same_windows": {
+      "R2": -0.325357791932831,
+      "r": 0.3113081135996026,
+      "MSE": 1.7550513022677987
+    },
+    "aggregate_shifted": {
+      "R2": 0.12717229947526854,
+      "r": 0.5488565923878141,
+      "MSE": 1.1558066823807325
+    }
+  }
+}

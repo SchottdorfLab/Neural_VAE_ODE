@@ -1,0 +1,39 @@
+{
+  "identity": {
+    "description": "Best recorded JAX sphere training reconstruction",
+    "source_notebook": "sandbox/JAX/tmp_fit_sphere_trials_comparison.ipynb",
+    "source_data": "runs/geodesic_sphere_forecast_2d_30x600_e3000_float64_cpu/synthetic_sphere_trials.npz",
+    "recorded_from": "executed notebook outputs"
+  },
+  "config": {
+    "num_trials": 30,
+    "num_train_trials": 24,
+    "num_heldout_trials": 6,
+    "heldout_fraction": 0.2,
+    "num_timepoints": 600,
+    "num_neurons": 300,
+    "latent_dim": 2,
+    "epochs": 3000,
+    "learning_rate": 0.001,
+    "dtype": "jax.float64",
+    "solver": "rk4",
+    "encoder_input": "first_2_neural_frames",
+    "forecast_start_frame_zero_based": 2,
+    "forecast_scored_frames_per_trial": 598,
+    "train_indices": [12, 0, 6, 25, 8, 15, 10, 18, 16, 23, 28, 26, 20, 7, 21, 22, 29, 13, 14, 2, 4, 1, 9, 11],
+    "heldout_indices": [17, 19, 27, 5, 24, 3]
+  },
+  "metrics": {
+    "train_R2": 0.925482,
+    "train_r": 0.962150,
+    "forecast_R2": -0.451123,
+    "forecast_r": 0.256559,
+    "last_logged_training_MSE": 0.11406,
+    "elapsed_seconds": 4557.74
+  },
+  "artifacts": {
+    "forecast_neural_activity_comparison": "forecast_neural_activity_comparison.png",
+    "prediction_arrays_saved": false,
+    "figure_scope": "first heldout trial (dataset trial index 17), all 600 frames; scored forecast is frames 2 through 599"
+  }
+}
